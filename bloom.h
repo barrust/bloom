@@ -12,10 +12,10 @@
 ***
 ***     Usage:
 ***			BloomFilter bf;
-***			bloom_filter_init(&bf, 100000, 0.05); // 5% false positive rate
+***			bloom_filter_init(&bf, 100000, 0.05, NULL); // 5% false positive rate
 ***			bloom_filter_add_string(&bf, "google");
 ***			bloom_filter_add_string(&bf, "twitter");
-***			if (bloom_filter_check_string(&bf, "facebook") == -1) {
+***			if (bloom_filter_check_string(&bf, "facebook") == BLOOM_FAILURE) {
 ***				printf("facebook is not present!\n");
 ***			}
 ***			bloom_filter_destroy(&bf);
