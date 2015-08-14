@@ -1,6 +1,9 @@
 
-
 #include "bloom.h"
+
+/*
+	Example of generating a custom hashing function 
+*/
 uint64_t* md5_hash2(int num_hashes, uint64_t num_bits, char *str) {
 	printf("in md5hash! from the caller!\n");
 	uint64_t *results = calloc(num_hashes, sizeof(uint64_t));
@@ -19,6 +22,8 @@ uint64_t* md5_hash2(int num_hashes, uint64_t num_bits, char *str) {
 	}
 	return results;
 }
+
+
 int main(int argc, char** argv) {
     printf("Testing BloomFilter version %s\n\n", bloom_filter_get_version());
     BloomFilter bf;
