@@ -1,23 +1,22 @@
 
 #include "bloom.h"
-
+#include <openssl/sha.h>
 /*
-	Example of generating a custom hashing function 
+	Example of generating a custom hashing function
 */
-uint64_t* md5_hash2(int num_hashes, uint64_t num_bits, char *str) {
-	printf("in md5hash! from the caller!\n");
+uint64_t* sha256_hash2(int num_hashes, uint64_t num_bits, char *str) {
 	uint64_t *results = calloc(num_hashes, sizeof(uint64_t));
-	unsigned char digest[MD5_DIGEST_LENGTH];
+	unsigned char digest[64];
 	int i;
 	for (i = 0; i < num_hashes; i++) {
-		MD5_CTX md5_ctx;
-		MD5_Init(&(md5_ctx));
+		SHA256_CTX sha256_ctx;
+		SHA256_Init(&(sha256_ctx));
 		if (i == 0) {
-			MD5_Update(&(md5_ctx), str, strlen(str));
+			SHA256_Update(&(sha256_ctx), str, strlen(str));
 		} else {
-			MD5_Update(&(md5_ctx), digest, MD5_DIGEST_LENGTH);
+			SHA256_Update(&(sha256_ctx), digest, 64);
 		}
-		MD5_Final(digest, &(md5_ctx));
+		SHA256_Final(digest, &(sha256_ctx));
 		results[i] = (uint64_t) *(uint64_t *)digest % num_bits;
 	}
 	return results;
@@ -27,7 +26,7 @@ uint64_t* md5_hash2(int num_hashes, uint64_t num_bits, char *str) {
 int main(int argc, char** argv) {
     printf("Testing BloomFilter version %s\n\n", bloom_filter_get_version());
     BloomFilter bf;
-    bloom_filter_init(&bf, 10, 0.05, &md5_hash2);
+    bloom_filter_init(&bf, 10, 0.05, &sha256_hash2);
     bloom_filter_add_string(&bf, "test");
     bloom_filter_add_string(&bf, "test123");
     bloom_filter_add_string(&bf, "abc");
