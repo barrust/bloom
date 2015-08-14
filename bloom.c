@@ -3,7 +3,7 @@
 ***     Author: Tyler Barrus
 ***     email:  barrust@gmail.com
 ***
-***     Version: 0.8.0
+***     Version: 0.8.1
 ***
 ***     License: MIT 2015
 ***
@@ -115,6 +115,16 @@ int bloom_filter_check_string(BloomFilter *bf, char *str) {
 	return r;
 }
 
+float bloom_filter_current_false_positive_rate(BloomFilter *bf) {
+	int num = (bf->number_hashes * -1 * bf->elements_added);
+	double d = (num*1.0) / (bf->number_bits*1.0);
+	double e = exp(d);
+	return pow((1 - e), bf->number_hashes);
+}
+
+/*******************************************************************************
+*	PRIVATE FUNCTIONS
+*******************************************************************************/
 /* NOTE:The caller will free the results */
 static uint64_t* md5_hash_default(int num_hashes, uint64_t num_bits, char *str) {
 	uint64_t *results = calloc(num_hashes, sizeof(uint64_t));
@@ -132,11 +142,4 @@ static uint64_t* md5_hash_default(int num_hashes, uint64_t num_bits, char *str) 
 		results[i] = (uint64_t) *(uint64_t *)digest % num_bits;
 	}
 	return results;
-}
-
-float bloom_filter_current_false_positive_rate(BloomFilter *bf) {
-	int num = (bf->number_hashes * -1 * bf->elements_added);
-	double d = (num*1.0) / (bf->number_bits*1.0);
-	double e = exp(d);
-	return pow((1 - e), bf->number_hashes);
 }
