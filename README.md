@@ -11,7 +11,7 @@ MIT 2015
 #include "bloom.h"
 
 BloomFilter bf;
-bloom_filter_init(&bf, 10, 0.05, &md5_hash2);
+bloom_filter_init(&bf, 10, 0.05, NULL);
 bloom_filter_add_string(&bf, "test");
 if (bloom_filter_check_string(&bf, "test") == BLOOM_FAILURE) {
 	printf("'test' is not in the bloom filter\n");
