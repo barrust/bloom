@@ -3,7 +3,7 @@
 ***     Author: Tyler Barrus
 ***     email:  barrust@gmail.com
 ***
-***     Version: 0.8.1
+***     Version: 1.0.0
 ***
 ***     License: MIT 2015
 ***
@@ -23,7 +23,7 @@ static const double LOG_TWO_SQUARED = 0.4804530139182;
 ***		PRIVATE FUNCTIONS
 *******************************************************************************/
 static uint64_t* md5_hash_default(int num_hashes, uint64_t num_bits, char *str);
-
+static void calculate_optimal_hashes(BloomFilter *bf);
 
 /*******************************************************************************
 ***		testing functions
@@ -44,19 +44,10 @@ int bloom_filter_init(BloomFilter *bf, uint64_t estimated_elements, float false_
 	if (false_positive_rate <= 0.0 || false_positive_rate >= 1.0 ) {
 		return BLOOM_FAILURE;
 	}
-    // calc optimized values
-	long n = estimated_elements;
-	float p = false_positive_rate;
-	uint64_t m = ceil((-n * log(p)) / LOG_TWO_SQUARED);  // AKA pow(log(2), 2);
-	unsigned int k = round(log(2.0) * m / n);
-    // set paramenters
-    bf->estimated_elements = estimated_elements;
+	bf->estimated_elements = estimated_elements;
     bf->false_positive_probability = false_positive_rate;
-    bf->number_hashes = k; // should check to make sure it is at least 1...
-    bf->number_bits = m;
-    long num_pos = ceil(m / (CHAR_LEN * 1.0));
-	bf->bloom_length = num_pos;
-	bf->bloom = calloc(num_pos, sizeof(char));
+	calculate_optimal_hashes(bf);
+	bf->bloom = calloc(bf->bloom_length, sizeof(char));
 	bf->elements_added = 0;
 	bloom_filter_set_hash_function(bf, hash_function);
 	return BLOOM_SUCCESS;
@@ -122,9 +113,44 @@ float bloom_filter_current_false_positive_rate(BloomFilter *bf) {
 	return pow((1 - e), bf->number_hashes);
 }
 
+int bloom_filter_export(BloomFilter *bf, char *filepath) {
+	FILE *fp;
+	fp = fopen(filepath, "wb");
+	fwrite(&bf->estimated_elements, sizeof(uint64_t), 1, fp);
+	fwrite(&bf->elements_added, sizeof(uint64_t), 1, fp);
+	fwrite(&bf->false_positive_probability, sizeof(float), 1, fp);
+	fwrite(bf->bloom, bf->bloom_length, 1, fp);
+	fclose(fp);
+}
+
+int bloom_filter_import(BloomFilter *bf, char *filepath, HashFunction hash_function) {
+	FILE *fp;
+	fp = fopen(filepath, "r+b");
+	fread(&bf->estimated_elements, sizeof(uint64_t), 1, fp);
+	fread(&bf->elements_added, sizeof(uint64_t), 1, fp);
+	fread(&bf->false_positive_probability, sizeof(float), 1, fp);
+	calculate_optimal_hashes(bf);
+	bf->bloom = calloc(bf->bloom_length, sizeof(char));
+	fread(bf->bloom, sizeof(char), bf->bloom_length, fp);
+	bloom_filter_set_hash_function(bf, hash_function);
+}
+
 /*******************************************************************************
 *	PRIVATE FUNCTIONS
 *******************************************************************************/
+static void calculate_optimal_hashes(BloomFilter *bf) {
+	// calc optimized values
+	long n = bf->estimated_elements;
+	float p = bf->false_positive_probability;
+	uint64_t m = ceil((-n * log(p)) / LOG_TWO_SQUARED);  // AKA pow(log(2), 2);
+	unsigned int k = round(log(2.0) * m / n);
+    // set paramenters
+    bf->number_hashes = k; // should check to make sure it is at least 1...
+    bf->number_bits = m;
+    long num_pos = ceil(m / (CHAR_LEN * 1.0));
+	bf->bloom_length = num_pos;
+}
+
 /* NOTE:The caller will free the results */
 static uint64_t* md5_hash_default(int num_hashes, uint64_t num_bits, char *str) {
 	uint64_t *results = calloc(num_hashes, sizeof(uint64_t));
