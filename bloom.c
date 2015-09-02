@@ -1,16 +1,16 @@
 /*******************************************************************************
 ***
-***     Author: Tyler Barrus
-***     email:  barrust@gmail.com
+***	 Author: Tyler Barrus
+***	 email:  barrust@gmail.com
 ***
-***     Version: 1.0.0
+***	 Version: 1.0.0
 ***
-***     License: MIT 2015
+***	 License: MIT 2015
 ***
 *******************************************************************************/
 #include "bloom.h"
 
-#define set_bit(A,k)     (A[((k) / 8)] |=  (1 << ((k) % 8)))
+#define set_bit(A,k)	 (A[((k) / 8)] |=  (1 << ((k) % 8)))
 #define clear_bit(A,k)   (A[((k) / 8)] &= ~(1 << ((k) % 8))) /* not currently used */
 #define check_bit(A,k)   (A[((k) / 8)] &   (1 << ((k) % 8)))
 
@@ -45,7 +45,7 @@ int bloom_filter_init(BloomFilter *bf, uint64_t estimated_elements, float false_
 		return BLOOM_FAILURE;
 	}
 	bf->estimated_elements = estimated_elements;
-    bf->false_positive_probability = false_positive_rate;
+	bf->false_positive_probability = false_positive_rate;
 	calculate_optimal_hashes(bf);
 	bf->bloom = calloc(bf->bloom_length, sizeof(char));
 	bf->elements_added = 0;
@@ -66,9 +66,9 @@ int bloom_filter_destroy(BloomFilter *bf) {
 	bf->bloom = NULL;
 	bf->elements_added = 0;
 	bf->estimated_elements = 0;
-    bf->false_positive_probability = 0;
-    bf->number_hashes = 0;
-    bf->number_bits = 0;
+	bf->false_positive_probability = 0;
+	bf->number_hashes = 0;
+	bf->number_bits = 0;
 	bf->hash_function = NULL;
 	return BLOOM_SUCCESS;
 }
@@ -152,10 +152,10 @@ static void calculate_optimal_hashes(BloomFilter *bf) {
 	float p = bf->false_positive_probability;
 	uint64_t m = ceil((-n * log(p)) / LOG_TWO_SQUARED);  // AKA pow(log(2), 2);
 	unsigned int k = round(log(2.0) * m / n);
-    // set paramenters
-    bf->number_hashes = k; // should check to make sure it is at least 1...
-    bf->number_bits = m;
-    long num_pos = ceil(m / (CHAR_LEN * 1.0));
+	// set paramenters
+	bf->number_hashes = k; // should check to make sure it is at least 1...
+	bf->number_bits = m;
+	long num_pos = ceil(m / (CHAR_LEN * 1.0));
 	bf->bloom_length = num_pos;
 }
 
