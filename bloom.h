@@ -28,9 +28,9 @@
 
 #include <stdlib.h>
 #include <inttypes.h>
-#include <math.h>   		/* pow, exp */
-#include <stdio.h> 			/* printf */
-#include <string.h> 		/* strlen */
+#include <math.h>			/* pow, exp */
+#include <stdio.h>			/* printf */
+#include <string.h>			/* strlen */
 #include <openssl/md5.h>
 
 #ifdef __APPLE__

@@ -74,7 +74,17 @@ int bloom_filter_destroy(BloomFilter *bf) {
 }
 
 void bloom_filter_stats(BloomFilter *bf) {
-	printf("BloomFilter\n\tbits: %" PRIu64 "\n\testimated elements: %" PRIu64 "\n\tnumber hashes: %d\n\tmax false positive rate: %f\n\tbloom length (8 bits): %ld\n\telements added: %" PRIu64 "\n\tcurrent false positive rate: %f\n", bf->number_bits, bf->estimated_elements, bf->number_hashes, bf->false_positive_probability, bf->bloom_length, bf->elements_added, bloom_filter_current_false_positive_rate(bf));
+	printf("BloomFilter\n\
+	bits: %" PRIu64 "\n\
+	estimated elements: %" PRIu64 "\n\
+	number hashes: %d\n\
+	max false positive rate: %f\n\
+	bloom length (8 bits): %ld\n\
+	elements added: %" PRIu64 "\n\
+	current false positive rate: %f\n",
+	bf->number_bits, bf->estimated_elements, bf->number_hashes,
+	bf->false_positive_probability, bf->bloom_length, bf->elements_added,
+	bloom_filter_current_false_positive_rate(bf));
 }
 
 int bloom_filter_add_string(BloomFilter *bf, char *str) {
