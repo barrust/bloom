@@ -1,16 +1,16 @@
 /*******************************************************************************
 ***
-***     Author: Tyler Barrus
-***     email:  barrust@gmail.com
+***	 Author: Tyler Barrus
+***	 email:  barrust@gmail.com
 ***
-***     Version: 0.8.0
-***     Purpose: Simple, yet effective, bloom filter implementation
+***	 Version: 1.0.0
+***	 Purpose: Simple, yet effective, bloom filter implementation
 ***
-***     License: MIT 2015
+***	 License: MIT 2015
 ***
-***     URL:
+***	 URL: https://github.com/barrust/bloom
 ***
-***     Usage:
+***	 Usage:
 ***			BloomFilter bf;
 ***			bloom_filter_init(&bf, 100000, 0.05, NULL); // 5% false positive rate
 ***			bloom_filter_add_string(&bf, "google");
@@ -45,20 +45,20 @@
 #define BLOOM_SUCCESS 0
 #define BLOOM_FAILURE -1
 
-#define bloom_filter_get_version()    (BLOOMFILTER_VERSION)
+#define bloom_filter_get_version()	(BLOOMFILTER_VERSION)
 
 typedef uint64_t* (*HashFunction) (int num_hashes, uint64_t num_bits, char *str);
 
 typedef struct bloom_filter {
-    /* bloom parameters */
-    uint64_t estimated_elements;
-    float false_positive_probability;
-    unsigned int number_hashes;
-    uint64_t number_bits;
-    /* bloom filter */
-    unsigned char *bloom;
-    long bloom_length;
-    uint64_t elements_added;
+	/* bloom parameters */
+	uint64_t estimated_elements;
+	float false_positive_probability;
+	unsigned int number_hashes;
+	uint64_t number_bits;
+	/* bloom filter */
+	unsigned char *bloom;
+	long bloom_length;
+	uint64_t elements_added;
 	HashFunction hash_function;
 } BloomFilter;
 
@@ -69,15 +69,14 @@ typedef struct bloom_filter {
 
 	Estimated elements is 0 < x <= UINT64_MAX.
 	False positive rate is 0.0 < x < 1.0
-
 */
 int bloom_filter_init(BloomFilter *bf, uint64_t estimated_elements, float false_positive_rate, HashFunction hash_function);
 
-/* NOT IMPLEMENTED: Import a previously exported bloom filter from a file */
-int bloom_filter_import(BloomFilter *bf, char *filepath, HashFunction hash_function); // not implemented
+/* Import a previously exported bloom filter from a file into memory */
+int bloom_filter_import(BloomFilter *bf, char *filepath, HashFunction hash_function);
 
-/* NOT IMPLEMENTED: Export the current bloom filter to file */
-int bloom_filter_export(BloomFilter *bf, char *filepath); // not implemented
+/* Export the current bloom filter to file */
+int bloom_filter_export(BloomFilter *bf, char *filepath);
 
 /* Set or change the hashing function */
 void bloom_filter_set_hash_function(BloomFilter *bf, HashFunction hf);

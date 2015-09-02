@@ -11,7 +11,7 @@
 #include "bloom.h"
 
 #define set_bit(A,k)     (A[((k) / 8)] |=  (1 << ((k) % 8)))
-#define clear_bit(A,k)   (A[((k) / 8)] &= ~(1 << ((k) % 8)))
+#define clear_bit(A,k)   (A[((k) / 8)] &= ~(1 << ((k) % 8))) /* not currently used */
 #define check_bit(A,k)   (A[((k) / 8)] &   (1 << ((k) % 8)))
 
 
@@ -78,7 +78,6 @@ void bloom_filter_stats(BloomFilter *bf) {
 }
 
 int bloom_filter_add_string(BloomFilter *bf, char *str) {
-	//uint64_t *hashes = calculate_hashes(bf, str);
 	uint64_t *hashes = bf->hash_function(bf->number_hashes, bf->number_bits, str);
 	int i;
 	for (i = 0; i < bf->number_hashes; i++) {
@@ -91,7 +90,6 @@ int bloom_filter_add_string(BloomFilter *bf, char *str) {
 
 
 int bloom_filter_check_string(BloomFilter *bf, char *str) {
-	//uint64_t *hashes = calculate_hashes(bf, str);
 	uint64_t *hashes = bf->hash_function(bf->number_hashes, bf->number_bits, str);
 	int r = BLOOM_SUCCESS;
 	int i;
@@ -108,7 +106,7 @@ int bloom_filter_check_string(BloomFilter *bf, char *str) {
 
 float bloom_filter_current_false_positive_rate(BloomFilter *bf) {
 	int num = (bf->number_hashes * -1 * bf->elements_added);
-	double d = (num*1.0) / (bf->number_bits*1.0);
+	double d = (num * 1.0) / (bf->number_bits * 1.0);
 	double e = exp(d);
 	return pow((1 - e), bf->number_hashes);
 }
@@ -116,16 +114,25 @@ float bloom_filter_current_false_positive_rate(BloomFilter *bf) {
 int bloom_filter_export(BloomFilter *bf, char *filepath) {
 	FILE *fp;
 	fp = fopen(filepath, "wb");
+	if (fp == NULL) {
+		fprintf(stderr, "Can't open file %s!\n", filepath);
+		return BLOOM_FAILURE;
+	}
 	fwrite(&bf->estimated_elements, sizeof(uint64_t), 1, fp);
 	fwrite(&bf->elements_added, sizeof(uint64_t), 1, fp);
 	fwrite(&bf->false_positive_probability, sizeof(float), 1, fp);
 	fwrite(bf->bloom, bf->bloom_length, 1, fp);
 	fclose(fp);
+	return BLOOM_SUCCESS;
 }
 
 int bloom_filter_import(BloomFilter *bf, char *filepath, HashFunction hash_function) {
 	FILE *fp;
 	fp = fopen(filepath, "r+b");
+	if (fp == NULL) {
+		fprintf(stderr, "Can't open file %s!\n", filepath);
+		return BLOOM_FAILURE;
+	}
 	fread(&bf->estimated_elements, sizeof(uint64_t), 1, fp);
 	fread(&bf->elements_added, sizeof(uint64_t), 1, fp);
 	fread(&bf->false_positive_probability, sizeof(float), 1, fp);
@@ -133,6 +140,7 @@ int bloom_filter_import(BloomFilter *bf, char *filepath, HashFunction hash_funct
 	bf->bloom = calloc(bf->bloom_length, sizeof(char));
 	fread(bf->bloom, sizeof(char), bf->bloom_length, fp);
 	bloom_filter_set_hash_function(bf, hash_function);
+	return BLOOM_SUCCESS;
 }
 
 /*******************************************************************************
@@ -151,7 +159,7 @@ static void calculate_optimal_hashes(BloomFilter *bf) {
 	bf->bloom_length = num_pos;
 }
 
-/* NOTE:The caller will free the results */
+/* NOTE: The caller will free the results */
 static uint64_t* md5_hash_default(int num_hashes, uint64_t num_bits, char *str) {
 	uint64_t *results = calloc(num_hashes, sizeof(uint64_t));
 	unsigned char digest[MD5_DIGEST_LENGTH];
