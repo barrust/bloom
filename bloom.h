@@ -3,7 +3,7 @@
 ***	 Author: Tyler Barrus
 ***	 email:  barrust@gmail.com
 ***
-***	 Version: 1.0.0
+***	 Version: 1.1.0
 ***	 Purpose: Simple, yet effective, bloom filter implementation
 ***
 ***	 License: MIT 2015
@@ -31,15 +31,17 @@
 #include <math.h>			/* pow, exp */
 #include <stdio.h>			/* printf */
 #include <string.h>			/* strlen */
+#include <fcntl.h>			/* O_RDWR */
+#include <sys/mman.h>		/* mmap, mummap */
 #include <openssl/md5.h>
 
 #ifdef __APPLE__
 	#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #endif
 
-#define BLOOMFILTER_VERSION "1.0.0"
+#define BLOOMFILTER_VERSION "1.1.0"
 #define BLOOMFILTER_MAJOR 1
-#define BLOOMFILTER_MINOR 0
+#define BLOOMFILTER_MINOR 1
 #define BLOOMFILTER_REVISION 0
 
 #define BLOOM_SUCCESS 0
@@ -60,6 +62,8 @@ typedef struct bloom_filter {
 	long bloom_length;
 	uint64_t elements_added;
 	HashFunction hash_function;
+	/* on disk handeling */
+	short __is_on_disk;
 } BloomFilter;
 
 
@@ -72,8 +76,14 @@ typedef struct bloom_filter {
 */
 int bloom_filter_init(BloomFilter *bf, uint64_t estimated_elements, float false_positive_rate, HashFunction hash_function);
 
+/* NOT IMPLEMENTED */
+int bloom_filter_init_on_disk(BloomFilter *bf, uint64_t estimated_elements, float false_positive_rate, HashFunction hash_function, char *filepath);
+
 /* Import a previously exported bloom filter from a file into memory */
 int bloom_filter_import(BloomFilter *bf, char *filepath, HashFunction hash_function);
+
+/* NOT IMPLEMENTED */
+int bloom_filter_import_on_disk(BloomFilter *bf, char *filepath, HashFunction hash_function);
 
 /* Export the current bloom filter to file */
 int bloom_filter_export(BloomFilter *bf, char *filepath);

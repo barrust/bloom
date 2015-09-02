@@ -3,7 +3,7 @@
 ***	 Author: Tyler Barrus
 ***	 email:  barrust@gmail.com
 ***
-***	 Version: 1.0.0
+***	 Version: 1.1.0
 ***
 ***	 License: MIT 2015
 ***
@@ -24,6 +24,8 @@ static const double LOG_TWO_SQUARED = 0.4804530139182;
 *******************************************************************************/
 static uint64_t* md5_hash_default(int num_hashes, uint64_t num_bits, char *str);
 static void calculate_optimal_hashes(BloomFilter *bf);
+static void read_from_file(BloomFilter *bf, FILE *fp, short on_disk);
+static void write_to_file(BloomFilter *bf, FILE *fp, short on_disk);
 
 /*******************************************************************************
 ***		testing functions
@@ -50,6 +52,7 @@ int bloom_filter_init(BloomFilter *bf, uint64_t estimated_elements, float false_
 	bf->bloom = calloc(bf->bloom_length, sizeof(char));
 	bf->elements_added = 0;
 	bloom_filter_set_hash_function(bf, hash_function);
+	bf->__is_on_disk = 0; // not on disk
 	return BLOOM_SUCCESS;
 }
 
@@ -62,7 +65,11 @@ void bloom_filter_set_hash_function(BloomFilter *bf, HashFunction hf) {
 }
 
 int bloom_filter_destroy(BloomFilter *bf) {
-	free(bf->bloom);
+	if (bf->__is_on_disk == 0) {
+		free(bf->bloom);
+	} else {
+		// we will need to munmap the file
+	}
 	bf->bloom = NULL;
 	bf->elements_added = 0;
 	bf->estimated_elements = 0;
@@ -70,10 +77,13 @@ int bloom_filter_destroy(BloomFilter *bf) {
 	bf->number_hashes = 0;
 	bf->number_bits = 0;
 	bf->hash_function = NULL;
+	bf->__is_on_disk = 0; // not on disk
 	return BLOOM_SUCCESS;
 }
 
 void bloom_filter_stats(BloomFilter *bf) {
+	char *is_on_disk = (bf->__is_on_disk == 0 ? "no" : "yes");
+
 	printf("BloomFilter\n\
 	bits: %" PRIu64 "\n\
 	estimated elements: %" PRIu64 "\n\
@@ -81,10 +91,11 @@ void bloom_filter_stats(BloomFilter *bf) {
 	max false positive rate: %f\n\
 	bloom length (8 bits): %ld\n\
 	elements added: %" PRIu64 "\n\
-	current false positive rate: %f\n",
+	current false positive rate: %f\n\
+	is on disk: %s\n",
 	bf->number_bits, bf->estimated_elements, bf->number_hashes,
 	bf->false_positive_probability, bf->bloom_length, bf->elements_added,
-	bloom_filter_current_false_positive_rate(bf));
+	bloom_filter_current_false_positive_rate(bf), is_on_disk);
 }
 
 int bloom_filter_add_string(BloomFilter *bf, char *str) {
@@ -123,15 +134,12 @@ float bloom_filter_current_false_positive_rate(BloomFilter *bf) {
 
 int bloom_filter_export(BloomFilter *bf, char *filepath) {
 	FILE *fp;
-	fp = fopen(filepath, "wb");
+	fp = fopen(filepath, "w+b");
 	if (fp == NULL) {
 		fprintf(stderr, "Can't open file %s!\n", filepath);
 		return BLOOM_FAILURE;
 	}
-	fwrite(&bf->estimated_elements, sizeof(uint64_t), 1, fp);
-	fwrite(&bf->elements_added, sizeof(uint64_t), 1, fp);
-	fwrite(&bf->false_positive_probability, sizeof(float), 1, fp);
-	fwrite(bf->bloom, bf->bloom_length, 1, fp);
+	write_to_file(bf, fp, 0);
 	fclose(fp);
 	return BLOOM_SUCCESS;
 }
@@ -143,13 +151,10 @@ int bloom_filter_import(BloomFilter *bf, char *filepath, HashFunction hash_funct
 		fprintf(stderr, "Can't open file %s!\n", filepath);
 		return BLOOM_FAILURE;
 	}
-	fread(&bf->estimated_elements, sizeof(uint64_t), 1, fp);
-	fread(&bf->elements_added, sizeof(uint64_t), 1, fp);
-	fread(&bf->false_positive_probability, sizeof(float), 1, fp);
-	calculate_optimal_hashes(bf);
-	bf->bloom = calloc(bf->bloom_length, sizeof(char));
-	fread(bf->bloom, sizeof(char), bf->bloom_length, fp);
+	read_from_file(bf, fp, 0);
+	fclose(fp);
 	bloom_filter_set_hash_function(bf, hash_function);
+	bf->__is_on_disk = 0; // not on disk
 	return BLOOM_SUCCESS;
 }
 
@@ -167,6 +172,35 @@ static void calculate_optimal_hashes(BloomFilter *bf) {
 	bf->number_bits = m;
 	long num_pos = ceil(m / (CHAR_LEN * 1.0));
 	bf->bloom_length = num_pos;
+}
+
+/* NOTE: this assumes that the file handler is open and ready to use */
+static void write_to_file(BloomFilter *bf, FILE *fp, short on_disk) {
+	if (on_disk == 0) {
+		fwrite(bf->bloom, bf->bloom_length, 1, fp);
+	} else {
+		// will need to write out everything by hand
+	}
+	fwrite(&bf->estimated_elements, sizeof(uint64_t), 1, fp);
+	fwrite(&bf->elements_added, sizeof(uint64_t), 1, fp);
+	fwrite(&bf->false_positive_probability, sizeof(float), 1, fp);
+}
+
+/* NOTE: this assumes that the file handler is open and ready to use */
+static void read_from_file(BloomFilter *bf, FILE *fp, short on_disk) {
+	int offset = sizeof(uint64_t) * 2 + sizeof(float);
+	fseek(fp, offset * -1, SEEK_END);
+	fread(&bf->estimated_elements, sizeof(uint64_t), 1, fp);
+	fread(&bf->elements_added, sizeof(uint64_t), 1, fp);
+	fread(&bf->false_positive_probability, sizeof(float), 1, fp);
+	calculate_optimal_hashes(bf);
+	rewind(fp);
+	if(on_disk == 0) {
+		bf->bloom = calloc(bf->bloom_length, sizeof(char));
+		fread(bf->bloom, sizeof(char), bf->bloom_length, fp);
+	} else {
+		// do something else
+	}
 }
 
 /* NOTE: The caller will free the results */
