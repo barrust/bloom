@@ -19,11 +19,11 @@ int main(int argc, char** argv) {
 	bloom_filter_add_string(&bf, "???");
 	bloom_filter_stats(&bf);
 
-	printf("Export the bloom filter\n");
+	printf("Export the bloom filter to file\n");
 	bloom_filter_export(&bf, "./dist/test.blm");
 	bloom_filter_destroy(&bf);
 
-	printf("Importing the bloom filter\n");
+	printf("Importing the bloom filter into memory\n");
 	BloomFilter bf1;
 	bloom_filter_import(&bf1, "./dist/test.blm", NULL);
 	bloom_filter_stats(&bf1);

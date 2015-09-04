@@ -56,11 +56,34 @@ int bloom_filter_init(BloomFilter *bf, uint64_t estimated_elements, float false_
 	return BLOOM_SUCCESS;
 }
 
-void bloom_filter_set_hash_function(BloomFilter *bf, HashFunction hf) {
-	if (hf == NULL) {
+int bloom_filter_init_on_disk(BloomFilter *bf, uint64_t estimated_elements, float false_positive_rate, char *filepath, HashFunction hash_function) {
+	if(estimated_elements <= 0 || estimated_elements > UINT64_MAX) {
+		return BLOOM_FAILURE;
+	}
+	if (false_positive_rate <= 0.0 || false_positive_rate >= 1.0 ) {
+		return BLOOM_FAILURE;
+	}
+	bf->estimated_elements = estimated_elements;
+	bf->false_positive_probability = false_positive_rate;
+	calculate_optimal_hashes(bf);
+	bf->elements_added = 0;
+	FILE *fp;
+	fp = fopen(filepath, "w+b");
+	if (fp == NULL) {
+		fprintf(stderr, "Can't open file %s!\n", filepath);
+		return BLOOM_FAILURE;
+	}
+	write_to_file(bf, fp, 1);
+	fclose(fp);
+	// slightly ineffecient to redo some of the calculations...
+	return bloom_filter_import_on_disk(bf, filepath, hash_function);
+}
+
+void bloom_filter_set_hash_function(BloomFilter *bf, HashFunction hash_function) {
+	if (hash_function == NULL) {
 		bf->hash_function = &md5_hash_default;
 	} else {
-		bf->hash_function = hf;
+		bf->hash_function = hash_function;
 	}
 }
 
@@ -68,18 +91,18 @@ int bloom_filter_destroy(BloomFilter *bf) {
 	if (bf->__is_on_disk == 0) {
 		free(bf->bloom);
 	} else {
-		// we will need to munmap the file
 		fclose(bf->filepointer);
 		munmap(bf->bloom, bf->__filesize);
 	}
 	bf->bloom = NULL;
+	bf->filepointer = NULL;
 	bf->elements_added = 0;
 	bf->estimated_elements = 0;
 	bf->false_positive_probability = 0;
 	bf->number_hashes = 0;
 	bf->number_bits = 0;
 	bf->hash_function = NULL;
-	bf->__is_on_disk = 0; // not on disk
+	bf->__is_on_disk = 0;
 	bf->__filesize = 0;
 	return BLOOM_SUCCESS;
 }
@@ -141,6 +164,10 @@ float bloom_filter_current_false_positive_rate(BloomFilter *bf) {
 }
 
 int bloom_filter_export(BloomFilter *bf, char *filepath) {
+	// if the bloom is initialized on disk, no need to export it
+	if(bf->__is_on_disk == 1) {
+		return BLOOM_SUCCESS;
+	}
 	FILE *fp;
 	fp = fopen(filepath, "w+b");
 	if (fp == NULL) {
@@ -175,7 +202,7 @@ int bloom_filter_import_on_disk(BloomFilter *bf, char *filepath, HashFunction ha
 	read_from_file(bf, bf->filepointer, 1, filepath);
 	// don't close the file pointer here...
 	bloom_filter_set_hash_function(bf, hash_function);
-	bf->__is_on_disk = 1; // not on disk
+	bf->__is_on_disk = 1; // on disk
 	return BLOOM_SUCCESS;
 }
 
@@ -201,6 +228,14 @@ static void write_to_file(BloomFilter *bf, FILE *fp, short on_disk) {
 		fwrite(bf->bloom, bf->bloom_length, 1, fp);
 	} else {
 		// will need to write out everything by hand
+		uint64_t i;
+		int q = 0;
+
+		//fwrite(&q, 1, bf->bloom_length, fp);
+		for (i = 0; i < bf->bloom_length; i++) {
+			//fwrite(&q, 1, 1, fp);
+			fputc(0, fp);
+		}
 	}
 	fwrite(&bf->estimated_elements, sizeof(uint64_t), 1, fp);
 	fwrite(&bf->elements_added, sizeof(uint64_t), 1, fp);

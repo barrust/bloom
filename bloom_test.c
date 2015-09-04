@@ -38,14 +38,14 @@ int main(int argc, char** argv) {
 	bloom_filter_add_string(&bf, "???");
 
 	if (bloom_filter_check_string(&bf, "test") == BLOOM_FAILURE) {
-		printf("'test' is not in the bloom filter\n");
+		printf("'test' is not in the bloom filter!\n");
 	} else {
-		printf("'test' is in the bloom filter\n");
+		printf("'test' is in the bloom filte!r\n");
 	}
 	if (bloom_filter_check_string(&bf, "blah") == BLOOM_FAILURE) {
 		printf("'blah' is not in the bloom filter!\n");
 	} else {
-		printf("'blah' is in th bloom filter\n");
+		printf("'blah' is in th bloom filter!\n");
 	}
 	bloom_filter_stats(&bf);
 	bloom_filter_destroy(&bf);
