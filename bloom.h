@@ -27,12 +27,14 @@
 #define __BLOOM_FILTER_H__
 
 #include <stdlib.h>
-#include <inttypes.h>
-#include <math.h>			/* pow, exp */
-#include <stdio.h>			/* printf */
-#include <string.h>			/* strlen */
-#include <fcntl.h>			/* O_RDWR */
-#include <sys/mman.h>		/* mmap, mummap */
+#include <inttypes.h>       /* PRIu64 */
+#include <math.h>           /* pow, exp */
+#include <stdio.h>          /* printf */
+#include <string.h>         /* strlen */
+#include <fcntl.h>          /* O_RDWR */
+#include <sys/mman.h>       /* mmap, mummap */
+#include <sys/types.h>      /* */
+#include <sys/stat.h>       /* fstat */
 #include <openssl/md5.h>
 
 #ifdef __APPLE__
@@ -64,6 +66,8 @@ typedef struct bloom_filter {
 	HashFunction hash_function;
 	/* on disk handeling */
 	short __is_on_disk;
+	FILE *filepointer;
+	uint64_t __filesize;
 } BloomFilter;
 
 
@@ -82,7 +86,11 @@ int bloom_filter_init_on_disk(BloomFilter *bf, uint64_t estimated_elements, floa
 /* Import a previously exported bloom filter from a file into memory */
 int bloom_filter_import(BloomFilter *bf, char *filepath, HashFunction hash_function);
 
-/* NOT IMPLEMENTED */
+/*
+	Import a previously exported bloom filter from a file but do not pull the full bloom into memory.
+	This is allows for the speed / storage trade off of not needing to put the full bloom filter
+	into memory.  
+*/
 int bloom_filter_import_on_disk(BloomFilter *bf, char *filepath, HashFunction hash_function);
 
 /* Export the current bloom filter to file */
@@ -100,7 +108,7 @@ int bloom_filter_destroy(BloomFilter *bf);
 /* Add a string (or element) to the bloom filter */
 int bloom_filter_add_string(BloomFilter *bf, char *str);
 
-/* Check to see if a string is or is not in the bloom filter */
+/* Check to see if a string (or element) is or is not in the bloom filter */
 int bloom_filter_check_string(BloomFilter *bf, char *str);
 
 /* Calculates the current false positive rate based on the number of inserted elements */

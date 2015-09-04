@@ -24,7 +24,7 @@ static const double LOG_TWO_SQUARED = 0.4804530139182;
 *******************************************************************************/
 static uint64_t* md5_hash_default(int num_hashes, uint64_t num_bits, char *str);
 static void calculate_optimal_hashes(BloomFilter *bf);
-static void read_from_file(BloomFilter *bf, FILE *fp, short on_disk);
+static void read_from_file(BloomFilter *bf, FILE *fp, short on_disk, char *filename);
 static void write_to_file(BloomFilter *bf, FILE *fp, short on_disk);
 
 /*******************************************************************************
@@ -69,6 +69,8 @@ int bloom_filter_destroy(BloomFilter *bf) {
 		free(bf->bloom);
 	} else {
 		// we will need to munmap the file
+		fclose(bf->filepointer);
+		munmap(bf->bloom, bf->__filesize);
 	}
 	bf->bloom = NULL;
 	bf->elements_added = 0;
@@ -78,6 +80,7 @@ int bloom_filter_destroy(BloomFilter *bf) {
 	bf->number_bits = 0;
 	bf->hash_function = NULL;
 	bf->__is_on_disk = 0; // not on disk
+	bf->__filesize = 0;
 	return BLOOM_SUCCESS;
 }
 
@@ -106,6 +109,11 @@ int bloom_filter_add_string(BloomFilter *bf, char *str) {
 	}
 	free(hashes);
 	bf->elements_added++;
+	if(bf->__is_on_disk == 1) { // only do this if it is on disk!
+		int offset = sizeof(uint64_t) + sizeof(float);
+		fseek(bf->filepointer, offset * -1, SEEK_END);
+		fwrite(&bf->elements_added, sizeof(uint64_t), 1, bf->filepointer);
+	}
 	return BLOOM_SUCCESS;
 }
 
@@ -151,10 +159,23 @@ int bloom_filter_import(BloomFilter *bf, char *filepath, HashFunction hash_funct
 		fprintf(stderr, "Can't open file %s!\n", filepath);
 		return BLOOM_FAILURE;
 	}
-	read_from_file(bf, fp, 0);
+	read_from_file(bf, fp, 0, NULL);
 	fclose(fp);
 	bloom_filter_set_hash_function(bf, hash_function);
 	bf->__is_on_disk = 0; // not on disk
+	return BLOOM_SUCCESS;
+}
+
+int bloom_filter_import_on_disk(BloomFilter *bf, char *filepath, HashFunction hash_function) {
+	bf->filepointer = fopen(filepath, "r+b");
+	if (bf->filepointer == NULL) {
+		fprintf(stderr, "Can't open file %s!\n", filepath);
+		return BLOOM_FAILURE;
+	}
+	read_from_file(bf, bf->filepointer, 1, filepath);
+	// don't close the file pointer here...
+	bloom_filter_set_hash_function(bf, hash_function);
+	bf->__is_on_disk = 1; // not on disk
 	return BLOOM_SUCCESS;
 }
 
@@ -187,7 +208,7 @@ static void write_to_file(BloomFilter *bf, FILE *fp, short on_disk) {
 }
 
 /* NOTE: this assumes that the file handler is open and ready to use */
-static void read_from_file(BloomFilter *bf, FILE *fp, short on_disk) {
+static void read_from_file(BloomFilter *bf, FILE *fp, short on_disk, char *filename) {
 	int offset = sizeof(uint64_t) * 2 + sizeof(float);
 	fseek(fp, offset * -1, SEEK_END);
 	fread(&bf->estimated_elements, sizeof(uint64_t), 1, fp);
@@ -199,7 +220,11 @@ static void read_from_file(BloomFilter *bf, FILE *fp, short on_disk) {
 		bf->bloom = calloc(bf->bloom_length, sizeof(char));
 		fread(bf->bloom, sizeof(char), bf->bloom_length, fp);
 	} else {
-		// do something else
+		struct stat buf;
+		int fd = open(filename, O_RDWR);
+		fstat(fd, &buf);
+		bf->__filesize = buf.st_size;
+		bf->bloom = mmap((caddr_t)0, bf->__filesize, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
 	}
 }
 
