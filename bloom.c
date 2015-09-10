@@ -3,7 +3,7 @@
 ***	 Author: Tyler Barrus
 ***	 email:  barrust@gmail.com
 ***
-***	 Version: 1.5.0
+***	 Version: 1.5.1
 ***
 ***	 License: MIT 2015
 ***
@@ -260,6 +260,8 @@ static void read_from_file(BloomFilter *bf, FILE *fp, short on_disk, char *filen
 		fstat(fd, &buf);
 		bf->__filesize = buf.st_size;
 		bf->bloom = mmap((caddr_t)0, bf->__filesize, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+		// close the file descriptor
+		close(fd);
 	}
 }
 

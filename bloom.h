@@ -3,7 +3,7 @@
 ***	 Author: Tyler Barrus
 ***	 email:  barrust@gmail.com
 ***
-***	 Version: 1.1.0
+***	 Version: 1.5.1
 ***	 Purpose: Simple, yet effective, bloom filter implementation
 ***
 ***	 License: MIT 2015
@@ -35,6 +35,7 @@
 #include <sys/mman.h>       /* mmap, mummap */
 #include <sys/types.h>      /* */
 #include <sys/stat.h>       /* fstat */
+#include <unistd.h>         /* close */
 #include <openssl/md5.h>
 
 #ifdef __APPLE__
@@ -44,7 +45,7 @@
 #define BLOOMFILTER_VERSION "1.5.0"
 #define BLOOMFILTER_MAJOR 1
 #define BLOOMFILTER_MINOR 5
-#define BLOOMFILTER_REVISION 0
+#define BLOOMFILTER_REVISION 1
 
 #define BLOOM_SUCCESS 0
 #define BLOOM_FAILURE -1
