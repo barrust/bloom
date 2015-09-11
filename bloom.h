@@ -42,10 +42,10 @@
 	#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #endif
 
-#define BLOOMFILTER_VERSION "1.5.1"
+#define BLOOMFILTER_VERSION "1.6.0"
 #define BLOOMFILTER_MAJOR 1
-#define BLOOMFILTER_MINOR 5
-#define BLOOMFILTER_REVISION 1
+#define BLOOMFILTER_MINOR 6
+#define BLOOMFILTER_REVISION 0
 
 #define BLOOM_SUCCESS 0
 #define BLOOM_FAILURE -1

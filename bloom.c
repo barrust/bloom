@@ -3,17 +3,24 @@
 ***	 Author: Tyler Barrus
 ***	 email:  barrust@gmail.com
 ***
-***	 Version: 1.5.1
+***	 Version: 1.6.0
 ***
 ***	 License: MIT 2015
 ***
 *******************************************************************************/
 #include "bloom.h"
 
-#define set_bit(A,k)	 (A[((k) / 8)] |=  (1 << ((k) % 8)))
+//#define set_bit(A,k)	 (A[((k) / 8)] |=  (1 << ((k) % 8)))
 #define clear_bit(A,k)   (A[((k) / 8)] &= ~(1 << ((k) % 8))) /* not currently used */
 #define check_bit(A,k)   (A[((k) / 8)] &   (1 << ((k) % 8)))
 
+#if defined (_OPENMP)
+	#define ATOMIC _Pragma ("omp atomic")
+	#define CRITICAL _Pragma ("omp critical")
+#else
+	#define ATOMIC
+	#define CRITICAL
+#endif
 
 #define CHAR_LEN 8
 
@@ -128,14 +135,20 @@ int bloom_filter_add_string(BloomFilter *bf, char *str) {
 	uint64_t *hashes = bf->hash_function(bf->number_hashes, bf->number_bits, str);
 	int i;
 	for (i = 0; i < bf->number_hashes; i++) {
-		set_bit(bf->bloom, hashes[i]);
+		//set_bit(bf->bloom, hashes[i]);
+		ATOMIC
+		bf->bloom[hashes[i] / 8] |=  (1 << (hashes[i] % 8));
 	}
 	free(hashes);
+	ATOMIC
 	bf->elements_added++;
 	if(bf->__is_on_disk == 1) { // only do this if it is on disk!
 		int offset = sizeof(uint64_t) + sizeof(float);
-		fseek(bf->filepointer, offset * -1, SEEK_END);
-		fwrite(&bf->elements_added, sizeof(uint64_t), 1, bf->filepointer);
+		CRITICAL
+		{
+			fseek(bf->filepointer, offset * -1, SEEK_END);
+			fwrite(&bf->elements_added, sizeof(uint64_t), 1, bf->filepointer);
+		}
 	}
 	return BLOOM_SUCCESS;
 }
@@ -144,14 +157,17 @@ int bloom_filter_add_string(BloomFilter *bf, char *str) {
 int bloom_filter_check_string(BloomFilter *bf, char *str) {
 	uint64_t *hashes = bf->hash_function(bf->number_hashes, bf->number_bits, str);
 	int r = BLOOM_SUCCESS;
-	int i;
-	for (i = 0; i < bf->number_hashes; i++) {
-		int t = check_bit(bf->bloom, hashes[i]);
-		if (check_bit(bf->bloom, hashes[i]) == 0) {
-			r = BLOOM_FAILURE;
-			break; // no need to continue checking
+	//CRITICAL
+	//{
+		int i;
+		for (i = 0; i < bf->number_hashes; i++) {
+			int t = check_bit(bf->bloom, hashes[i]);
+			if (check_bit(bf->bloom, hashes[i]) == 0) {
+				r = BLOOM_FAILURE;
+				break; // no need to continue checking
+			}
 		}
-	}
+	//}
 	free(hashes);
 	return r;
 }
