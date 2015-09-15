@@ -42,17 +42,17 @@
 	#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #endif
 
-#define BLOOMFILTER_VERSION "1.6.0"
+#define BLOOMFILTER_VERSION "1.6.1"
 #define BLOOMFILTER_MAJOR 1
 #define BLOOMFILTER_MINOR 6
-#define BLOOMFILTER_REVISION 0
+#define BLOOMFILTER_REVISION 1
 
 #define BLOOM_SUCCESS 0
 #define BLOOM_FAILURE -1
 
 #define bloom_filter_get_version()	(BLOOMFILTER_VERSION)
 
-typedef uint64_t* (*HashFunction) (int num_hashes, uint64_t num_bits, char *str);
+typedef uint64_t* (*HashFunction) (int num_hashes, char *str);
 
 typedef struct bloom_filter {
 	/* bloom parameters */

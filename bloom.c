@@ -3,7 +3,7 @@
 ***	 Author: Tyler Barrus
 ***	 email:  barrust@gmail.com
 ***
-***	 Version: 1.6.0
+***	 Version: 1.6.1
 ***
 ***	 License: MIT 2015
 ***
@@ -29,7 +29,7 @@ static const double LOG_TWO_SQUARED = 0.4804530139182;
 /*******************************************************************************
 ***		PRIVATE FUNCTIONS
 *******************************************************************************/
-static uint64_t* md5_hash_default(int num_hashes, uint64_t num_bits, char *str);
+static uint64_t* md5_hash_default(int num_hashes, char *str);
 static void calculate_optimal_hashes(BloomFilter *bf);
 static void read_from_file(BloomFilter *bf, FILE *fp, short on_disk, char *filename);
 static void write_to_file(BloomFilter *bf, FILE *fp, short on_disk);
@@ -132,12 +132,12 @@ void bloom_filter_stats(BloomFilter *bf) {
 }
 
 int bloom_filter_add_string(BloomFilter *bf, char *str) {
-	uint64_t *hashes = bf->hash_function(bf->number_hashes, bf->number_bits, str);
+	uint64_t *hashes = bf->hash_function(bf->number_hashes, str);
 	int i;
 	for (i = 0; i < bf->number_hashes; i++) {
 		//set_bit(bf->bloom, hashes[i]);
 		ATOMIC
-		bf->bloom[hashes[i] / 8] |=  (1 << (hashes[i] % 8));
+		bf->bloom[(hashes[i] % bf->number_bits) / 8] |=  (1 << ((hashes[i] % bf->number_bits) % 8));
 	}
 	free(hashes);
 	ATOMIC
@@ -155,14 +155,14 @@ int bloom_filter_add_string(BloomFilter *bf, char *str) {
 
 
 int bloom_filter_check_string(BloomFilter *bf, char *str) {
-	uint64_t *hashes = bf->hash_function(bf->number_hashes, bf->number_bits, str);
+	uint64_t *hashes = bf->hash_function(bf->number_hashes, str);
 	int r = BLOOM_SUCCESS;
 	//CRITICAL
 	//{
 		int i;
 		for (i = 0; i < bf->number_hashes; i++) {
-			int t = check_bit(bf->bloom, hashes[i]);
-			if (check_bit(bf->bloom, hashes[i]) == 0) {
+			int tmp_check = check_bit(bf->bloom, (hashes[i] % bf->number_bits));
+			if (tmp_check == 0) {
 				r = BLOOM_FAILURE;
 				break; // no need to continue checking
 			}
@@ -290,7 +290,7 @@ static void read_from_file(BloomFilter *bf, FILE *fp, short on_disk, char *filen
 }
 
 /* NOTE: The caller will free the results */
-static uint64_t* md5_hash_default(int num_hashes, uint64_t num_bits, char *str) {
+static uint64_t* md5_hash_default(int num_hashes, char *str) {
 	uint64_t *results = calloc(num_hashes, sizeof(uint64_t));
 	unsigned char digest[MD5_DIGEST_LENGTH];
 	int i;
@@ -303,7 +303,7 @@ static uint64_t* md5_hash_default(int num_hashes, uint64_t num_bits, char *str) 
 			MD5_Update(&(md5_ctx), digest, MD5_DIGEST_LENGTH);
 		}
 		MD5_Final(digest, &(md5_ctx));
-		results[i] = (uint64_t) *(uint64_t *)digest % num_bits;
+		results[i] = (uint64_t) *(uint64_t *)digest % UINT64_MAX;
 	}
 	return results;
 }

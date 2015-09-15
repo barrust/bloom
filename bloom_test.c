@@ -4,7 +4,7 @@
 /*
 	Example of generating a custom hashing function
 */
-uint64_t* sha256_hash(int num_hashes, uint64_t num_bits, char *str) {
+uint64_t* sha256_hash(int num_hashes, char *str) {
 	uint64_t *results = calloc(num_hashes, sizeof(uint64_t));
 	unsigned char digest[SHA256_DIGEST_LENGTH];
 	int i;
@@ -17,7 +17,7 @@ uint64_t* sha256_hash(int num_hashes, uint64_t num_bits, char *str) {
 			SHA256_Update(&sha256_ctx, digest, SHA256_DIGEST_LENGTH);
 		}
 		SHA256_Final(digest, &sha256_ctx);
-		results[i] = (uint64_t) *(uint64_t *)digest % num_bits;
+		results[i] = (uint64_t) *(uint64_t *)digest % UINT64_MAX;
 	}
 	return results;
 }
@@ -25,6 +25,7 @@ uint64_t* sha256_hash(int num_hashes, uint64_t num_bits, char *str) {
 
 int main(int argc, char** argv) {
 	printf("Testing BloomFilter version %s\n\n", bloom_filter_get_version());
+
 	BloomFilter bf;
 	bloom_filter_init(&bf, 10, 0.05, &sha256_hash);
 	bloom_filter_add_string(&bf, "test");
@@ -45,7 +46,7 @@ int main(int argc, char** argv) {
 	if (bloom_filter_check_string(&bf, "blah") == BLOOM_FAILURE) {
 		printf("'blah' is not in the bloom filter!\n");
 	} else {
-		printf("'blah' is in th bloom filter!\n");
+		printf("'blah' is in the bloom filter!\n");
 	}
 	bloom_filter_stats(&bf);
 	bloom_filter_destroy(&bf);
