@@ -3,7 +3,7 @@
 ***	 Author: Tyler Barrus
 ***	 email:  barrust@gmail.com
 ***
-***	 Version: 1.5.1
+***	 Version: 1.6.2
 ***	 Purpose: Simple, yet effective, bloom filter implementation
 ***
 ***	 License: MIT 2015
@@ -42,10 +42,10 @@
 	#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #endif
 
-#define BLOOMFILTER_VERSION "1.6.1"
+#define BLOOMFILTER_VERSION "1.6.2"
 #define BLOOMFILTER_MAJOR 1
 #define BLOOMFILTER_MINOR 6
-#define BLOOMFILTER_REVISION 1
+#define BLOOMFILTER_REVISION 2
 
 #define BLOOM_SUCCESS 0
 #define BLOOM_FAILURE -1
@@ -114,6 +114,27 @@ int bloom_filter_check_string(BloomFilter *bf, char *str);
 
 /* Calculates the current false positive rate based on the number of inserted elements */
 float bloom_filter_current_false_positive_rate(BloomFilter *bf);
+
+/*
+	The functions below are to allow a user to check many hashes for the same string
+	without having to re-hash the string for each filter. It could possibly allow for
+	some time savings on large jobs of checks
+
+	NOTE: This assumes that every bloom filter being checked uses the same hash function
+*/
+
+/*
+	Generate the desired number of hashes for the provided string
+	
+	NOTE: It is up to the caller to free the allocated memory
+*/
+uint64_t* bloom_filter_calculate_hashes(BloomFilter *bf, char *str, unsigned int number_hashes);
+
+/* Add a string to a bloom filter using the defined hashes */
+int bloom_filter_add_string_alt(BloomFilter *bf, uint64_t *hashes, unsigned int number_hashes_passed);
+
+/* Check if a string is in the bloom filter using the passed hashes */
+int bloom_filter_check_string_alt(BloomFilter *bf, uint64_t *hashes, unsigned int number_hashes_passed);
 
 
 #endif /* END BLOOM FILTER HEADER */

@@ -3,7 +3,7 @@
 ***	 Author: Tyler Barrus
 ***	 email:  barrust@gmail.com
 ***
-***	 Version: 1.6.1
+***	 Version: 1.6.2
 ***
 ***	 License: MIT 2015
 ***
@@ -15,11 +15,11 @@
 #define check_bit(A,k)   (A[((k) / 8)] &   (1 << ((k) % 8)))
 
 #if defined (_OPENMP)
-	#define ATOMIC _Pragma ("omp atomic")
-	#define CRITICAL _Pragma ("omp critical")
+#define ATOMIC _Pragma ("omp atomic")
+#define CRITICAL _Pragma ("omp critical")
 #else
-	#define ATOMIC
-	#define CRITICAL
+#define ATOMIC
+#define CRITICAL
 #endif
 
 #define CHAR_LEN 8
@@ -33,6 +33,8 @@ static uint64_t* md5_hash_default(int num_hashes, char *str);
 static void calculate_optimal_hashes(BloomFilter *bf);
 static void read_from_file(BloomFilter *bf, FILE *fp, short on_disk, char *filename);
 static void write_to_file(BloomFilter *bf, FILE *fp, short on_disk);
+static int check_hashes(BloomFilter *bf, uint64_t *hashes, unsigned int number_hashes_passed);
+static int add_hashes(BloomFilter *bf, uint64_t *hashes, unsigned int number_hashes_passed);
 
 /*******************************************************************************
 ***		testing functions
@@ -132,44 +134,32 @@ void bloom_filter_stats(BloomFilter *bf) {
 }
 
 int bloom_filter_add_string(BloomFilter *bf, char *str) {
-	uint64_t *hashes = bf->hash_function(bf->number_hashes, str);
-	int i;
-	for (i = 0; i < bf->number_hashes; i++) {
-		//set_bit(bf->bloom, hashes[i]);
-		ATOMIC
-		bf->bloom[(hashes[i] % bf->number_bits) / 8] |=  (1 << ((hashes[i] % bf->number_bits) % 8));
-	}
+	uint64_t *hashes = bloom_filter_calculate_hashes(bf, str, bf->number_hashes);
+	int res = add_hashes(bf, hashes, bf->number_hashes);
 	free(hashes);
-	ATOMIC
-	bf->elements_added++;
-	if(bf->__is_on_disk == 1) { // only do this if it is on disk!
-		int offset = sizeof(uint64_t) + sizeof(float);
-		CRITICAL
-		{
-			fseek(bf->filepointer, offset * -1, SEEK_END);
-			fwrite(&bf->elements_added, sizeof(uint64_t), 1, bf->filepointer);
-		}
-	}
-	return BLOOM_SUCCESS;
+	return res;
 }
 
 
 int bloom_filter_check_string(BloomFilter *bf, char *str) {
-	uint64_t *hashes = bf->hash_function(bf->number_hashes, str);
-	int r = BLOOM_SUCCESS;
-	//CRITICAL
-	//{
-		int i;
-		for (i = 0; i < bf->number_hashes; i++) {
-			int tmp_check = check_bit(bf->bloom, (hashes[i] % bf->number_bits));
-			if (tmp_check == 0) {
-				r = BLOOM_FAILURE;
-				break; // no need to continue checking
-			}
-		}
-	//}
+	uint64_t *hashes = bloom_filter_calculate_hashes(bf, str, bf->number_hashes);
+	int res = check_hashes(bf, hashes, bf->number_hashes);
 	free(hashes);
-	return r;
+	return res;
+}
+
+uint64_t* bloom_filter_calculate_hashes(BloomFilter *bf, char *str, unsigned int number_hashes) {
+	return bf->hash_function(number_hashes, str);
+}
+
+/* Add a string to a bloom filter using the defined hashes */
+int bloom_filter_add_string_alt(BloomFilter *bf, uint64_t *hashes, unsigned int number_hashes_passed) {
+	add_hashes(bf, hashes, number_hashes_passed);
+}
+
+/* Check if a string is in the bloom filter using the passed hashes */
+int bloom_filter_check_string_alt(BloomFilter *bf, uint64_t *hashes, unsigned int number_hashes_passed) {
+	return check_hashes(bf, hashes, number_hashes_passed);
 }
 
 float bloom_filter_current_false_positive_rate(BloomFilter *bf) {
@@ -236,6 +226,50 @@ static void calculate_optimal_hashes(BloomFilter *bf) {
 	bf->number_bits = m;
 	long num_pos = ceil(m / (CHAR_LEN * 1.0));
 	bf->bloom_length = num_pos;
+}
+
+static int check_hashes(BloomFilter *bf, uint64_t *hashes, unsigned int number_hashes_passed) {
+	if (number_hashes_passed < bf->number_hashes) {
+		printf("Error: not enough hashes passed in to correctly check!\n");
+		return BLOOM_FAILURE;
+	}
+
+	int r = BLOOM_SUCCESS;
+	int i;
+	for (i = 0; i < bf->number_hashes; i++) {
+		int tmp_check = check_bit(bf->bloom, (hashes[i] % bf->number_bits));
+		if (tmp_check == 0) {
+			r = BLOOM_FAILURE;
+			break; // no need to continue checking
+		}
+	}
+	return r;
+}
+
+static int add_hashes(BloomFilter *bf, uint64_t *hashes, unsigned int number_hashes_passed) {
+	if (number_hashes_passed < bf->number_hashes) {
+		printf("Error: not enough hashes passed in to correctly check!\n");
+		return BLOOM_FAILURE;
+	}
+
+	int i;
+	for (i = 0; i < bf->number_hashes; i++) {
+		//set_bit(bf->bloom, hashes[i]);
+		ATOMIC
+		bf->bloom[(hashes[i] % bf->number_bits) / 8] |=  (1 << ((hashes[i] % bf->number_bits) % 8));
+	}
+
+	ATOMIC
+	bf->elements_added++;
+	if(bf->__is_on_disk == 1) { // only do this if it is on disk!
+		int offset = sizeof(uint64_t) + sizeof(float);
+		CRITICAL
+		{
+			fseek(bf->filepointer, offset * -1, SEEK_END);
+			fwrite(&bf->elements_added, sizeof(uint64_t), 1, bf->filepointer);
+		}
+	}
+	return BLOOM_SUCCESS;
 }
 
 /* NOTE: this assumes that the file handler is open and ready to use */
