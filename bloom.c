@@ -154,7 +154,7 @@ uint64_t* bloom_filter_calculate_hashes(BloomFilter *bf, char *str, unsigned int
 
 /* Add a string to a bloom filter using the defined hashes */
 int bloom_filter_add_string_alt(BloomFilter *bf, uint64_t *hashes, unsigned int number_hashes_passed) {
-	add_hashes(bf, hashes, number_hashes_passed);
+	return add_hashes(bf, hashes, number_hashes_passed);
 }
 
 /* Check if a string is in the bloom filter using the passed hashes */
