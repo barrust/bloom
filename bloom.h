@@ -3,7 +3,7 @@
 ***	 Author: Tyler Barrus
 ***	 email:  barrust@gmail.com
 ***
-***	 Version: 1.6.2
+***	 Version: 1.6.3
 ***	 Purpose: Simple, yet effective, bloom filter implementation
 ***
 ***	 License: MIT 2015
@@ -42,10 +42,10 @@
 	#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #endif
 
-#define BLOOMFILTER_VERSION "1.6.2"
+#define BLOOMFILTER_VERSION "1.6.3"
 #define BLOOMFILTER_MAJOR 1
 #define BLOOMFILTER_MINOR 6
-#define BLOOMFILTER_REVISION 2
+#define BLOOMFILTER_REVISION 3
 
 #define BLOOM_SUCCESS 0
 #define BLOOM_FAILURE -1
@@ -125,7 +125,7 @@ float bloom_filter_current_false_positive_rate(BloomFilter *bf);
 
 /*
 	Generate the desired number of hashes for the provided string
-	
+
 	NOTE: It is up to the caller to free the allocated memory
 */
 uint64_t* bloom_filter_calculate_hashes(BloomFilter *bf, char *str, unsigned int number_hashes);

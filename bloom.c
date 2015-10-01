@@ -3,7 +3,7 @@
 ***	 Author: Tyler Barrus
 ***	 email:  barrust@gmail.com
 ***
-***	 Version: 1.6.2
+***	 Version: 1.6.3
 ***
 ***	 License: MIT 2015
 ***
@@ -89,11 +89,7 @@ int bloom_filter_init_on_disk(BloomFilter *bf, uint64_t estimated_elements, floa
 }
 
 void bloom_filter_set_hash_function(BloomFilter *bf, HashFunction hash_function) {
-	if (hash_function == NULL) {
-		bf->hash_function = &md5_hash_default;
-	} else {
-		bf->hash_function = hash_function;
-	}
+	bf->hash_function = (hash_function == NULL) ? md5_hash_default : hash_function;
 }
 
 int bloom_filter_destroy(BloomFilter *bf) {
