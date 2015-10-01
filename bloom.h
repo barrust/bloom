@@ -3,7 +3,7 @@
 ***	 Author: Tyler Barrus
 ***	 email:  barrust@gmail.com
 ***
-***	 Version: 1.6.3
+***	 Version: 1.7.0
 ***	 Purpose: Simple, yet effective, bloom filter implementation
 ***
 ***	 License: MIT 2015
@@ -42,10 +42,10 @@
 	#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #endif
 
-#define BLOOMFILTER_VERSION "1.6.3"
+#define BLOOMFILTER_VERSION "1.7.0"
 #define BLOOMFILTER_MAJOR 1
-#define BLOOMFILTER_MINOR 6
-#define BLOOMFILTER_REVISION 3
+#define BLOOMFILTER_MINOR 7
+#define BLOOMFILTER_REVISION 0
 
 #define BLOOM_SUCCESS 0
 #define BLOOM_FAILURE -1
@@ -79,20 +79,24 @@ typedef struct bloom_filter {
 	Estimated elements is 0 < x <= UINT64_MAX.
 	False positive rate is 0.0 < x < 1.0
 */
-int bloom_filter_init(BloomFilter *bf, uint64_t estimated_elements, float false_positive_rate, HashFunction hash_function);
+int bloom_filter_init(BloomFilter *bf, uint64_t estimated_elements, float false_positive_rate);
+int bloom_filter_init_alt(BloomFilter *bf, uint64_t estimated_elements, float false_positive_rate, HashFunction hash_function);
 
 /* Initialize a bloom filter directly into file; useful if the bloom filter is larger than available RAM */
-int bloom_filter_init_on_disk(BloomFilter *bf, uint64_t estimated_elements, float false_positive_rate, char *filepath, HashFunction hash_function);
+int bloom_filter_init_on_disk(BloomFilter *bf, uint64_t estimated_elements, float false_positive_rate, char *filepath);
+int bloom_filter_init_on_disk_alt(BloomFilter *bf, uint64_t estimated_elements, float false_positive_rate, char *filepath, HashFunction hash_function);
 
 /* Import a previously exported bloom filter from a file into memory */
-int bloom_filter_import(BloomFilter *bf, char *filepath, HashFunction hash_function);
+int bloom_filter_import(BloomFilter *bf, char *filepath);
+int bloom_filter_import_alt(BloomFilter *bf, char *filepath, HashFunction hash_function);
 
 /*
 	Import a previously exported bloom filter from a file but do not pull the full bloom into memory.
 	This is allows for the speed / storage trade off of not needing to put the full bloom filter
 	into RAM.
 */
-int bloom_filter_import_on_disk(BloomFilter *bf, char *filepath, HashFunction hash_function);
+int bloom_filter_import_on_disk(BloomFilter *bf, char *filepath);
+int bloom_filter_import_on_disk_alt(BloomFilter *bf, char *filepath, HashFunction hash_function);
 
 /* Export the current bloom filter to file */
 int bloom_filter_export(BloomFilter *bf, char *filepath);
@@ -109,19 +113,17 @@ int bloom_filter_destroy(BloomFilter *bf);
 /* Add a string (or element) to the bloom filter */
 int bloom_filter_add_string(BloomFilter *bf, char *str);
 
+/* Add a string to a bloom filter using the defined hashes */
+int bloom_filter_add_string_alt(BloomFilter *bf, uint64_t *hashes, unsigned int number_hashes_passed);
+
 /* Check to see if a string (or element) is or is not in the bloom filter */
 int bloom_filter_check_string(BloomFilter *bf, char *str);
 
+/* Check if a string is in the bloom filter using the passed hashes */
+int bloom_filter_check_string_alt(BloomFilter *bf, uint64_t *hashes, unsigned int number_hashes_passed);
+
 /* Calculates the current false positive rate based on the number of inserted elements */
 float bloom_filter_current_false_positive_rate(BloomFilter *bf);
-
-/*
-	The functions below are to allow a user to check many hashes for the same string
-	without having to re-hash the string for each filter. It could possibly allow for
-	some time savings on large jobs of checks
-
-	NOTE: This assumes that every bloom filter being checked uses the same hash function
-*/
 
 /*
 	Generate the desired number of hashes for the provided string
@@ -130,11 +132,7 @@ float bloom_filter_current_false_positive_rate(BloomFilter *bf);
 */
 uint64_t* bloom_filter_calculate_hashes(BloomFilter *bf, char *str, unsigned int number_hashes);
 
-/* Add a string to a bloom filter using the defined hashes */
-int bloom_filter_add_string_alt(BloomFilter *bf, uint64_t *hashes, unsigned int number_hashes_passed);
 
-/* Check if a string is in the bloom filter using the passed hashes */
-int bloom_filter_check_string_alt(BloomFilter *bf, uint64_t *hashes, unsigned int number_hashes_passed);
 
 
 #endif /* END BLOOM FILTER HEADER */

@@ -18,7 +18,7 @@ int main(int argc, char** argv) {
 	// build one in serial in memory
 	timing_start(&t);
 	BloomFilter bf;
-	bloom_filter_init(&bf, SIZE, 0.01, NULL);
+	bloom_filter_init(&bf, SIZE, 0.01);
 	uint64_t i;
 	for(i = 1; i < SIZE; i++) {
 		char str[255] = {0};
@@ -32,7 +32,7 @@ int main(int argc, char** argv) {
 	timing_start(&t);
 	BloomFilter bf2;
 	//bloom_filter_init(&bf2, SIZE, 0.01, NULL);
-	bloom_filter_init(&bf2, SIZE, 0.01, NULL);
+	bloom_filter_init(&bf2, SIZE, 0.01);
 	#if defined (_OPENMP)
 	printf("setting the number of threads to use to: %d\n", THREADS);
 	omp_set_num_threads(THREADS);

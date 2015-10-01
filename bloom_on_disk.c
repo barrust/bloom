@@ -5,7 +5,7 @@
 int main(int argc, char** argv) {
 	printf("Testing BloomFilter version %s\n\n", bloom_filter_get_version());
 	BloomFilter bf;
-	bloom_filter_init_on_disk(&bf, 10000000, 0.001, "./dist/test.blm", NULL);
+	bloom_filter_init_on_disk(&bf, 10000000, 0.001, "./dist/test.blm");
 
 	printf("Completed initializing the bloom filter on disk!\n");
 
@@ -18,7 +18,7 @@ int main(int argc, char** argv) {
 
 	printf("Import the exported bloom filter on disk for read / write\n");
 	BloomFilter bf1;
-	bloom_filter_import_on_disk(&bf1, "./dist/test.blm", NULL);
+	bloom_filter_import_on_disk(&bf1, "./dist/test.blm");
 
 	// '100000000' should not be in the bloom filter unless it is a false positive!
 	if (bloom_filter_check_string(&bf1, "100000000") == BLOOM_FAILURE) {

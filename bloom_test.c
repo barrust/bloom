@@ -27,7 +27,7 @@ int main(int argc, char** argv) {
 	printf("Testing BloomFilter version %s\n\n", bloom_filter_get_version());
 
 	BloomFilter bf;
-	bloom_filter_init(&bf, 10, 0.05, &sha256_hash);
+	bloom_filter_init_alt(&bf, 10, 0.05, &sha256_hash);
 	bloom_filter_add_string(&bf, "test");
 	bloom_filter_add_string(&bf, "test123");
 	bloom_filter_add_string(&bf, "abc");

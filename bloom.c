@@ -3,7 +3,7 @@
 ***	 Author: Tyler Barrus
 ***	 email:  barrust@gmail.com
 ***
-***	 Version: 1.6.3
+***	 Version: 1.7.0
 ***
 ***	 License: MIT 2015
 ***
@@ -48,7 +48,11 @@ void print_bits(char ch) {
 }
 /* END TESTING */
 
-int bloom_filter_init(BloomFilter *bf, uint64_t estimated_elements, float false_positive_rate, HashFunction hash_function) {
+int bloom_filter_init(BloomFilter *bf, uint64_t estimated_elements, float false_positive_rate) {
+	return bloom_filter_init_alt(bf, estimated_elements, false_positive_rate, NULL);
+}
+
+int bloom_filter_init_alt(BloomFilter *bf, uint64_t estimated_elements, float false_positive_rate, HashFunction hash_function) {
 	if(estimated_elements <= 0 || estimated_elements > UINT64_MAX) {
 		return BLOOM_FAILURE;
 	}
@@ -65,7 +69,11 @@ int bloom_filter_init(BloomFilter *bf, uint64_t estimated_elements, float false_
 	return BLOOM_SUCCESS;
 }
 
-int bloom_filter_init_on_disk(BloomFilter *bf, uint64_t estimated_elements, float false_positive_rate, char *filepath, HashFunction hash_function) {
+int bloom_filter_init_on_disk(BloomFilter *bf, uint64_t estimated_elements, float false_positive_rate, char *filepath) {
+	return bloom_filter_init_on_disk_alt(bf, estimated_elements, false_positive_rate, filepath, NULL);
+}
+
+int bloom_filter_init_on_disk_alt(BloomFilter *bf, uint64_t estimated_elements, float false_positive_rate, char *filepath, HashFunction hash_function) {
 	if(estimated_elements <= 0 || estimated_elements > UINT64_MAX) {
 		return BLOOM_FAILURE;
 	}
@@ -85,7 +93,7 @@ int bloom_filter_init_on_disk(BloomFilter *bf, uint64_t estimated_elements, floa
 	write_to_file(bf, fp, 1);
 	fclose(fp);
 	// slightly ineffecient to redo some of the calculations...
-	return bloom_filter_import_on_disk(bf, filepath, hash_function);
+	return bloom_filter_import_on_disk_alt(bf, filepath, hash_function);
 }
 
 void bloom_filter_set_hash_function(BloomFilter *bf, HashFunction hash_function) {
@@ -181,7 +189,11 @@ int bloom_filter_export(BloomFilter *bf, char *filepath) {
 	return BLOOM_SUCCESS;
 }
 
-int bloom_filter_import(BloomFilter *bf, char *filepath, HashFunction hash_function) {
+int bloom_filter_import(BloomFilter *bf, char *filepath) {
+	return bloom_filter_import_alt(bf, filepath, NULL);
+}
+
+int bloom_filter_import_alt(BloomFilter *bf, char *filepath, HashFunction hash_function) {
 	FILE *fp;
 	fp = fopen(filepath, "r+b");
 	if (fp == NULL) {
@@ -195,7 +207,11 @@ int bloom_filter_import(BloomFilter *bf, char *filepath, HashFunction hash_funct
 	return BLOOM_SUCCESS;
 }
 
-int bloom_filter_import_on_disk(BloomFilter *bf, char *filepath, HashFunction hash_function) {
+int bloom_filter_import_on_disk(BloomFilter *bf, char *filepath) {
+	return bloom_filter_import_on_disk_alt(bf, filepath, NULL);
+}
+
+int bloom_filter_import_on_disk_alt(BloomFilter *bf, char *filepath, HashFunction hash_function) {
 	bf->filepointer = fopen(filepath, "r+b");
 	if (bf->filepointer == NULL) {
 		fprintf(stderr, "Can't open file %s!\n", filepath);

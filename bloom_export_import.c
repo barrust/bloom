@@ -7,7 +7,7 @@ int main(int argc, char** argv) {
 
 	printf("Testing BloomFilter version %s\n\n", bloom_filter_get_version());
 	BloomFilter bf;
-	bloom_filter_init(&bf, 10, 0.05, NULL);
+	bloom_filter_init(&bf, 10, 0.05);
 	bloom_filter_add_string(&bf, "test");
 	bloom_filter_add_string(&bf, "test123");
 	bloom_filter_add_string(&bf, "abc");
@@ -25,7 +25,7 @@ int main(int argc, char** argv) {
 
 	printf("Importing the bloom filter into memory\n");
 	BloomFilter bf1;
-	bloom_filter_import(&bf1, "./dist/test.blm", NULL);
+	bloom_filter_import(&bf1, "./dist/test.blm");
 	bloom_filter_stats(&bf1);
 
 	if (bloom_filter_check_string(&bf1, "test") == BLOOM_FAILURE) {
