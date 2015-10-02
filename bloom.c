@@ -282,11 +282,7 @@ static void write_to_file(BloomFilter *bf, FILE *fp, short on_disk) {
 	} else {
 		// will need to write out everything by hand
 		uint64_t i;
-		int q = 0;
-
-		//fwrite(&q, 1, bf->bloom_length, fp);
 		for (i = 0; i < bf->bloom_length; i++) {
-			//fwrite(&q, 1, 1, fp);
 			fputc(0, fp);
 		}
 	}

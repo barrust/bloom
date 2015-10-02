@@ -1,3 +1,7 @@
+###Version 1.7.1
+* Added easier to use functions when using the default hashing algorithm
+* Minor clean up to reduce some function calls
+
 ###Version 1.6.2
 * Updated to allow for hashes to be generated, added, and checked against similar bloom filters without having to re-hash
 
