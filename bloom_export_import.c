@@ -29,7 +29,7 @@ int main(int argc, char** argv) {
 	bloom_filter_stats(&bf1);
 
 	if (bloom_filter_check_string(&bf1, "test") == BLOOM_FAILURE) {
-		printf("'test' is not in the bloom filter\n");
+		printf("'test' is not in the bloom filter!\n");
 	} else {
 		printf("'test' is in the bloom filter!\n");
 	}

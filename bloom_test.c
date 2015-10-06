@@ -17,7 +17,7 @@ uint64_t* sha256_hash(int num_hashes, char *str) {
 			SHA256_Update(&sha256_ctx, digest, SHA256_DIGEST_LENGTH);
 		}
 		SHA256_Final(digest, &sha256_ctx);
-		results[i] = (uint64_t) *(uint64_t *)digest % UINT64_MAX;
+		results[i] = (uint64_t) *(uint64_t *)digest;
 	}
 	return results;
 }
@@ -41,7 +41,7 @@ int main(int argc, char** argv) {
 	if (bloom_filter_check_string(&bf, "test") == BLOOM_FAILURE) {
 		printf("'test' is not in the bloom filter!\n");
 	} else {
-		printf("'test' is in the bloom filte!r\n");
+		printf("'test' is in the bloom filter!\n");
 	}
 	if (bloom_filter_check_string(&bf, "blah") == BLOOM_FAILURE) {
 		printf("'blah' is not in the bloom filter!\n");

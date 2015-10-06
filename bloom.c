@@ -336,7 +336,7 @@ static uint64_t* md5_hash_default(int num_hashes, char *str) {
 			MD5_Update(&(md5_ctx), digest, MD5_DIGEST_LENGTH);
 		}
 		MD5_Final(digest, &(md5_ctx));
-		results[i] = (uint64_t) *(uint64_t *)digest % UINT64_MAX;
+		results[i] = (uint64_t) *(uint64_t *)digest;
 	}
 	return results;
 }
