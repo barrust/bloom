@@ -101,9 +101,14 @@ int bloom_filter_import_on_disk_alt(BloomFilter *bf, char *filepath, HashFunctio
 /* Export the current bloom filter to file */
 int bloom_filter_export(BloomFilter *bf, char *filepath);
 
-/* Export and import as a hex string */
-char* bloom_filter_export_hex_string(BloomFilter *bf);          /* NOT IMPLEMENTED */
-int bloom_filter_import_hex_string(BloomFilter *bf, char *hex); /* NOT IMPLEMENTED */
+/*
+	Export and import as a hex string
+
+	NOTE: It is up to the caller to free the allocated memory
+*/
+char* bloom_filter_export_hex_string(BloomFilter *bf);
+int bloom_filter_import_hex_string(BloomFilter *bf, char *hex);
+int bloom_filter_import_hex_string_alt(BloomFilter *bf, char *hex, HashFunction hash_function);
 
 /* Set or change the hashing function */
 void bloom_filter_set_hash_function(BloomFilter *bf, HashFunction hash_function);

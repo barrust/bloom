@@ -258,6 +258,58 @@ int bloom_filter_import_on_disk_alt(BloomFilter *bf, char *filepath, HashFunctio
 	return BLOOM_SUCCESS;
 }
 
+char* bloom_filter_export_hex_string(BloomFilter *bf) {
+	uint64_t bytes = sizeof(uint64_t) * 2 + sizeof(float) + (bf->bloom_length);
+	char* hex = malloc((bytes * 2 + 1) * sizeof(char));
+	uint64_t i;
+	for (i = 0; i < bf->bloom_length; i++) {
+		sprintf(hex + (i * 2), "%02x", bf->bloom[i]); // not the fastest way, but works
+	}
+	i = bf->bloom_length * 2;
+	sprintf(hex + i,   "%016" PRIx64 "", bf->estimated_elements);
+	i += 16; // 8 bytes * 2 for hex
+	sprintf(hex + i,   "%016" PRIx64 "", bf->elements_added);
+	i += 16; // 8 bytes * 2 for hex
+	sprintf(hex + i,   "%08x", *(unsigned int*)&bf->false_positive_probability);
+	return hex;
+}
+
+
+int bloom_filter_import_hex_string(BloomFilter *bf, char *hex) {
+	return bloom_filter_import_hex_string_alt(bf, hex, NULL);
+}
+
+int bloom_filter_import_hex_string_alt(BloomFilter *bf, char *hex, HashFunction hash_function) {
+	uint64_t len = strlen(hex);
+	if (len % 2 != 0) {
+		printf("Unable to parse; exiting\n");
+		return BLOOM_FAILURE;
+	}
+	char fpr[9] = {0};
+	char est_els[17] = {0};
+	char ins_els[17] = {0};
+	memcpy(fpr, hex + (len - 8), 8);
+	memcpy(ins_els, hex + (len - 24), 16);
+	memcpy(est_els, hex + (len - 40), 16);
+	uint32_t t_fpr;
+
+	bf->estimated_elements = strtoull(est_els, NULL, 16);
+	bf->elements_added = strtoull(ins_els, NULL, 16);
+	sscanf(fpr, "%x", &t_fpr);
+	bf->false_positive_probability = *((float*)&t_fpr);
+	bloom_filter_set_hash_function(bf, hash_function);
+
+	calculate_optimal_hashes(bf);
+	bf->bloom = calloc(bf->bloom_length, sizeof(char));
+	bf->__is_on_disk = 0; // not on disk
+
+	uint64_t i;
+	for (i = 0; i < bf->bloom_length; i++) {
+		sscanf(hex + (i * 2), "%2hhx", &bf->bloom[i]);
+	}
+	return BLOOM_SUCCESS;
+}
+
 /*******************************************************************************
 *	PRIVATE FUNCTIONS
 *******************************************************************************/
