@@ -49,5 +49,24 @@ int main(int argc, char** argv) {
 		printf("'blah' is in the bloom filter!\n");
 	}
 	bloom_filter_stats(&bf);
+	char* hex = bloom_filter_export_hex_string(&bf);
 	bloom_filter_destroy(&bf);
+
+	// import the hex string and test it
+	printf("\n\nImport the hex string: %s\n", hex);
+	BloomFilter bf1;
+	bloom_filter_import_hex_string_alt(&bf1, hex, &sha256_hash);
+	free(hex);
+	if (bloom_filter_check_string(&bf1, "test") == BLOOM_FAILURE) {
+		printf("'test' is not in the bloom filter!\n");
+	} else {
+		printf("'test' is in the bloom filter!\n");
+	}
+	if (bloom_filter_check_string(&bf1, "blah") == BLOOM_FAILURE) {
+		printf("'blah' is not in the bloom filter!\n");
+	} else {
+		printf("'blah' is in the bloom filter!\n");
+	}
+	bloom_filter_stats(&bf1);
+	bloom_filter_destroy(&bf1);
 }
