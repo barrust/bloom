@@ -102,7 +102,8 @@ int bloom_filter_import_on_disk_alt(BloomFilter *bf, char *filepath, HashFunctio
 int bloom_filter_export(BloomFilter *bf, char *filepath);
 
 /*
-	Export and import as a hex string
+	Export and import as a hex string; not space effecient but allows for storing
+	multiple blooms in a single file or in a database, etc. 
 
 	NOTE: It is up to the caller to free the allocated memory
 */
