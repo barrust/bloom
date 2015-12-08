@@ -79,15 +79,15 @@ typedef struct bloom_filter {
 	Estimated elements is 0 < x <= UINT64_MAX.
 	False positive rate is 0.0 < x < 1.0
 */
-int bloom_filter_init(BloomFilter *bf, uint64_t estimated_elements, float false_positive_rate);
+#define bloom_filter_init(bf, estimated_elements, false_positive_rate) {bloom_filter_init_alt(bf, estimated_elements, false_positive_rate, NULL);}
 int bloom_filter_init_alt(BloomFilter *bf, uint64_t estimated_elements, float false_positive_rate, HashFunction hash_function);
 
 /* Initialize a bloom filter directly into file; useful if the bloom filter is larger than available RAM */
-int bloom_filter_init_on_disk(BloomFilter *bf, uint64_t estimated_elements, float false_positive_rate, char *filepath);
+#define bloom_filter_init_on_disk(bf, estimated_elements, false_positive_rate, filepath) {bloom_filter_init_on_disk_alt(bf, estimated_elements, false_positive_rate, filepath, NULL);}
 int bloom_filter_init_on_disk_alt(BloomFilter *bf, uint64_t estimated_elements, float false_positive_rate, char *filepath, HashFunction hash_function);
 
 /* Import a previously exported bloom filter from a file into memory */
-int bloom_filter_import(BloomFilter *bf, char *filepath);
+#define bloom_filter_import(bf, filepath) {bloom_filter_import_alt(bf, filepath, NULL);}
 int bloom_filter_import_alt(BloomFilter *bf, char *filepath, HashFunction hash_function);
 
 /*
@@ -95,7 +95,7 @@ int bloom_filter_import_alt(BloomFilter *bf, char *filepath, HashFunction hash_f
 	This is allows for the speed / storage trade off of not needing to put the full bloom filter
 	into RAM.
 */
-int bloom_filter_import_on_disk(BloomFilter *bf, char *filepath);
+#define bloom_filter_import_on_disk(bf,filepath) {bloom_filter_import_on_disk_alt(bf, filepath, NULL);}
 int bloom_filter_import_on_disk_alt(BloomFilter *bf, char *filepath, HashFunction hash_function);
 
 /* Export the current bloom filter to file */
@@ -103,12 +103,12 @@ int bloom_filter_export(BloomFilter *bf, char *filepath);
 
 /*
 	Export and import as a hex string; not space effecient but allows for storing
-	multiple blooms in a single file or in a database, etc. 
+	multiple blooms in a single file or in a database, etc.
 
 	NOTE: It is up to the caller to free the allocated memory
 */
 char* bloom_filter_export_hex_string(BloomFilter *bf);
-int bloom_filter_import_hex_string(BloomFilter *bf, char *hex);
+#define bloom_filter_import_hex_string(bf, hex) {bloom_filter_import_hex_string_alt(bf, hex, NULL);}
 int bloom_filter_import_hex_string_alt(BloomFilter *bf, char *hex, HashFunction hash_function);
 
 /* Set or change the hashing function */
