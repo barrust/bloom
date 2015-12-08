@@ -3,7 +3,7 @@
 ***	 Author: Tyler Barrus
 ***	 email:  barrust@gmail.com
 ***
-***	 Version: 1.7.1
+***	 Version: 1.7.2
 ***
 ***	 License: MIT 2015
 ***
@@ -62,10 +62,6 @@ int bloom_filter_init_alt(BloomFilter *bf, uint64_t estimated_elements, float fa
 	bf->__is_on_disk = 0; // not on disk
 	return BLOOM_SUCCESS;
 }
-
-// int bloom_filter_init_on_disk(BloomFilter *bf, uint64_t estimated_elements, float false_positive_rate, char *filepath) {
-// 	return bloom_filter_init_on_disk_alt(bf, estimated_elements, false_positive_rate, filepath, NULL);
-// }
 
 int bloom_filter_init_on_disk_alt(BloomFilter *bf, uint64_t estimated_elements, float false_positive_rate, char *filepath, HashFunction hash_function) {
 	if(estimated_elements <= 0 || estimated_elements > UINT64_MAX) {
