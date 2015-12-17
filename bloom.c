@@ -116,6 +116,7 @@ int bloom_filter_clear(BloomFilter *bf) {
 		bf->bloom[i] = 0;
 	}
 	bf->elements_added = 0;
+	return BLOOM_SUCCESS;
 }
 
 void bloom_filter_stats(BloomFilter *bf) {
