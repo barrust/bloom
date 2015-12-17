@@ -3,7 +3,7 @@
 ***	 Author: Tyler Barrus
 ***	 email:  barrust@gmail.com
 ***
-***	 Version: 1.7.2
+***	 Version: 1.7.3
 ***	 Purpose: Simple, yet effective, bloom filter implementation
 ***
 ***	 License: MIT 2015
@@ -42,10 +42,10 @@
 	#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #endif
 
-#define BLOOMFILTER_VERSION "1.7.2"
+#define BLOOMFILTER_VERSION "1.7.3"
 #define BLOOMFILTER_MAJOR 1
 #define BLOOMFILTER_MINOR 7
-#define BLOOMFILTER_REVISION 2
+#define BLOOMFILTER_REVISION 3
 
 #define BLOOM_SUCCESS 0
 #define BLOOM_FAILURE -1
@@ -119,6 +119,9 @@ void bloom_filter_stats(BloomFilter *bf);
 
 /* Release all memory used by the bloom filter */
 int bloom_filter_destroy(BloomFilter *bf);
+
+/* reset filter to unused state */
+int bloom_filter_clear(BloomFilter *bf);
 
 /* Add a string (or element) to the bloom filter */
 int bloom_filter_add_string(BloomFilter *bf, char *str);

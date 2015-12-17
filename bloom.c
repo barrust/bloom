@@ -3,7 +3,7 @@
 ***	 Author: Tyler Barrus
 ***	 email:  barrust@gmail.com
 ***
-***	 Version: 1.7.2
+***	 Version: 1.7.3
 ***
 ***	 License: MIT 2015
 ***
@@ -108,6 +108,14 @@ int bloom_filter_destroy(BloomFilter *bf) {
 	bf->__is_on_disk = 0;
 	bf->__filesize = 0;
 	return BLOOM_SUCCESS;
+}
+
+int bloom_filter_clear(BloomFilter *bf) {
+	long i;
+	for (i = 0; i < bf->bloom_length; i++) {
+		bf->bloom[i] = 0;
+	}
+	bf->elements_added = 0;
 }
 
 void bloom_filter_stats(BloomFilter *bf) {

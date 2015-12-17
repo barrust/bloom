@@ -68,5 +68,20 @@ int main(int argc, char** argv) {
 		printf("'blah' is in the bloom filter!\n");
 	}
 	bloom_filter_stats(&bf1);
+
+	/* test clearing out the bloom filter */
+	bloom_filter_clear(&bf1);
+	bloom_filter_stats(&bf1);
+	if (bloom_filter_check_string(&bf1, "test") == BLOOM_FAILURE) {
+		printf("'test' is not in the bloom filter!\n");
+	} else {
+		printf("'test' is in the bloom filter!\n");
+	}
+	if (bloom_filter_check_string(&bf1, "blah") == BLOOM_FAILURE) {
+		printf("'blah' is not in the bloom filter!\n");
+	} else {
+		printf("'blah' is in the bloom filter!\n");
+	}
+
 	bloom_filter_destroy(&bf1);
 }
