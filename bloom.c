@@ -3,7 +3,7 @@
 ***	 Author: Tyler Barrus
 ***	 email:  barrust@gmail.com
 ***
-***	 Version: 1.7.3
+***	 Version: 1.7.4
 ***
 ***	 License: MIT 2015
 ***
@@ -121,6 +121,7 @@ int bloom_filter_clear(BloomFilter *bf) {
 
 void bloom_filter_stats(BloomFilter *bf) {
 	char *is_on_disk = (bf->__is_on_disk == 0 ? "no" : "yes");
+	uint64_t size_on_disk = (bf->bloom_length * sizeof(unsigned char)) + (2 * sizeof(uint64_t)) + (1 * sizeof(float));
 
 	printf("BloomFilter\n\
 	bits: %" PRIu64 "\n\
@@ -130,10 +131,11 @@ void bloom_filter_stats(BloomFilter *bf) {
 	bloom length (8 bits): %ld\n\
 	elements added: %" PRIu64 "\n\
 	current false positive rate: %f\n\
+	export size (bytes): %" PRIu64 "\n\
 	is on disk: %s\n",
 	bf->number_bits, bf->estimated_elements, bf->number_hashes,
 	bf->false_positive_probability, bf->bloom_length, bf->elements_added,
-	bloom_filter_current_false_positive_rate(bf), is_on_disk);
+	bloom_filter_current_false_positive_rate(bf), size_on_disk, is_on_disk);
 }
 
 int bloom_filter_add_string(BloomFilter *bf, char *str) {
