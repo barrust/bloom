@@ -3,7 +3,7 @@
 ***	 Author: Tyler Barrus
 ***	 email:  barrust@gmail.com
 ***
-***	 Version: 1.7.4
+***	 Version: 1.7.5
 ***
 ***	 License: MIT 2015
 ***
@@ -121,7 +121,7 @@ int bloom_filter_clear(BloomFilter *bf) {
 
 void bloom_filter_stats(BloomFilter *bf) {
 	char *is_on_disk = (bf->__is_on_disk == 0 ? "no" : "yes");
-	uint64_t size_on_disk = (bf->bloom_length * sizeof(unsigned char)) + (2 * sizeof(uint64_t)) + (1 * sizeof(float));
+	uint64_t size_on_disk = bloom_filter_export_size(bf);
 
 	printf("BloomFilter\n\
 	bits: %" PRIu64 "\n\
@@ -298,6 +298,11 @@ int bloom_filter_import_hex_string_alt(BloomFilter *bf, char *hex, HashFunction 
 		sscanf(hex + (i * 2), "%2hhx", &bf->bloom[i]);
 	}
 	return BLOOM_SUCCESS;
+}
+
+uint64_t bloom_filter_export_size(BloomFilter *bf) {
+	uint64_t r = (bf->bloom_length * sizeof(unsigned char)) + (2 * sizeof(uint64_t)) + sizeof(float);
+	return r;
 }
 
 /*******************************************************************************

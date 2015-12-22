@@ -3,7 +3,7 @@
 ***	 Author: Tyler Barrus
 ***	 email:  barrust@gmail.com
 ***
-***	 Version: 1.7.4
+***	 Version: 1.7.5
 ***	 Purpose: Simple, yet effective, bloom filter implementation
 ***
 ***	 License: MIT 2015
@@ -42,10 +42,10 @@
 	#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #endif
 
-#define BLOOMFILTER_VERSION "1.7.4"
+#define BLOOMFILTER_VERSION "1.7.5"
 #define BLOOMFILTER_MAJOR 1
 #define BLOOMFILTER_MINOR 7
-#define BLOOMFILTER_REVISION 4
+#define BLOOMFILTER_REVISION 5
 
 #define BLOOM_SUCCESS 0
 #define BLOOM_FAILURE -1
@@ -145,7 +145,6 @@ float bloom_filter_current_false_positive_rate(BloomFilter *bf);
 */
 uint64_t* bloom_filter_calculate_hashes(BloomFilter *bf, char *str, unsigned int number_hashes);
 
-
-
+uint64_t bloom_filter_export_size(BloomFilter *bf);
 
 #endif /* END BLOOM FILTER HEADER */
