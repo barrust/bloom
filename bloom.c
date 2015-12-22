@@ -34,23 +34,8 @@ static void calculate_optimal_hashes(BloomFilter *bf);
 static void read_from_file(BloomFilter *bf, FILE *fp, short on_disk, char *filename);
 static void write_to_file(BloomFilter *bf, FILE *fp, short on_disk);
 
-/*******************************************************************************
-***		testing functions
-*******************************************************************************/
-void print_bits(char ch) {
-	int i;
-	for (i = 0; i < CHAR_LEN; i++) {
-		printf("%c", (ch & (1 << i)) ? '1' : '0');
-	}
-	printf("\n");
-}
-/* END TESTING */
-
 int bloom_filter_init_alt(BloomFilter *bf, uint64_t estimated_elements, float false_positive_rate, HashFunction hash_function) {
-	if(estimated_elements <= 0 || estimated_elements > UINT64_MAX) {
-		return BLOOM_FAILURE;
-	}
-	if (false_positive_rate <= 0.0 || false_positive_rate >= 1.0 ) {
+	if(estimated_elements <= 0 || estimated_elements > UINT64_MAX || false_positive_rate <= 0.0 || false_positive_rate >= 1.0) {
 		return BLOOM_FAILURE;
 	}
 	bf->estimated_elements = estimated_elements;
@@ -64,10 +49,7 @@ int bloom_filter_init_alt(BloomFilter *bf, uint64_t estimated_elements, float fa
 }
 
 int bloom_filter_init_on_disk_alt(BloomFilter *bf, uint64_t estimated_elements, float false_positive_rate, char *filepath, HashFunction hash_function) {
-	if(estimated_elements <= 0 || estimated_elements > UINT64_MAX) {
-		return BLOOM_FAILURE;
-	}
-	if (false_positive_rate <= 0.0 || false_positive_rate >= 1.0 ) {
+	if(estimated_elements <= 0 || estimated_elements > UINT64_MAX || false_positive_rate <= 0.0 || false_positive_rate >= 1.0) {
 		return BLOOM_FAILURE;
 	}
 	bf->estimated_elements = estimated_elements;
@@ -191,8 +173,7 @@ int bloom_filter_check_string_alt(BloomFilter *bf, uint64_t *hashes, unsigned in
 		return BLOOM_FAILURE;
 	}
 
-	int r = BLOOM_SUCCESS;
-	int i;
+	int i, r = BLOOM_SUCCESS;
 	for (i = 0; i < bf->number_hashes; i++) {
 		int tmp_check = check_bit(bf->bloom, (hashes[i] % bf->number_bits));
 		if (tmp_check == 0) {
@@ -254,9 +235,8 @@ int bloom_filter_import_on_disk_alt(BloomFilter *bf, char *filepath, HashFunctio
 }
 
 char* bloom_filter_export_hex_string(BloomFilter *bf) {
-	uint64_t bytes = sizeof(uint64_t) * 2 + sizeof(float) + (bf->bloom_length);
+	uint64_t i, bytes = sizeof(uint64_t) * 2 + sizeof(float) + (bf->bloom_length);
 	char* hex = malloc((bytes * 2 + 1) * sizeof(char));
-	uint64_t i;
 	for (i = 0; i < bf->bloom_length; i++) {
 		sprintf(hex + (i * 2), "%02x", bf->bloom[i]); // not the fastest way, but works
 	}
@@ -301,8 +281,7 @@ int bloom_filter_import_hex_string_alt(BloomFilter *bf, char *hex, HashFunction 
 }
 
 uint64_t bloom_filter_export_size(BloomFilter *bf) {
-	uint64_t r = (bf->bloom_length * sizeof(unsigned char)) + (2 * sizeof(uint64_t)) + sizeof(float);
-	return r;
+	return (uint64_t)(bf->bloom_length * sizeof(unsigned char)) + (2 * sizeof(uint64_t)) + sizeof(float);
 }
 
 /*******************************************************************************
