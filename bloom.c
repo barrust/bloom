@@ -25,11 +25,11 @@
 #define CHAR_LEN 8
 
 static const double LOG_TWO_SQUARED = 0.4804530139182;
-
+static const double LOG_TWO = 0.6931471805599453;
 /*******************************************************************************
 ***		PRIVATE FUNCTIONS
 *******************************************************************************/
-static uint64_t* md5_hash_default(int num_hashes, char *str);
+static uint64_t* default_hash(int num_hashes, char *str);
 static void calculate_optimal_hashes(BloomFilter *bf);
 static void read_from_file(BloomFilter *bf, FILE *fp, short on_disk, char *filename);
 static void write_to_file(BloomFilter *bf, FILE *fp, short on_disk);
@@ -69,7 +69,7 @@ int bloom_filter_init_on_disk_alt(BloomFilter *bf, uint64_t estimated_elements, 
 }
 
 void bloom_filter_set_hash_function(BloomFilter *bf, HashFunction hash_function) {
-	bf->hash_function = (hash_function == NULL) ? md5_hash_default : hash_function;
+	bf->hash_function = (hash_function == NULL) ? default_hash : hash_function;
 }
 
 int bloom_filter_destroy(BloomFilter *bf) {
@@ -292,7 +292,7 @@ static void calculate_optimal_hashes(BloomFilter *bf) {
 	long n = bf->estimated_elements;
 	float p = bf->false_positive_probability;
 	uint64_t m = ceil((-n * log(p)) / LOG_TWO_SQUARED);  // AKA pow(log(2), 2);
-	unsigned int k = round(log(2.0) * m / n);
+	unsigned int k = round(LOG_TWO * m / n); // log(2.0) = 0.6931471805599453
 	// set paramenters
 	bf->number_hashes = k; // should check to make sure it is at least 1...
 	bf->number_bits = m;
@@ -348,7 +348,7 @@ static void read_from_file(BloomFilter *bf, FILE *fp, short on_disk, char *filen
 }
 
 /* NOTE: The caller will free the results */
-static uint64_t* md5_hash_default(int num_hashes, char *str) {
+static uint64_t* default_hash(int num_hashes, char *str) {
 	uint64_t *results = calloc(num_hashes, sizeof(uint64_t));
 	unsigned char digest[MD5_DIGEST_LENGTH];
 	int i;
