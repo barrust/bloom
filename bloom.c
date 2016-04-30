@@ -23,9 +23,9 @@
 #endif
 
 #define CHAR_LEN 8
+#define LOG_TWO_SQUARED 0.4804530139182
+#define LOG_TWO 0.6931471805599453
 
-static const double LOG_TWO_SQUARED = 0.4804530139182;
-static const double LOG_TWO = 0.6931471805599453;
 /*******************************************************************************
 ***		PRIVATE FUNCTIONS
 *******************************************************************************/
@@ -142,15 +142,14 @@ uint64_t* bloom_filter_calculate_hashes(BloomFilter *bf, char *str, unsigned int
 /* Add a string to a bloom filter using the defined hashes */
 int bloom_filter_add_string_alt(BloomFilter *bf, uint64_t *hashes, unsigned int number_hashes_passed) {
 	if (number_hashes_passed < bf->number_hashes) {
-		printf("Error: not enough hashes passed in to correctly check!\n");
+		fprintf(stderr, "Error: not enough hashes passed in to correctly check!\n");
 		return BLOOM_FAILURE;
 	}
 
 	int i;
 	for (i = 0; i < bf->number_hashes; i++) {
-		//set_bit(bf->bloom, hashes[i]);
 		ATOMIC
-		bf->bloom[(hashes[i] % bf->number_bits) / 8] |=  (1 << ((hashes[i] % bf->number_bits) % 8));
+		bf->bloom[(hashes[i] % bf->number_bits) / 8] |=  (1 << ((hashes[i] % bf->number_bits) % 8)); // set the bit
 	}
 
 	ATOMIC
@@ -169,7 +168,7 @@ int bloom_filter_add_string_alt(BloomFilter *bf, uint64_t *hashes, unsigned int 
 /* Check if a string is in the bloom filter using the passed hashes */
 int bloom_filter_check_string_alt(BloomFilter *bf, uint64_t *hashes, unsigned int number_hashes_passed) {
 	if (number_hashes_passed < bf->number_hashes) {
-		printf("Error: not enough hashes passed in to correctly check!\n");
+		fprintf(stderr, "Error: not enough hashes passed in to correctly check!\n");
 		return BLOOM_FAILURE;
 	}
 
@@ -252,7 +251,7 @@ char* bloom_filter_export_hex_string(BloomFilter *bf) {
 int bloom_filter_import_hex_string_alt(BloomFilter *bf, char *hex, HashFunction hash_function) {
 	uint64_t len = strlen(hex);
 	if (len % 2 != 0) {
-		printf("Unable to parse; exiting\n");
+		fprintf(stderr, "Unable to parse; exiting\n");
 		return BLOOM_FAILURE;
 	}
 	char fpr[9] = {0};
@@ -292,7 +291,7 @@ static void calculate_optimal_hashes(BloomFilter *bf) {
 	long n = bf->estimated_elements;
 	float p = bf->false_positive_probability;
 	uint64_t m = ceil((-n * log(p)) / LOG_TWO_SQUARED);  // AKA pow(log(2), 2);
-	unsigned int k = round(LOG_TWO * m / n); // log(2.0) = 0.6931471805599453
+	unsigned int k = round(LOG_TWO * m / n);             // AKA log(2.0);
 	// set paramenters
 	bf->number_hashes = k; // should check to make sure it is at least 1...
 	bf->number_bits = m;
