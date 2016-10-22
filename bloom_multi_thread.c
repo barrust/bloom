@@ -1,5 +1,6 @@
 
-
+#include <stdlib.h>
+#include <stdio.h>
 #include "bloom.h"
 #include "../timing-c/timing.h" /* URL: https://github.com/barrust/timing-c */
 #include <omp.h>

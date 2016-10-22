@@ -8,6 +8,17 @@
 ***	 License: MIT 2015
 ***
 *******************************************************************************/
+
+#include <stdlib.h>
+#include <math.h>           /* pow, exp */
+#include <stdio.h>          /* printf */
+#include <string.h>         /* strlen */
+#include <fcntl.h>          /* O_RDWR */
+#include <sys/mman.h>       /* mmap, mummap */
+#include <sys/types.h>      /* */
+#include <sys/stat.h>       /* fstat */
+#include <unistd.h>         /* close */
+#include <openssl/md5.h>
 #include "bloom.h"
 
 //#define set_bit(A,k)	 (A[((k) / 8)] |=  (1 << ((k) % 8)))
@@ -38,6 +49,10 @@ int bloom_filter_init_alt(BloomFilter *bf, uint64_t estimated_elements, float fa
 	if(estimated_elements <= 0 || estimated_elements > UINT64_MAX || false_positive_rate <= 0.0 || false_positive_rate >= 1.0) {
 		return BLOOM_FAILURE;
 	}
+	#if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+	    fprintf(stderr, "This version of bloom does not support big endian at the moment!\n");
+		return BLOOM_FAILURE;
+    #endif
 	bf->estimated_elements = estimated_elements;
 	bf->false_positive_probability = false_positive_rate;
 	calculate_optimal_hashes(bf);
@@ -185,7 +200,7 @@ int bloom_filter_check_string_alt(BloomFilter *bf, uint64_t *hashes, unsigned in
 
 float bloom_filter_current_false_positive_rate(BloomFilter *bf) {
 	int num = (bf->number_hashes * -1 * bf->elements_added);
-	double d = (num * 1.0) / (bf->number_bits * 1.0);
+	double d = num / (float) bf->number_bits;
 	double e = exp(d);
 	return pow((1 - e), bf->number_hashes);
 }
