@@ -1,6 +1,10 @@
 
-#include "bloom.h"
+
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 #include <openssl/sha.h>
+#include "bloom.h"
 /*
 	Example of generating a custom hashing function
 */
