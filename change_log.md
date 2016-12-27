@@ -1,3 +1,7 @@
+###Version 1.7.6
+* Changed default hash to FNV-1A **NOTE:** Breaks backwards compatibility with previously exported blooms with default hash!
+* Removed **-lcrypto** requirement
+
 ###Version 1.7.5
 * Moved reused logic into a function
 * Added clear bloom filter

@@ -3,7 +3,7 @@
 ***	 Author: Tyler Barrus
 ***	 email:  barrust@gmail.com
 ***
-***	 Version: 1.7.5
+***	 Version: 1.7.6
 ***
 ***	 License: MIT 2015
 ***
@@ -18,7 +18,6 @@
 #include <sys/types.h>      /* */
 #include <sys/stat.h>       /* fstat */
 #include <unistd.h>         /* close */
-// #include <openssl/md5.h>
 #include "bloom.h"
 
 //#define set_bit(A,k)	 (A[((k) / 8)] |=  (1 << ((k) % 8)))
@@ -366,29 +365,28 @@ static void read_from_file(BloomFilter *bf, FILE *fp, short on_disk, char *filen
 static uint64_t* default_hash(int num_hashes, char *str) {
 	uint64_t *results = calloc(num_hashes, sizeof(uint64_t));
 	int i;
+	char *key = calloc(17, sizeof(char));  // largest value is 7FFF,FFFF,FFFF,FFFF
 	for (i = 0; i < num_hashes; i++) {
 		if (i == 0) {
 			results[i] = fnv_1a(str);
 		} else {
 			uint64_t prev = results[i-1];
-			char *key = calloc(25, sizeof(char));
+			memset(key, 0, 17);
 			sprintf(key, "%" PRIx64 "", prev);
 			results[i] = fnv_1a(key);
 		}
 	}
+	free(key);
 	return results;
 }
 
 static uint64_t fnv_1a(char *key) {
 	// FNV-1a hash (http://www.isthe.com/chongo/tech/comp/fnv/)
 	int i, len = strlen(key);
-	char *p = calloc(len + 1, sizeof(char));
-	strncpy(p, key, len);
 	uint64_t h = 14695981039346656073ULL; // FNV_OFFSET 64 bit
 	for (i = 0; i < len; i++){
-			h = h ^ (unsigned char) p[i];
+			h = h ^ (unsigned char) key[i];
 			h = h * 1099511628211ULL; // FNV_PRIME 64 bit
 	}
-	free(p);
 	return h;
 }

@@ -3,7 +3,7 @@
 ***	 Author: Tyler Barrus
 ***	 email:  barrust@gmail.com
 ***
-***	 Version: 1.7.5
+***	 Version: 1.7.6
 ***	 Purpose: Simple, yet effective, bloom filter implementation
 ***
 ***	 License: MIT 2015
