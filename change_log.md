@@ -1,3 +1,9 @@
+###Version 1.7.5
+* Moved reused logic into a function
+* Added clear bloom filter
+* Pre-computed calculation of log(2) for speed
+* Renamed default hash - **NOTE:** this hash function may change in the future!
+
 ###Version 1.7.1
 * Added easier to use functions when using the default hashing algorithm
 * Minor clean up to reduce some function calls

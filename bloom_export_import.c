@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "bloom.h"
-#include <openssl/sha.h>
+// #include <openssl/sha.h>
 
 
 int main(int argc, char** argv) {

@@ -18,7 +18,7 @@
 #include <sys/types.h>      /* */
 #include <sys/stat.h>       /* fstat */
 #include <unistd.h>         /* close */
-#include <openssl/md5.h>
+// #include <openssl/md5.h>
 #include "bloom.h"
 
 //#define set_bit(A,k)	 (A[((k) / 8)] |=  (1 << ((k) % 8)))
@@ -41,6 +41,7 @@
 ***		PRIVATE FUNCTIONS
 *******************************************************************************/
 static uint64_t* default_hash(int num_hashes, char *str);
+static uint64_t fnv_1a(char *key);
 static void calculate_optimal_hashes(BloomFilter *bf);
 static void read_from_file(BloomFilter *bf, FILE *fp, short on_disk, char *filename);
 static void write_to_file(BloomFilter *bf, FILE *fp, short on_disk);
@@ -364,18 +365,30 @@ static void read_from_file(BloomFilter *bf, FILE *fp, short on_disk, char *filen
 /* NOTE: The caller will free the results */
 static uint64_t* default_hash(int num_hashes, char *str) {
 	uint64_t *results = calloc(num_hashes, sizeof(uint64_t));
-	unsigned char digest[MD5_DIGEST_LENGTH];
 	int i;
 	for (i = 0; i < num_hashes; i++) {
-		MD5_CTX md5_ctx;
-		MD5_Init(&(md5_ctx));
 		if (i == 0) {
-			MD5_Update(&(md5_ctx), str, strlen(str));
+			results[i] = fnv_1a(str);
 		} else {
-			MD5_Update(&(md5_ctx), digest, MD5_DIGEST_LENGTH);
+			uint64_t prev = results[i-1];
+			char *key = calloc(25, sizeof(char));
+			sprintf(key, "%" PRIx64 "", prev);
+			results[i] = fnv_1a(key);
 		}
-		MD5_Final(digest, &(md5_ctx));
-		results[i] = (uint64_t) *(uint64_t *)digest;
 	}
 	return results;
+}
+
+static uint64_t fnv_1a(char *key) {
+	// FNV-1a hash (http://www.isthe.com/chongo/tech/comp/fnv/)
+	int i, len = strlen(key);
+	char *p = calloc(len + 1, sizeof(char));
+	strncpy(p, key, len);
+	uint64_t h = 14695981039346656073ULL; // FNV_OFFSET 64 bit
+	for (i = 0; i < len; i++){
+			h = h ^ (unsigned char) p[i];
+			h = h * 1099511628211ULL; // FNV_PRIME 64 bit
+	}
+	free(p);
+	return h;
 }
