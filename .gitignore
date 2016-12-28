@@ -1,6 +1,7 @@
 
 # Custom
 dist/*
+!dist/.gitkeep
 
 
 # Prerequisites
