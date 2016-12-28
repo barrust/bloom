@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "../src/bloom.h"
-#include "../timing-c/timing.h" /* URL: https://github.com/barrust/timing-c */
+#include "timing.h" /* URL: https://github.com/barrust/timing-c */
 #include <omp.h>
 
 #define SIZE 100000000

@@ -1,16 +1,17 @@
 TESTDIR=tests
+DISTDIR=dist
 SRCDIR=src
-CCFLAGS=-lm -Wall
+CCFLAGS=-lm -Wall -Wpedantic
 
 all: clean bloom
-	gcc $(SRCDIR)/bloom.o $(TESTDIR)/bloom_test.c $(CCFLAGS) -lcrypto -o ./dist/blm
-	gcc $(SRCDIR)/bloom.o $(TESTDIR)/bloom_export_import.c $(CCFLAGS) -o ./dist/blmix
-	gcc $(SRCDIR)/bloom.o $(TESTDIR)/bloom_on_disk.c $(CCFLAGS) -o ./dist/blmd
-omp:
-	if [ -e ./dist/blmmt ]; then rm ./dist/blmmt; fi;
-	gcc bloom.o $(TESTDIR)/bloom_multi_thread.c $(CCFLAGS) -fopenmp -o ./dist/blmmt
+	gcc $(SRCDIR)/bloom.o $(TESTDIR)/bloom_test.c $(CCFLAGS) -lcrypto -o ./$(DISTDIR)/blm
+	gcc $(SRCDIR)/bloom.o $(TESTDIR)/bloom_export_import.c $(CCFLAGS) -o ./$(DISTDIR)/blmix
+	gcc $(SRCDIR)/bloom.o $(TESTDIR)/bloom_on_disk.c $(CCFLAGS) -o ./$(DISTDIR)/blmd
+omp: bloom
+	if [ -e ./$(DISTDIR)/blmmt ]; then rm ./dist/blmmt; fi;
+	gcc $(SRCDIR)/bloom.o $(TESTDIR)/bloom_multi_thread.c $(CCFLAGS) -fopenmp -o ./$(DISTDIR)/blmmt
 clean:
-	rm -rf ./dist/*
+	rm -rf ./$(DISTDIR)/*
 	if [ -e ./$(SRCDIR)/bloom.o ]; then rm ./$(SRCDIR)/bloom.o; fi;
 bloom:
-	gcc -c $(SRCDIR)/bloom.c -o $(SRCDIR)/bloom.o
+	gcc -c $(SRCDIR)/bloom.c -o $(SRCDIR)/bloom.o $(CCFLAGS)

@@ -3,11 +3,11 @@ Bloom filter implementation written in C.
 
 Bloom filters are a probabilistic data structure that allows for the storage and look up of elements that have previously been seen.
 
-##License:
+## License:
 MIT 2015
 
-##Usage:
-```
+## Usage:
+``` c
 #include "bloom.h"
 
 BloomFilter bf;
@@ -27,5 +27,5 @@ bloom_filter_stats(&bf);
 bloom_filter_destroy(&bf);
 ```
 
-##Required Compile Flags:
--lm -lcrypto
+## Required Compile Flags:
+-lm
