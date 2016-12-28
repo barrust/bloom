@@ -1,7 +1,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include "../bloom.h"
+#include "../src/bloom.h"
 
 
 int main(int argc, char** argv) {
