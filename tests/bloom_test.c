@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <openssl/sha.h>
-#include "bloom.h"
+#include "../bloom.h"
 /*
 	Example of generating a custom hashing function
 */
