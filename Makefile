@@ -9,12 +9,7 @@ omp:
 	if [ -e ./dist/blmmt ]; then rm ./dist/blmmt; fi;
 	gcc bloom.o $(TEST_DIR)/bloom_multi_thread.c $(CCFLAGS) -fopenmp -o ./dist/blmmt
 clean:
-	if [ -e ./dist/blm ]; then rm ./dist/blm; fi;
-	if [ -e ./dist/blmix ]; then rm ./dist/blmix; fi;
-	if [ -e ./dist/blmd ]; then rm ./dist/blmd; fi;
-	if [ -e ./dist/test.blm ]; then rm ./dist/test.blm; fi;
-	if [ -e ./dist/test2.blm ]; then rm ./dist/test2.blm; fi;
-	if [ -e ./dist/blmmt ]; then rm ./dist/blmmt; fi;
+	rm -rf ./dist/*
 	if [ -e bloom.o ]; then rm bloom.o; fi;
 bloom:
 	gcc -c bloom.c -o bloom.o
