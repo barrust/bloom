@@ -1,91 +1,172 @@
-
-
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <openssl/sha.h>
-#include "../src/bloom.h"
 /*
-	Example of generating a custom hashing function
+    Default tests for using the default hashing algorithm
 */
-uint64_t* sha256_hash(int num_hashes, char *str) {
-	uint64_t *results = calloc(num_hashes, sizeof(uint64_t));
-	unsigned char digest[SHA256_DIGEST_LENGTH];
-	int i;
-	for (i = 0; i < num_hashes; i++) {
-		SHA256_CTX sha256_ctx;
-		SHA256_Init(&sha256_ctx);
-		if (i == 0) {
-			SHA256_Update(&sha256_ctx, str, strlen(str));
-		} else {
-			SHA256_Update(&sha256_ctx, digest, SHA256_DIGEST_LENGTH);
-		}
-		SHA256_Final(digest, &sha256_ctx);
-		results[i] = (uint64_t) *(uint64_t *)digest;
-	}
-	return results;
+
+#include <stdio.h>
+#include <assert.h>
+#include <math.h>  /* roundf */
+#include "../src/bloom.h"
+
+
+#define ELEMENTS 50000
+#define FALSE_POSITIVE_RATE 0.05
+#define KEY_LEN 10
+
+
+int check_known_values(BloomFilter *bf) {
+	int i, cnt = 0;
+    for (i = 0; i < ELEMENTS * 2; i+=2) {
+        char key[KEY_LEN] = {0};
+        sprintf(key, "%d", i);
+        if (bloom_filter_check_string(bf, key) == BLOOM_FAILURE) {
+            cnt++;
+        }
+    }
+	return cnt;
+}
+
+int check_unknown_values(BloomFilter *bf) {
+	int i, cnt = 0;
+    for (i = 1; i < ELEMENTS * 2; i+=2) {
+        char key[KEY_LEN] = {0};
+        sprintf(key, "%d", i);
+        if (bloom_filter_check_string(bf, key) == BLOOM_SUCCESS) {
+            cnt++;
+        }
+    }
+	return cnt;
 }
 
 
 int main(int argc, char** argv) {
-	printf("Testing BloomFilter version %s\n\n", bloom_filter_get_version());
+    printf("Testing BloomFilter version %s\n\n", bloom_filter_get_version());
+    BloomFilter bf;
+    // add a few additional spaces just in case!
+    // bloom_filter_init_alt(&bf, ELEMENTS, FALSE_POSITIVE_RATE, &sha256_hash);
+    bloom_filter_init(&bf, ELEMENTS, FALSE_POSITIVE_RATE);
+    int i, cnt;
+    for (i = 0; i < ELEMENTS * 2; i+=2) {
+        char key[KEY_LEN] = {0};
+        sprintf(key, "%d", i);
+        bloom_filter_add_string(&bf, key);
+    }
+    printf("%f\n", bf.false_positive_probability);
+    assert(bf.false_positive_probability == (float)FALSE_POSITIVE_RATE);
+    assert(bf.elements_added == ELEMENTS);
+    printf("%f\n", bloom_filter_current_false_positive_rate(&bf));
+    assert(roundf(100 * bloom_filter_current_false_positive_rate(&bf)) / 100 <= bf.false_positive_probability);
+    printf("Bloom Filter insertion: success!\n");
 
-	BloomFilter bf;
-	bloom_filter_init_alt(&bf, 10, 0.05, &sha256_hash);
-	bloom_filter_add_string(&bf, "test");
-	bloom_filter_add_string(&bf, "test123");
-	bloom_filter_add_string(&bf, "abc");
-	bloom_filter_add_string(&bf, "def");
-	bloom_filter_add_string(&bf, "something");
-	bloom_filter_add_string(&bf, "to");
-	bloom_filter_add_string(&bf, "say");
-	bloom_filter_add_string(&bf, "please");
-	bloom_filter_add_string(&bf, "???");
 
-	if (bloom_filter_check_string(&bf, "test") == BLOOM_FAILURE) {
-		printf("'test' is not in the bloom filter!\n");
-	} else {
-		printf("'test' is in the bloom filter!\n");
-	}
-	if (bloom_filter_check_string(&bf, "blah") == BLOOM_FAILURE) {
-		printf("'blah' is not in the bloom filter!\n");
-	} else {
-		printf("'blah' is in the bloom filter!\n");
-	}
-	bloom_filter_stats(&bf);
-	char* hex = bloom_filter_export_hex_string(&bf);
-	bloom_filter_destroy(&bf);
+    printf("Bloom Filter: Check known values (all should be found): ");
+    cnt = check_known_values(&bf);
+    assert(cnt == 0);
+    printf("success!\n");
 
-	// import the hex string and test it
-	printf("\n\nImport the hex string: %s\n", hex);
-	BloomFilter bf1;
-	bloom_filter_import_hex_string_alt(&bf1, hex, &sha256_hash);
-	free(hex);
-	if (bloom_filter_check_string(&bf1, "test") == BLOOM_FAILURE) {
-		printf("'test' is not in the bloom filter!\n");
-	} else {
-		printf("'test' is in the bloom filter!\n");
-	}
-	if (bloom_filter_check_string(&bf1, "blah") == BLOOM_FAILURE) {
-		printf("'blah' is not in the bloom filter!\n");
-	} else {
-		printf("'blah' is in the bloom filter!\n");
-	}
-	bloom_filter_stats(&bf1);
 
-	/* test clearing out the bloom filter */
-	bloom_filter_clear(&bf1);
-	bloom_filter_stats(&bf1);
-	if (bloom_filter_check_string(&bf1, "test") == BLOOM_FAILURE) {
-		printf("'test' is not in the bloom filter!\n");
-	} else {
-		printf("'test' is in the bloom filter!\n");
-	}
-	if (bloom_filter_check_string(&bf1, "blah") == BLOOM_FAILURE) {
-		printf("'blah' is not in the bloom filter!\n");
-	} else {
-		printf("'blah' is in the bloom filter!\n");
-	}
+    printf("Bloom Filter: Check known values (all should be either not found or false positive): ");
+    cnt = check_unknown_values(&bf);
+    assert((float)cnt / ELEMENTS <= (float) FALSE_POSITIVE_RATE);
+    printf("success!\n");
+    printf("NOTE: %d flagged as possible hits! Or %f%%\n", cnt, (float)cnt / ELEMENTS);
 
-	bloom_filter_destroy(&bf1);
+
+    printf("Bloom filter export: ");
+    bloom_filter_export(&bf, "./dist/test_bloom.blm");
+    printf("sucess!\n");
+
+	printf("Clear bloom filter: ");
+	bloom_filter_clear(&bf);
+	assert(bf.false_positive_probability == (float)FALSE_POSITIVE_RATE);
+    assert(bf.elements_added == 0);  // should be empty!
+	long u;
+	for(u = 0; u < bf.bloom_length; u++) {
+		assert(bf.bloom[u] == 0);
+	}
+	printf("success!\n");
+
+    printf("Cleanup original Bloom Filter: ");
+    bloom_filter_destroy(&bf);
+    printf("success!\n\n");
+
+    /* import in the exported bloom filter and re-run tests */
+    printf("Import from file: ");
+    BloomFilter bfi;
+    bloom_filter_import(&bfi, "./dist/test_bloom.blm");
+    assert(bfi.false_positive_probability == (float)FALSE_POSITIVE_RATE);
+    assert(bfi.elements_added == ELEMENTS);
+    assert(roundf(100 * bloom_filter_current_false_positive_rate(&bfi)) / 100 <= bfi.false_positive_probability);
+    printf("success!\n");
+
+
+    printf("Bloom Filter Imported: Check known values (all should be found): ");
+    cnt = check_known_values(&bfi);
+    assert(cnt == 0);
+    printf("success!\n");
+
+
+    printf("Bloom Filter Imported: Check known values (all should be either not found or false positive): ");
+    cnt = check_unknown_values(&bfi);
+    assert((float)cnt / ELEMENTS <= (float) FALSE_POSITIVE_RATE);
+    printf("success!\n");
+    printf("NOTE: %d flagged as possible hits! Or %f%%\n", cnt, (float)cnt / ELEMENTS);
+
+
+    printf("Export bloom filter as hex string: ");
+    char* bloom_hex = bloom_filter_export_hex_string(&bfi);
+    printf("success!\n");
+
+    printf("Cleanup imported Bloom Filter: ");
+    bloom_filter_destroy(&bfi);
+    printf("success!\n\n");
+
+
+    printf("Bloom Filter Hex Import: ");
+    BloomFilter bfh;
+    bloom_filter_import_hex_string(&bfh, bloom_hex);
+    assert(bfh.false_positive_probability == (float)FALSE_POSITIVE_RATE);
+    assert(bfh.elements_added == ELEMENTS);
+    assert(roundf(100 * bloom_filter_current_false_positive_rate(&bfh)) / 100 <= bfh.false_positive_probability);
+    printf("success!\n");
+
+
+    printf("Bloom Filter Hex: Check known values (all should be found): ");
+    cnt = check_known_values(&bfh);
+    assert(cnt == 0);
+    printf("success!\n");
+
+    printf("Bloom Filter Hex: Check known values (all should be either not found or false positive): ");
+    cnt = check_unknown_values(&bfh);
+    assert((float)cnt / ELEMENTS <= (float) FALSE_POSITIVE_RATE);
+    printf("success!\n");
+    printf("NOTE: %d flagged as possible hits! Or %f%%\n", cnt, (float)cnt / ELEMENTS);
+
+
+    printf("Cleanup hex Bloom Filter: ");
+    bloom_filter_destroy(&bfh);
+    printf("success!\n\n");
+
+
+    printf("Bloom Filter initialize On Disk: ");
+    BloomFilter bfd;
+    bloom_filter_import_on_disk(&bfd, "./dist/test_bloom.blm");
+    assert(bfd.false_positive_probability == (float)FALSE_POSITIVE_RATE);
+    assert(bfd.elements_added == ELEMENTS);
+    assert(roundf(100 * bloom_filter_current_false_positive_rate(&bfd)) / 100 <= bfd.false_positive_probability);
+    printf("success!\n");
+
+    printf("Bloom Filter On Disk: Check known values (all should be found): ");
+    cnt = check_known_values(&bfd);
+    assert(cnt == 0);
+    printf("success!\n");
+
+    printf("Bloom Filter On Disk: Check known values (all should be either not found or false positive): ");
+    cnt = check_unknown_values(&bfd);
+    assert((float)cnt / ELEMENTS <= (float) FALSE_POSITIVE_RATE);
+    printf("success!\n");
+    printf("NOTE: %d flagged as possible hits! Or %f%%\n", cnt, (float)cnt / ELEMENTS);
+
+    printf("Cleanup On Disk Bloom Filter: ");
+    bloom_filter_destroy(&bfd);
+    printf("success!\n\n");
 }

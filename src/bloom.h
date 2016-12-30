@@ -135,7 +135,7 @@ float bloom_filter_current_false_positive_rate(BloomFilter *bf);
 */
 uint64_t* bloom_filter_calculate_hashes(BloomFilter *bf, char *str, unsigned int number_hashes);
 
-/* Calculate the size the bloom filter will take on disk when exported */
+/* Calculate the size the bloom filter will take on disk when exported in bytes */
 uint64_t bloom_filter_export_size(BloomFilter *bf);
 
 #endif /* END BLOOM FILTER HEADER */
