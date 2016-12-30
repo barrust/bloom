@@ -1,18 +1,19 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include "bloom.h"
-#include "../timing-c/timing.h" /* URL: https://github.com/barrust/timing-c */
+#include "../src/bloom.h"
+#include "timing.h"  /* URL: https://github.com/barrust/timing-c */
 #include <omp.h>
 
 #define SIZE 100000000
-#define THREADS 4
 
 int main(int argc, char** argv) {
 	printf("Testing BloomFilter version %s\n\n", bloom_filter_get_version());
 
+	int THREADS = 1;
 	#if defined (_OPENMP)
 		printf("OpenMP Enabled\n\n");
+		THREADS =  omp_get_max_threads();
 	#endif
 
 	Timing t;
