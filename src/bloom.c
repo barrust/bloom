@@ -39,11 +39,11 @@
 /*******************************************************************************
 ***		PRIVATE FUNCTIONS
 *******************************************************************************/
-static uint64_t* default_hash(int num_hashes, char *str);
-static uint64_t fnv_1a(char *key);
-static void calculate_optimal_hashes(BloomFilter *bf);
-static void read_from_file(BloomFilter *bf, FILE *fp, short on_disk, char *filename);
-static void write_to_file(BloomFilter *bf, FILE *fp, short on_disk);
+static uint64_t* __default_hash(int num_hashes, char *str);
+static uint64_t __fnv_1a(char *key);
+static void __calculate_optimal_hashes(BloomFilter *bf);
+static void __read_from_file(BloomFilter *bf, FILE *fp, short on_disk, char *filename);
+static void __write_to_file(BloomFilter *bf, FILE *fp, short on_disk);
 
 int bloom_filter_init_alt(BloomFilter *bf, uint64_t estimated_elements, float false_positive_rate, HashFunction hash_function) {
 	if(estimated_elements <= 0 || estimated_elements > UINT64_MAX || false_positive_rate <= 0.0 || false_positive_rate >= 1.0) {
@@ -55,7 +55,7 @@ int bloom_filter_init_alt(BloomFilter *bf, uint64_t estimated_elements, float fa
     #endif
 	bf->estimated_elements = estimated_elements;
 	bf->false_positive_probability = false_positive_rate;
-	calculate_optimal_hashes(bf);
+	__calculate_optimal_hashes(bf);
 	bf->bloom = calloc(bf->bloom_length, sizeof(char));
 	bf->elements_added = 0;
 	bloom_filter_set_hash_function(bf, hash_function);
@@ -69,7 +69,7 @@ int bloom_filter_init_on_disk_alt(BloomFilter *bf, uint64_t estimated_elements, 
 	}
 	bf->estimated_elements = estimated_elements;
 	bf->false_positive_probability = false_positive_rate;
-	calculate_optimal_hashes(bf);
+	__calculate_optimal_hashes(bf);
 	bf->elements_added = 0;
 	FILE *fp;
 	fp = fopen(filepath, "w+b");
@@ -77,14 +77,14 @@ int bloom_filter_init_on_disk_alt(BloomFilter *bf, uint64_t estimated_elements, 
 		fprintf(stderr, "Can't open file %s!\n", filepath);
 		return BLOOM_FAILURE;
 	}
-	write_to_file(bf, fp, 1);
+	__write_to_file(bf, fp, 1);
 	fclose(fp);
 	// slightly ineffecient to redo some of the calculations...
 	return bloom_filter_import_on_disk_alt(bf, filepath, hash_function);
 }
 
 void bloom_filter_set_hash_function(BloomFilter *bf, HashFunction hash_function) {
-	bf->hash_function = (hash_function == NULL) ? default_hash : hash_function;
+	bf->hash_function = (hash_function == NULL) ? __default_hash : hash_function;
 }
 
 int bloom_filter_destroy(BloomFilter *bf) {
@@ -216,7 +216,7 @@ int bloom_filter_export(BloomFilter *bf, char *filepath) {
 		fprintf(stderr, "Can't open file %s!\n", filepath);
 		return BLOOM_FAILURE;
 	}
-	write_to_file(bf, fp, 0);
+	__write_to_file(bf, fp, 0);
 	fclose(fp);
 	return BLOOM_SUCCESS;
 }
@@ -228,7 +228,7 @@ int bloom_filter_import_alt(BloomFilter *bf, char *filepath, HashFunction hash_f
 		fprintf(stderr, "Can't open file %s!\n", filepath);
 		return BLOOM_FAILURE;
 	}
-	read_from_file(bf, fp, 0, NULL);
+	__read_from_file(bf, fp, 0, NULL);
 	fclose(fp);
 	bloom_filter_set_hash_function(bf, hash_function);
 	bf->__is_on_disk = 0; // not on disk
@@ -241,7 +241,7 @@ int bloom_filter_import_on_disk_alt(BloomFilter *bf, char *filepath, HashFunctio
 		fprintf(stderr, "Can't open file %s!\n", filepath);
 		return BLOOM_FAILURE;
 	}
-	read_from_file(bf, bf->filepointer, 1, filepath);
+	__read_from_file(bf, bf->filepointer, 1, filepath);
 	// don't close the file pointer here...
 	bloom_filter_set_hash_function(bf, hash_function);
 	bf->__is_on_disk = 1; // on disk
@@ -283,7 +283,7 @@ int bloom_filter_import_hex_string_alt(BloomFilter *bf, char *hex, HashFunction 
 	bf->false_positive_probability = *((float*)&t_fpr);
 	bloom_filter_set_hash_function(bf, hash_function);
 
-	calculate_optimal_hashes(bf);
+	__calculate_optimal_hashes(bf);
 	bf->bloom = calloc(bf->bloom_length, sizeof(char));
 	bf->__is_on_disk = 0; // not on disk
 
@@ -301,7 +301,7 @@ uint64_t bloom_filter_export_size(BloomFilter *bf) {
 /*******************************************************************************
 *	PRIVATE FUNCTIONS
 *******************************************************************************/
-static void calculate_optimal_hashes(BloomFilter *bf) {
+static void __calculate_optimal_hashes(BloomFilter *bf) {
 	// calc optimized values
 	long n = bf->estimated_elements;
 	float p = bf->false_positive_probability;
@@ -315,7 +315,7 @@ static void calculate_optimal_hashes(BloomFilter *bf) {
 }
 
 /* NOTE: this assumes that the file handler is open and ready to use */
-static void write_to_file(BloomFilter *bf, FILE *fp, short on_disk) {
+static void __write_to_file(BloomFilter *bf, FILE *fp, short on_disk) {
 	if (on_disk == 0) {
 		fwrite(bf->bloom, bf->bloom_length, 1, fp);
 	} else {
@@ -331,13 +331,13 @@ static void write_to_file(BloomFilter *bf, FILE *fp, short on_disk) {
 }
 
 /* NOTE: this assumes that the file handler is open and ready to use */
-static void read_from_file(BloomFilter *bf, FILE *fp, short on_disk, char *filename) {
+static void __read_from_file(BloomFilter *bf, FILE *fp, short on_disk, char *filename) {
 	int offset = sizeof(uint64_t) * 2 + sizeof(float);
 	fseek(fp, offset * -1, SEEK_END);
 	fread(&bf->estimated_elements, sizeof(uint64_t), 1, fp);
 	fread(&bf->elements_added, sizeof(uint64_t), 1, fp);
 	fread(&bf->false_positive_probability, sizeof(float), 1, fp);
-	calculate_optimal_hashes(bf);
+	__calculate_optimal_hashes(bf);
 	rewind(fp);
 	if(on_disk == 0) {
 		bf->bloom = calloc(bf->bloom_length, sizeof(char));
@@ -362,25 +362,25 @@ static void read_from_file(BloomFilter *bf, FILE *fp, short on_disk, char *filen
 }
 
 /* NOTE: The caller will free the results */
-static uint64_t* default_hash(int num_hashes, char *str) {
+static uint64_t* __default_hash(int num_hashes, char *str) {
 	uint64_t *results = calloc(num_hashes, sizeof(uint64_t));
 	int i;
 	char *key = calloc(17, sizeof(char));  // largest value is 7FFF,FFFF,FFFF,FFFF
 	for (i = 0; i < num_hashes; i++) {
 		if (i == 0) {
-			results[i] = fnv_1a(str);
+			results[i] = __fnv_1a(str);
 		} else {
 			uint64_t prev = results[i-1];
 			memset(key, 0, 17);
 			sprintf(key, "%" PRIx64 "", prev);
-			results[i] = fnv_1a(key);
+			results[i] = __fnv_1a(key);
 		}
 	}
 	free(key);
 	return results;
 }
 
-static uint64_t fnv_1a(char *key) {
+static uint64_t __fnv_1a(char *key) {
 	// FNV-1a hash (http://www.isthe.com/chongo/tech/comp/fnv/)
 	int i, len = strlen(key);
 	uint64_t h = 14695981039346656073ULL; // FNV_OFFSET 64 bit
