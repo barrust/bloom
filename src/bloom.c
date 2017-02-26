@@ -319,6 +319,26 @@ uint64_t bloom_filter_count_set_bits(BloomFilter *bf) {
 }
 
 uint64_t bloom_filter_estimate_elements(BloomFilter *bf) {
+	// TODO: this seems to come in very high, I wonder why...
+	// double m = (double)bf->number_bits;
+	// double k = (double)bf->number_hashes;
+	// uint64_t X = bloom_filter_count_set_bits(bf);
+	//
+	// printf("%f\n", m);
+	// printf("%f\n", k);
+	// printf("%f\n", m/k);
+	//
+	// double first = -1 * (m/k);
+	// double second = 1 - (X / m);
+	//
+	//
+	// printf("first: %f\n", first);
+	// printf("second: %f\n", second);
+	//
+	// printf("ln(second): %f\n", log(second));
+	// return (uint64_t) first * log(second);
+
+
 	double log_n = log(1 - ((double) bloom_filter_count_set_bits(bf) / (double)bf->number_bits));
 	return (uint64_t)-(((double)bf->number_bits / bf->number_hashes ) * log_n) ;
 }
@@ -341,6 +361,7 @@ int bloom_filter_intersect(BloomFilter *res, BloomFilter *bf1, BloomFilter *bf2)
 	for (i = 0; i < bf1->bloom_length; i++) {
 		res->bloom[i] = bf1->bloom[i] & bf2->bloom[i];
 	}
+	res->elements_added = bloom_filter_estimate_elements(res);
 	return BLOOM_SUCCESS;
 }
 

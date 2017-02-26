@@ -63,8 +63,20 @@ int check_unknown_values(BloomFilter *bf, int multiple) {
 }
 
 
-
-int check_unknown_values_alt(BloomFilter *bf,int mul, int f, int s) {
+int check_known_values_alt(BloomFilter *bf,int f, int s) {
+	int i, cnt = 0;
+    for (i = 0; i < ELEMENTS * f; i+=f) {
+		if (i % s == 0) {
+			char key[KEY_LEN] = {0};
+	        sprintf(key, "%d", i);
+			if (bloom_filter_check_string(bf, key) == BLOOM_FAILURE) {
+	            cnt++;
+	        }
+		}
+    }
+	return cnt;
+}
+int check_unknown_values_alt(BloomFilter *bf, int mul, int f, int s) {
 	int i, cnt = 0;
     for (i = 1; i < ELEMENTS * mul; i+=mul) {
 		if (i % s != 0 || i % f != 0) {
@@ -250,9 +262,9 @@ int main(int argc, char** argv) {
 	// test union and intersection
 	printf("Bloom Filter Union: \n");
 	BloomFilter bf1, bf2, res;
-	bloom_filter_init(&res, ELEMENTS * 2, FALSE_POSITIVE_RATE);
-	bloom_filter_init(&bf1, ELEMENTS * 2, FALSE_POSITIVE_RATE);
-	bloom_filter_init(&bf2, ELEMENTS * 2, FALSE_POSITIVE_RATE);
+	bloom_filter_init(&res, ELEMENTS * 4, FALSE_POSITIVE_RATE);
+	bloom_filter_init(&bf1, ELEMENTS * 4, FALSE_POSITIVE_RATE);
+	bloom_filter_init(&bf2, ELEMENTS * 4, FALSE_POSITIVE_RATE);
     for (i = 0; i < ELEMENTS * 2; i+=2) {
         char key[KEY_LEN] = {0};
         sprintf(key, "%d", i);
@@ -279,7 +291,30 @@ int main(int argc, char** argv) {
 		success_or_failure(-1);
 	}
     printf(KCYN "NOTE:" KNRM " %d flagged as possible hits! Or %f%%\n", cnt, (float)cnt / (ELEMENTS * 2));
+	printf("Clear Union Bloom Filter\n");
+	bloom_filter_clear(&res);
 
+
+	printf("Bloom Filter Intersection: \n");
+	bloom_filter_intersect(&res, &bf1, &bf2);
+	bloom_filter_stats(&res);
+
+	printf("Bloom Filter Intersection: Check inserted elements: ");
+	cnt = check_known_values_alt(&res, 2, 3);
+	success_or_failure(cnt);
+
+	printf("Bloom Filter Intersection: Check known values (all should be either not found or false positive): ");
+    cnt = check_unknown_values_alt(&res, 23, 2, 3);
+    if (((float)cnt / (ELEMENTS * 2)) <= (float) FALSE_POSITIVE_RATE) {
+		success_or_failure(0);
+	} else {
+		success_or_failure(-1);
+	}
+    printf(KCYN "NOTE:" KNRM " %d flagged as possible hits! Or %f%%\n", cnt, (float)cnt / (ELEMENTS * 2));
+	printf("Cleanup Intersection Bloom Filters: ");
+    bloom_filter_destroy(&bf1);
+	bloom_filter_destroy(&bf2);
+	bloom_filter_destroy(&res);
 
 	printf("\nCompleted tests!\n");
 }
