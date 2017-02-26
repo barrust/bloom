@@ -44,7 +44,7 @@ if (bloom_filter_check_string(&bf, "test") == BLOOM_FAILURE) {
 }
 if (bloom_filter_check_string(&bf, "blah") == BLOOM_FAILURE) {
 	printf("'blah' is not in the bloom filter!\n");
-}else {
+} else {
 	printf("'blah' is in th bloom filter\n");
 }
 bloom_filter_stats(&bf);
@@ -93,7 +93,7 @@ if (bloom_filter_check_string(&bf, "test") == BLOOM_FAILURE) {
 }
 if (bloom_filter_check_string(&bf, "blah") == BLOOM_FAILURE) {
 	printf("'blah' is not in the bloom filter!\n");
-}else {
+} else {
 	printf("'blah' is in th bloom filter\n");
 }
 bloom_filter_stats(&bf);

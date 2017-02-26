@@ -128,14 +128,41 @@ int bloom_filter_check_string_alt(BloomFilter *bf, uint64_t *hashes, unsigned in
 /* Calculates the current false positive rate based on the number of inserted elements */
 float bloom_filter_current_false_positive_rate(BloomFilter *bf);
 
+/* Count the number of bits set to 1 */
+uint64_t bloom_filter_count_set_bits(BloomFilter *bf);
+
+/* Estimate the number of unique elements in a Bloom Filter instead of using the overall count */
+uint64_t bloom_filter_estimate_elements(BloomFilter *bf);
+
 /*
 	Generate the desired number of hashes for the provided string
-
 	NOTE: It is up to the caller to free the allocated memory
 */
 uint64_t* bloom_filter_calculate_hashes(BloomFilter *bf, char *str, unsigned int number_hashes);
 
 /* Calculate the size the bloom filter will take on disk when exported in bytes */
 uint64_t bloom_filter_export_size(BloomFilter *bf);
+
+/*******************************************************************************
+	Merging, Intersection, Jaccard Index Functions
+	NOTE: Requires that the bloom filters be of the same type: hash, estimated elements, etc.
+*******************************************************************************/
+
+/* Merge Bloom Filters - inserts information into bf1 */
+int bloom_filter_union(BloomFilter *bf1, BloomFilter *bf2);  // TODO: implement
+uint64_t bloom_filter_calculate_union_bits_set(BloomFilter *bf1, BloomFilter *bf2);  // TODO: implement
+
+/* Find the intersection of Bloom Filters - updates bf1 with the intersection */
+int bloom_filter_intersect(BloomFilter *bf1, BloomFilter *bf2);  // TODO: implement
+uint64_t bloom_filter_calculate_intersection_bits_set(BloomFilter *bf1, BloomFilter *bf2);  // TODO: implement
+
+/*
+	Calculate the Jacccard Index of the Bloom Filters
+	NOTE: The closer to 1 the index, the closer in bloom filters. If it is 1, then
+	the Bloom Filters contain the same elements, 0.5 would mean about 1/2 the same
+	elements are in common. 0 would mean the Bloom Filters are completely different.
+*/
+float bloom_filter_jacccard_index(BloomFilter *bf1, BloomFilter *bf2);  // TODO: implement
+
 
 #endif /* END BLOOM FILTER HEADER */

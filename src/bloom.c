@@ -20,9 +20,13 @@
 #include <unistd.h>         /* close */
 #include "bloom.h"
 
+
+// TODO: It would be faster if we didn't always have to calculate the array position
 //#define set_bit(A,k)	 (A[((k) / 8)] |=  (1 << ((k) % 8)))
-#define clear_bit(A,k)   (A[((k) / 8)] &= ~(1 << ((k) % 8))) /* not currently used */
-#define check_bit(A,k)   (A[((k) / 8)] &   (1 << ((k) % 8)))
+#define check_bit_char(c,k)   (c & (1 << (k)))
+#define check_bit(A, k)       (check_bit_char(A[((k) / 8)], ((k) % 8)))
+#define clear_bit(A,k)        (A[((k) / 8)] &= ~(1 << ((k) % 8))) /* not currently used */
+
 
 #if defined (_OPENMP)
 #define ATOMIC _Pragma ("omp atomic")
@@ -127,12 +131,16 @@ void bloom_filter_stats(BloomFilter *bf) {
 	max false positive rate: %f\n\
 	bloom length (8 bits): %ld\n\
 	elements added: %" PRIu64 "\n\
+	estimated elements added: %" PRIu64 "\n\
 	current false positive rate: %f\n\
 	export size (bytes): %" PRIu64 "\n\
+	number bits set: %" PRIu64 "\n\
 	is on disk: %s\n",
 	bf->number_bits, bf->estimated_elements, bf->number_hashes,
 	bf->false_positive_probability, bf->bloom_length, bf->elements_added,
-	bloom_filter_current_false_positive_rate(bf), size_on_disk, is_on_disk);
+	bloom_filter_estimate_elements(bf),
+	bloom_filter_current_false_positive_rate(bf), size_on_disk,
+	bloom_filter_count_set_bits(bf), is_on_disk);
 }
 
 int bloom_filter_add_string(BloomFilter *bf, char *str) {
@@ -169,7 +177,7 @@ int bloom_filter_add_string_alt(BloomFilter *bf, uint64_t *hashes, unsigned int 
 
 	ATOMIC
 	bf->elements_added++;
-	if(bf->__is_on_disk == 1) { // only do this if it is on disk!
+	if (bf->__is_on_disk == 1) { // only do this if it is on disk!
 		int offset = sizeof(uint64_t) + sizeof(float);
 		CRITICAL
 		{
@@ -207,7 +215,7 @@ float bloom_filter_current_false_positive_rate(BloomFilter *bf) {
 
 int bloom_filter_export(BloomFilter *bf, char *filepath) {
 	// if the bloom is initialized on disk, no need to export it
-	if(bf->__is_on_disk == 1) {
+	if (bf->__is_on_disk == 1) {
 		return BLOOM_SUCCESS;
 	}
 	FILE *fp;
@@ -296,6 +304,23 @@ int bloom_filter_import_hex_string_alt(BloomFilter *bf, char *hex, HashFunction 
 
 uint64_t bloom_filter_export_size(BloomFilter *bf) {
 	return (uint64_t)(bf->bloom_length * sizeof(unsigned char)) + (2 * sizeof(uint64_t)) + sizeof(float);
+}
+
+uint64_t bloom_filter_count_set_bits(BloomFilter *bf) {
+	uint64_t i, res = 0;
+	int j;
+	// TODO: look into a check_bit for just a char... would speed it up
+	for (i = 0; i < bf->bloom_length; i++) {
+		for (j = 0; j < 8; j++) {
+			res += (check_bit_char(bf->bloom[i], j) == BLOOM_SUCCESS) ? 1 : 0;
+		}
+	}
+	return res;
+}
+
+uint64_t bloom_filter_estimate_elements(BloomFilter *bf) {
+	double log_n = log(1 - ((double) bloom_filter_count_set_bits(bf) /(double)bf->number_bits));
+	return (uint64_t)-(bf->number_bits * log_n) / bf->number_hashes;
 }
 
 /*******************************************************************************
