@@ -3,7 +3,7 @@
 ***	 Author: Tyler Barrus
 ***	 email:  barrust@gmail.com
 ***
-***	 Version: 1.7.6
+***	 Version: 1.7.7
 ***	 Purpose: Simple, yet effective, bloom filter implementation
 ***
 ***	 License: MIT 2015
@@ -32,10 +32,10 @@
 	#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #endif
 
-#define BLOOMFILTER_VERSION "1.7.6"
+#define BLOOMFILTER_VERSION "1.7.7"
 #define BLOOMFILTER_MAJOR 1
 #define BLOOMFILTER_MINOR 7
-#define BLOOMFILTER_REVISION 6
+#define BLOOMFILTER_REVISION 7
 
 #define BLOOM_SUCCESS 0
 #define BLOOM_FAILURE -1
@@ -148,13 +148,13 @@ uint64_t bloom_filter_export_size(BloomFilter *bf);
 	NOTE: Requires that the bloom filters be of the same type: hash, estimated elements, etc.
 *******************************************************************************/
 
-/* Merge Bloom Filters - inserts information into bf1 */
-int bloom_filter_union(BloomFilter *bf1, BloomFilter *bf2);  // TODO: implement
-uint64_t bloom_filter_calculate_union_bits_set(BloomFilter *bf1, BloomFilter *bf2);  // TODO: implement
+/* Merge Bloom Filters - inserts information into res */
+int bloom_filter_union(BloomFilter *res, BloomFilter *bf1, BloomFilter *bf2);
+uint64_t bloom_filter_count_union_bits_set(BloomFilter *bf1, BloomFilter *bf2);  // TODO: implement
 
-/* Find the intersection of Bloom Filters - updates bf1 with the intersection */
-int bloom_filter_intersect(BloomFilter *bf1, BloomFilter *bf2);  // TODO: implement
-uint64_t bloom_filter_calculate_intersection_bits_set(BloomFilter *bf1, BloomFilter *bf2);  // TODO: implement
+/* Find the intersection of Bloom Filters - insert int res with the intersection */
+int bloom_filter_intersect(BloomFilter *res, BloomFilter *bf1, BloomFilter *bf2);
+uint64_t bloom_filter_count_intersection_bits_set(BloomFilter *bf1, BloomFilter *bf2);  // TODO: implement
 
 /*
 	Calculate the Jacccard Index of the Bloom Filters

@@ -6,6 +6,8 @@
 #include <stdio.h>
 #include <assert.h>
 #include <math.h>  /* roundf */
+// #include <string.h>
+// #include <openssl/sha.h>
 #include "../src/bloom.h"
 
 
@@ -18,10 +20,27 @@
 #define KGRN  "\x1B[32m"
 #define KCYN  "\x1B[36m"
 
+// uint64_t* sha256_hash(int num_hashes, char* str) {
+// 	uint64_t* results = calloc(num_hashes, sizeof(uint64_t));
+// 	unsigned char digest[SHA256_DIGEST_LENGTH];
+// 	int i;
+// 	for (i = 0; i < num_hashes; i++) {
+// 		SHA256_CTX sha256_ctx;
+// 		SHA256_Init(&sha256_ctx);
+// 		if (i == 0) {
+// 			SHA256_Update(&sha256_ctx, str, strlen(str));
+// 		} else {
+// 			SHA256_Update(&sha256_ctx, digest, SHA256_DIGEST_LENGTH);
+// 		}
+// 		SHA256_Final(digest, &sha256_ctx);
+// 		results[i] = (uint64_t)* (uint64_t* )digest;
+// 	}
+// 	return results;
+// }
 
-int check_known_values(BloomFilter *bf) {
+int check_known_values(BloomFilter *bf, int multiple) {
 	int i, cnt = 0;
-    for (i = 0; i < ELEMENTS * 2; i+=2) {
+    for (i = 0; i < ELEMENTS * multiple; i+=multiple) {
         char key[KEY_LEN] = {0};
         sprintf(key, "%d", i);
         if (bloom_filter_check_string(bf, key) == BLOOM_FAILURE) {
@@ -31,14 +50,30 @@ int check_known_values(BloomFilter *bf) {
 	return cnt;
 }
 
-int check_unknown_values(BloomFilter *bf) {
+int check_unknown_values(BloomFilter *bf, int multiple) {
 	int i, cnt = 0;
-    for (i = 1; i < ELEMENTS * 2; i+=2) {
+    for (i = 1; i < ELEMENTS * multiple; i+=multiple) {
         char key[KEY_LEN] = {0};
         sprintf(key, "%d", i);
         if (bloom_filter_check_string(bf, key) == BLOOM_SUCCESS) {
             cnt++;
         }
+    }
+	return cnt;
+}
+
+
+
+int check_unknown_values_alt(BloomFilter *bf,int mul, int f, int s) {
+	int i, cnt = 0;
+    for (i = 1; i < ELEMENTS * mul; i+=mul) {
+		if (i % s != 0 || i % f != 0) {
+			char key[KEY_LEN] = {0};
+	        sprintf(key, "%d", i);
+			if (bloom_filter_check_string(bf, key) == BLOOM_SUCCESS) {
+	            cnt++;
+	        }
+		}
     }
 	return cnt;
 }
@@ -72,13 +107,15 @@ int main(int argc, char** argv) {
 		// TODO: add why these failed!
 	}
 	printf(KCYN "NOTE:" KNRM "Bloom Filter Current False Positive Rate: %f\n", bloom_filter_current_false_positive_rate(&bf));
+	bloom_filter_stats(&bf);
 
     printf("Bloom Filter: Check known values (all should be found): ");
-    cnt = check_known_values(&bf);
+    cnt = check_known_values(&bf, 2);
 	success_or_failure(cnt);
 
     printf("Bloom Filter: Check known values (all should be either not found or false positive): ");
-    cnt = check_unknown_values(&bf);
+    cnt = check_unknown_values(&bf, 2);
+	printf("\n\n%d\n\n", cnt);
 
     if ((float)cnt / ELEMENTS <= (float) FALSE_POSITIVE_RATE) {
 		success_or_failure(0);
@@ -86,7 +123,7 @@ int main(int argc, char** argv) {
 		success_or_failure(-1);
 	}
     printf(KCYN "NOTE:" KNRM " %d flagged as possible hits! Or %f%%\n", cnt, (float)cnt / ELEMENTS);
-
+	bloom_filter_stats(&bf);
 
     printf("Bloom filter export: ");
     int ex_res = bloom_filter_export(&bf, "./dist/test_bloom.blm");
@@ -122,12 +159,12 @@ int main(int argc, char** argv) {
 	}
 
     printf("Bloom Filter Imported: Check known values (all should be found): ");
-    cnt = check_known_values(&bfi);
+    cnt = check_known_values(&bfi, 2);
     success_or_failure(cnt);
 
 
     printf("Bloom Filter Imported: Check known values (all should be either not found or false positive): ");
-    cnt = check_unknown_values(&bfi);
+    cnt = check_unknown_values(&bfi, 2);
     if ((float)cnt / ELEMENTS <= (float) FALSE_POSITIVE_RATE) {
 		success_or_failure(0);
 	} else {
@@ -164,11 +201,11 @@ int main(int argc, char** argv) {
 
 
     printf("Bloom Filter Hex: Check known values (all should be found): ");
-    cnt = check_known_values(&bfh);
+    cnt = check_known_values(&bfh, 2);
     success_or_failure(cnt);
 
     printf("Bloom Filter Hex: Check known values (all should be either not found or false positive): ");
-    cnt = check_unknown_values(&bfh);
+    cnt = check_unknown_values(&bfh, 2);
     if ((float)cnt / ELEMENTS <= (float) FALSE_POSITIVE_RATE) {
 		success_or_failure(0);
 	} else {
@@ -193,11 +230,11 @@ int main(int argc, char** argv) {
 	}
 
     printf("Bloom Filter On Disk: Check known values (all should be found): ");
-    cnt = check_known_values(&bfd);
+    cnt = check_known_values(&bfd, 2);
     success_or_failure(cnt);
 
     printf("Bloom Filter On Disk: Check known values (all should be either not found or false positive): ");
-    cnt = check_unknown_values(&bfd);
+    cnt = check_unknown_values(&bfd, 2);
     if ((float)cnt / ELEMENTS <= (float) FALSE_POSITIVE_RATE) {
 		success_or_failure(0);
 	} else {
@@ -208,6 +245,41 @@ int main(int argc, char** argv) {
     printf("Cleanup On Disk Bloom Filter: ");
     bloom_filter_destroy(&bfd);
     success_or_failure(0);  // there is basically no failure mode
+
+
+	// test union and intersection
+	printf("Bloom Filter Union: \n");
+	BloomFilter bf1, bf2, res;
+	bloom_filter_init(&res, ELEMENTS * 2, FALSE_POSITIVE_RATE);
+	bloom_filter_init(&bf1, ELEMENTS * 2, FALSE_POSITIVE_RATE);
+	bloom_filter_init(&bf2, ELEMENTS * 2, FALSE_POSITIVE_RATE);
+    for (i = 0; i < ELEMENTS * 2; i+=2) {
+        char key[KEY_LEN] = {0};
+        sprintf(key, "%d", i);
+        bloom_filter_add_string(&bf1, key);
+    }
+    for (i = 0; i < ELEMENTS * 3; i+=3) {
+        char key[KEY_LEN] = {0};
+        sprintf(key, "%d", i);
+        bloom_filter_add_string(&bf2, key);
+    }
+	bloom_filter_union(&res, &bf1, &bf2);
+	bloom_filter_stats(&res);
+
+	printf("Bloom Filter Union: Check inserted elements: ");
+	cnt = check_known_values(&res, 2);
+	cnt += check_known_values(&res, 3);
+	success_or_failure(cnt);
+
+	printf("Bloom Filter Union: Check known values (all should be either not found or false positive): ");
+    cnt = check_unknown_values_alt(&res, 23, 2, 3);
+    if (((float)cnt / (ELEMENTS * 2)) <= (float) FALSE_POSITIVE_RATE) {
+		success_or_failure(0);
+	} else {
+		success_or_failure(-1);
+	}
+    printf(KCYN "NOTE:" KNRM " %d flagged as possible hits! Or %f%%\n", cnt, (float)cnt / (ELEMENTS * 2));
+
 
 	printf("\nCompleted tests!\n");
 }

@@ -3,7 +3,7 @@
 ***	 Author: Tyler Barrus
 ***	 email:  barrust@gmail.com
 ***
-***	 Version: 1.7.6
+***	 Version: 1.7.7
 ***
 ***	 License: MIT 2015
 ***
@@ -319,8 +319,29 @@ uint64_t bloom_filter_count_set_bits(BloomFilter *bf) {
 }
 
 uint64_t bloom_filter_estimate_elements(BloomFilter *bf) {
-	double log_n = log(1 - ((double) bloom_filter_count_set_bits(bf) /(double)bf->number_bits));
-	return (uint64_t)-(bf->number_bits * log_n) / bf->number_hashes;
+	double log_n = log(1 - ((double) bloom_filter_count_set_bits(bf) / (double)bf->number_bits));
+	return (uint64_t)-(((double)bf->number_bits / bf->number_hashes ) * log_n) ;
+}
+
+int bloom_filter_union(BloomFilter *res, BloomFilter *bf1, BloomFilter *bf2) {
+	// TODO: Ensure the bloom filters can be unioned
+
+	uint64_t i;
+	for (i = 0; i < bf1->bloom_length; i++) {
+		res->bloom[i] = bf1->bloom[i] | bf2->bloom[i];
+	}
+	res->elements_added = bf1->elements_added + bf2->elements_added;
+	return BLOOM_SUCCESS;
+}
+
+int bloom_filter_intersect(BloomFilter *res, BloomFilter *bf1, BloomFilter *bf2) {
+	// TODO: Ensure the bloom filters can be unioned
+
+	uint64_t i;
+	for (i = 0; i < bf1->bloom_length; i++) {
+		res->bloom[i] = bf1->bloom[i] & bf2->bloom[i];
+	}
+	return BLOOM_SUCCESS;
 }
 
 /*******************************************************************************
