@@ -127,7 +127,6 @@ int main(int argc, char** argv) {
 
     printf("Bloom Filter: Check known values (all should be either not found or false positive): ");
     cnt = check_unknown_values(&bf, 2);
-	printf("\n\n%d\n\n", cnt);
 
     if ((float)cnt / ELEMENTS <= (float) FALSE_POSITIVE_RATE) {
 		success_or_failure(0);
@@ -262,9 +261,9 @@ int main(int argc, char** argv) {
 	// test union and intersection
 	printf("Bloom Filter Union: \n");
 	BloomFilter bf1, bf2, res;
-	bloom_filter_init(&res, ELEMENTS * 4, FALSE_POSITIVE_RATE);
-	bloom_filter_init(&bf1, ELEMENTS * 4, FALSE_POSITIVE_RATE);
-	bloom_filter_init(&bf2, ELEMENTS * 4, FALSE_POSITIVE_RATE);
+	bloom_filter_init(&res, ELEMENTS * 2, FALSE_POSITIVE_RATE);
+	bloom_filter_init(&bf1, ELEMENTS * 2, FALSE_POSITIVE_RATE);
+	bloom_filter_init(&bf2, ELEMENTS * 2, FALSE_POSITIVE_RATE);
     for (i = 0; i < ELEMENTS * 2; i+=2) {
         char key[KEY_LEN] = {0};
         sprintf(key, "%d", i);
@@ -276,6 +275,7 @@ int main(int argc, char** argv) {
         bloom_filter_add_string(&bf2, key);
     }
 	bloom_filter_union(&res, &bf1, &bf2);
+	printf("Bloom Filter Union: Stats\n");
 	bloom_filter_stats(&res);
 
 	printf("Bloom Filter Union: Check inserted elements: ");
@@ -297,6 +297,7 @@ int main(int argc, char** argv) {
 
 	printf("Bloom Filter Intersection: \n");
 	bloom_filter_intersect(&res, &bf1, &bf2);
+	printf("Bloom Filter Intersection: Stats\n");
 	bloom_filter_stats(&res);
 
 	printf("Bloom Filter Intersection: Check inserted elements: ");

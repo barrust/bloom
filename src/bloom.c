@@ -309,36 +309,17 @@ uint64_t bloom_filter_export_size(BloomFilter *bf) {
 uint64_t bloom_filter_count_set_bits(BloomFilter *bf) {
 	uint64_t i, res = 0;
 	int j;
-	// TODO: look into a check_bit for just a char... would speed it up
+	/* run the double for loop to not need to calculate mods and figure out where
+	   in the filter we are */
 	for (i = 0; i < bf->bloom_length; i++) {
 		for (j = 0; j < 8; j++) {
-			res += (check_bit_char(bf->bloom[i], j) == BLOOM_SUCCESS) ? 1 : 0;
+			res += (check_bit_char(bf->bloom[i], j) != 0) ? 1 : 0;
 		}
 	}
 	return res;
 }
 
 uint64_t bloom_filter_estimate_elements(BloomFilter *bf) {
-	// TODO: this seems to come in very high, I wonder why...
-	// double m = (double)bf->number_bits;
-	// double k = (double)bf->number_hashes;
-	// uint64_t X = bloom_filter_count_set_bits(bf);
-	//
-	// printf("%f\n", m);
-	// printf("%f\n", k);
-	// printf("%f\n", m/k);
-	//
-	// double first = -1 * (m/k);
-	// double second = 1 - (X / m);
-	//
-	//
-	// printf("first: %f\n", first);
-	// printf("second: %f\n", second);
-	//
-	// printf("ln(second): %f\n", log(second));
-	// return (uint64_t) first * log(second);
-
-
 	double log_n = log(1 - ((double) bloom_filter_count_set_bits(bf) / (double)bf->number_bits));
 	return (uint64_t)-(((double)bf->number_bits / bf->number_hashes ) * log_n) ;
 }
