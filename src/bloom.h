@@ -131,8 +131,14 @@ float bloom_filter_current_false_positive_rate(BloomFilter *bf);
 /* Count the number of bits set to 1 */
 uint64_t bloom_filter_count_set_bits(BloomFilter *bf);
 
-/* Estimate the number of unique elements in a Bloom Filter instead of using the overall count */
+/* Estimate the number of unique elements in a Bloom Filter instead of using the overall count
+https://en.wikipedia.org/wiki/Bloom_filter#Approximating_the_number_of_items_in_a_Bloom_filter
+	m = bits in Bloom filter
+	k = number hashes
+	X = count of flipped bits in filter
+*/
 uint64_t bloom_filter_estimate_elements(BloomFilter *bf);
+uint64_t bloom_filter_estimate_elements_by_values(uint64_t m, uint64_t X, int k);
 
 /*
 	Generate the desired number of hashes for the provided string
@@ -150,11 +156,11 @@ uint64_t bloom_filter_export_size(BloomFilter *bf);
 
 /* Merge Bloom Filters - inserts information into res */
 int bloom_filter_union(BloomFilter *res, BloomFilter *bf1, BloomFilter *bf2);
-uint64_t bloom_filter_count_union_bits_set(BloomFilter *bf1, BloomFilter *bf2);  // TODO: implement
+uint64_t bloom_filter_count_union_bits_set(BloomFilter *bf1, BloomFilter *bf2);
 
 /* Find the intersection of Bloom Filters - insert int res with the intersection */
 int bloom_filter_intersect(BloomFilter *res, BloomFilter *bf1, BloomFilter *bf2);
-uint64_t bloom_filter_count_intersection_bits_set(BloomFilter *bf1, BloomFilter *bf2);  // TODO: implement
+uint64_t bloom_filter_count_intersection_bits_set(BloomFilter *bf1, BloomFilter *bf2);
 
 /*
 	Calculate the Jacccard Index of the Bloom Filters

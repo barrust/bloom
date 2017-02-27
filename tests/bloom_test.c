@@ -291,6 +291,14 @@ int main(int argc, char** argv) {
 		success_or_failure(-1);
 	}
     printf(KCYN "NOTE:" KNRM " %d flagged as possible hits! Or %f%%\n", cnt, (float)cnt / (ELEMENTS * 2));
+
+	printf("Bloom Filter Union: Check set bits to without storing: ");
+	if (bloom_filter_count_set_bits(&res) == bloom_filter_count_union_bits_set(&bf1, &bf2)) {
+		success_or_failure(0);
+	} else {
+		success_or_failure(-1);
+	}
+
 	printf("Clear Union Bloom Filter\n");
 	bloom_filter_clear(&res);
 
@@ -312,6 +320,14 @@ int main(int argc, char** argv) {
 		success_or_failure(-1);
 	}
     printf(KCYN "NOTE:" KNRM " %d flagged as possible hits! Or %f%%\n", cnt, (float)cnt / (ELEMENTS * 2));
+
+	printf("Bloom Filter Intersection: Check set bits to without storing: ");
+	if (bloom_filter_count_set_bits(&res) == bloom_filter_count_intersection_bits_set(&bf1, &bf2)) {
+		success_or_failure(0);
+	} else {
+		success_or_failure(-1);
+	}
+
 	printf("Cleanup Intersection Bloom Filters: ");
     bloom_filter_destroy(&bf1);
 	bloom_filter_destroy(&bf2);
