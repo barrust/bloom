@@ -6,8 +6,6 @@
 #include <stdio.h>
 #include <assert.h>
 #include <math.h>  /* roundf */
-// #include <string.h>
-// #include <openssl/sha.h>
 #include "../src/bloom.h"
 
 
@@ -20,83 +18,12 @@
 #define KGRN  "\x1B[32m"
 #define KCYN  "\x1B[36m"
 
-// uint64_t* sha256_hash(int num_hashes, char* str) {
-// 	uint64_t* results = calloc(num_hashes, sizeof(uint64_t));
-// 	unsigned char digest[SHA256_DIGEST_LENGTH];
-// 	int i;
-// 	for (i = 0; i < num_hashes; i++) {
-// 		SHA256_CTX sha256_ctx;
-// 		SHA256_Init(&sha256_ctx);
-// 		if (i == 0) {
-// 			SHA256_Update(&sha256_ctx, str, strlen(str));
-// 		} else {
-// 			SHA256_Update(&sha256_ctx, digest, SHA256_DIGEST_LENGTH);
-// 		}
-// 		SHA256_Final(digest, &sha256_ctx);
-// 		results[i] = (uint64_t)* (uint64_t* )digest;
-// 	}
-// 	return results;
-// }
-
-int check_known_values(BloomFilter *bf, int multiple) {
-	int i, cnt = 0;
-    for (i = 0; i < ELEMENTS * multiple; i+=multiple) {
-        char key[KEY_LEN] = {0};
-        sprintf(key, "%d", i);
-        if (bloom_filter_check_string(bf, key) == BLOOM_FAILURE) {
-            cnt++;
-        }
-    }
-	return cnt;
-}
-
-int check_unknown_values(BloomFilter *bf, int multiple) {
-	int i, cnt = 0;
-    for (i = 1; i < ELEMENTS * multiple; i+=multiple) {
-        char key[KEY_LEN] = {0};
-        sprintf(key, "%d", i);
-        if (bloom_filter_check_string(bf, key) == BLOOM_SUCCESS) {
-            cnt++;
-        }
-    }
-	return cnt;
-}
-
-
-int check_known_values_alt(BloomFilter *bf,int f, int s) {
-	int i, cnt = 0;
-    for (i = 0; i < ELEMENTS * f; i+=f) {
-		if (i % s == 0) {
-			char key[KEY_LEN] = {0};
-	        sprintf(key, "%d", i);
-			if (bloom_filter_check_string(bf, key) == BLOOM_FAILURE) {
-	            cnt++;
-	        }
-		}
-    }
-	return cnt;
-}
-int check_unknown_values_alt(BloomFilter *bf, int mul, int f, int s) {
-	int i, cnt = 0;
-    for (i = 1; i < ELEMENTS * mul; i+=mul) {
-		if (i % s != 0 || i % f != 0) {
-			char key[KEY_LEN] = {0};
-	        sprintf(key, "%d", i);
-			if (bloom_filter_check_string(bf, key) == BLOOM_SUCCESS) {
-	            cnt++;
-	        }
-		}
-    }
-	return cnt;
-}
-
-void success_or_failure(int res) {
-	if (res == 0) {
-		printf(KGRN "success!\n" KNRM);
-	} else {
-		printf(KRED "failure!\n" KNRM);
-	}
-}
+/* private functions */
+int check_known_values(BloomFilter *bf, int multiple);
+int check_unknown_values(BloomFilter *bf, int multiple);
+int check_known_values_alt(BloomFilter *bf,int f, int s);
+int check_unknown_values_alt(BloomFilter *bf, int mul, int f, int s);
+void success_or_failure(int res);
 
 
 int main(int argc, char** argv) {
@@ -328,10 +255,90 @@ int main(int argc, char** argv) {
 		success_or_failure(-1);
 	}
 
+	printf("Jaccard Index:\n");
+	printf("Jaccard Index: Identical Bloom Filters: ");
+	if (bloom_filter_jacccard_index(&bf1, &bf1) == 1.0) {
+		printf("Jaccard index: %f\t", bloom_filter_jacccard_index(&bf1, &bf1));
+		success_or_failure(0);
+	} else {
+		success_or_failure(-1);
+	}
+
+	printf("Jaccard Index: Similar Bloom Filters: ");
+	if (bloom_filter_jacccard_index(&bf1, &bf2) > 0.25) {
+		printf("Jaccard index: %f\t", bloom_filter_jacccard_index(&bf1, &bf2));
+		success_or_failure(0);
+	} else {
+		success_or_failure(-1);
+	}
+
+
 	printf("Cleanup Intersection Bloom Filters: ");
     bloom_filter_destroy(&bf1);
 	bloom_filter_destroy(&bf2);
 	bloom_filter_destroy(&res);
 
 	printf("\nCompleted tests!\n");
+}
+
+
+/* private function definitions */
+int check_known_values(BloomFilter *bf, int multiple) {
+	int i, cnt = 0;
+    for (i = 0; i < ELEMENTS * multiple; i+=multiple) {
+        char key[KEY_LEN] = {0};
+        sprintf(key, "%d", i);
+        if (bloom_filter_check_string(bf, key) == BLOOM_FAILURE) {
+            cnt++;
+        }
+    }
+	return cnt;
+}
+
+int check_unknown_values(BloomFilter *bf, int multiple) {
+	int i, cnt = 0;
+    for (i = 1; i < ELEMENTS * multiple; i+=multiple) {
+        char key[KEY_LEN] = {0};
+        sprintf(key, "%d", i);
+        if (bloom_filter_check_string(bf, key) == BLOOM_SUCCESS) {
+            cnt++;
+        }
+    }
+	return cnt;
+}
+
+int check_known_values_alt(BloomFilter *bf,int f, int s) {
+	int i, cnt = 0;
+    for (i = 0; i < ELEMENTS * f; i+=f) {
+		if (i % s == 0) {
+			char key[KEY_LEN] = {0};
+	        sprintf(key, "%d", i);
+			if (bloom_filter_check_string(bf, key) == BLOOM_FAILURE) {
+	            cnt++;
+	        }
+		}
+    }
+	return cnt;
+}
+
+int check_unknown_values_alt(BloomFilter *bf, int mul, int f, int s) {
+	int i, cnt = 0;
+    for (i = 1; i < ELEMENTS * mul; i+=mul) {
+		if (i % s != 0 || i % f != 0) {
+			char key[KEY_LEN] = {0};
+	        sprintf(key, "%d", i);
+			if (bloom_filter_check_string(bf, key) == BLOOM_SUCCESS) {
+	            cnt++;
+	        }
+		}
+    }
+	return cnt;
+}
+
+void success_or_failure(int res) {
+	if (res == 0) {
+		printf(KGRN "success!\n" KNRM);
+	} else {
+		printf(KRED "failure!\n" KNRM);
+	}
 }

@@ -1,3 +1,8 @@
+### Version 1.7.7
+* Added calculating union and intersection of Bloom filters
+* Added calculating the Jaccard Index of two Bloom filters
+* Added estimating elements bases only on number bits set
+
 ### Version 1.7.6
 * Changed default hash to FNV-1A **NOTE:** Breaks backwards compatibility with previously exported blooms using the default hash!
 * Removed **-lcrypto** requirement
@@ -19,7 +24,7 @@
 
 ### Version 1.6.0
 * Updated to support parallel construction of a bloom filter using OpenMP
-* NOTE: using parallel with on disk bloom filters is about the same as single threaded
+* **NOTE:** using parallel with on disk bloom filters is about the same as single threaded
 * Update does not force parallel construction only makes it possible. See bloom_multi_thread.c for an example
 
 ### Version 1.5.1

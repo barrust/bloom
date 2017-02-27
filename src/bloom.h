@@ -168,7 +168,7 @@ uint64_t bloom_filter_count_intersection_bits_set(BloomFilter *bf1, BloomFilter 
 	the Bloom Filters contain the same elements, 0.5 would mean about 1/2 the same
 	elements are in common. 0 would mean the Bloom Filters are completely different.
 */
-float bloom_filter_jacccard_index(BloomFilter *bf1, BloomFilter *bf2);  // TODO: implement
+float bloom_filter_jacccard_index(BloomFilter *bf1, BloomFilter *bf2);
 
 
 #endif /* END BLOOM FILTER HEADER */

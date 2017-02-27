@@ -366,6 +366,10 @@ uint64_t bloom_filter_count_intersection_bits_set(BloomFilter *bf1, BloomFilter 
 	return res;
 }
 
+float bloom_filter_jacccard_index(BloomFilter *bf1, BloomFilter *bf2) {
+	return (float)bloom_filter_count_intersection_bits_set(bf1, bf2) / (float)bloom_filter_count_union_bits_set(bf1, bf2);
+}
+
 /*******************************************************************************
 *	PRIVATE FUNCTIONS
 *******************************************************************************/
