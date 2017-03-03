@@ -3,7 +3,11 @@
 ***	 Author: Tyler Barrus
 ***	 email:  barrust@gmail.com
 ***
+<<<<<<< HEAD:src/bloom.h
 ***	 Version: 1.7.7
+=======
+***	 Version: 1.7.6
+>>>>>>> master:src/bloom.h
 ***	 Purpose: Simple, yet effective, bloom filter implementation
 ***
 ***	 License: MIT 2015
@@ -32,10 +36,17 @@
 	#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #endif
 
+<<<<<<< HEAD:src/bloom.h
 #define BLOOMFILTER_VERSION "1.7.7"
 #define BLOOMFILTER_MAJOR 1
 #define BLOOMFILTER_MINOR 7
 #define BLOOMFILTER_REVISION 7
+=======
+#define BLOOMFILTER_VERSION "1.7.6"
+#define BLOOMFILTER_MAJOR 1
+#define BLOOMFILTER_MINOR 7
+#define BLOOMFILTER_REVISION 6
+>>>>>>> master:src/bloom.h
 
 #define BLOOM_SUCCESS 0
 #define BLOOM_FAILURE -1

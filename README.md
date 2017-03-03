@@ -17,7 +17,7 @@ MIT 2015
 	* File base can be loaded either on disk or into memory
 * Ability to read bloom filter on disk instead of in memory if needed
 * Add or check for presence in the filter by using either the string or hashes
-	* Using hashes can be used to check many similar bloom filters while only needing to hash the string once
+    * Using hashes can be used to check many similar bloom filters while only needing to hash the string once
 * Calculate current false positive rate
 * **OpenMP** support for generation and lookup
 

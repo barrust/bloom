@@ -3,7 +3,11 @@
 ***	 Author: Tyler Barrus
 ***	 email:  barrust@gmail.com
 ***
+<<<<<<< HEAD:src/bloom.c
 ***	 Version: 1.7.7
+=======
+***	 Version: 1.7.6
+>>>>>>> master:src/bloom.c
 ***
 ***	 License: MIT 2015
 ***
@@ -47,8 +51,11 @@ static uint64_t __fnv_1a(char *key);
 static void __calculate_optimal_hashes(BloomFilter *bf);
 static void __read_from_file(BloomFilter *bf, FILE *fp, short on_disk, char *filename);
 static void __write_to_file(BloomFilter *bf, FILE *fp, short on_disk);
+<<<<<<< HEAD:src/bloom.c
 static int __sum_bits_set_char(char c);
 static int __check_if_union_or_intersection_ok(BloomFilter *res, BloomFilter *bf1, BloomFilter *bf2);
+=======
+>>>>>>> master:src/bloom.c
 
 int bloom_filter_init_alt(BloomFilter *bf, uint64_t estimated_elements, float false_positive_rate, HashFunction hash_function) {
 	if(estimated_elements <= 0 || estimated_elements > UINT64_MAX || false_positive_rate <= 0.0 || false_positive_rate >= 1.0) {
