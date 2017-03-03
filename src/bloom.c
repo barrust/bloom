@@ -20,7 +20,6 @@
 #include <unistd.h>         /* close */
 #include "bloom.h"
 
-
 // TODO: It would be faster if we didn't always have to calculate the array position
 //#define set_bit(A,k)	 (A[((k) / 8)] |=  (1 << ((k) % 8)))
 #define check_bit_char(c,k)   (c & (1 << (k)))
