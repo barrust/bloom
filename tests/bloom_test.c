@@ -20,8 +20,10 @@
 
 /* private functions */
 int check_known_values(BloomFilter *bf, int mult);
+int check_known_values_alt(BloomFilter *bf, int mult, int mult2, int* used);
 int check_unknown_values(BloomFilter *bf, int mult);
-int check_unknown_values_alt(BloomFilter *bf, int mult, int mult2, int offset);
+int check_unknown_values_alt(BloomFilter *bf, int mult, int mult2, int offset, int* used);
+int check_unknown_values_alt_2(BloomFilter *bf, int mult, int mult2, int offset, int* used);
 void success_or_failure(int res);
 void populate_bloom_filter(BloomFilter *bf, unsigned long long elements, int mult);
 
@@ -32,7 +34,7 @@ int main(int argc, char** argv) {
     // add a few additional spaces just in case!
     // bloom_filter_init_alt(&bf, ELEMENTS, FALSE_POSITIVE_RATE, &sha256_hash);
     bloom_filter_init(&bf, ELEMENTS, FALSE_POSITIVE_RATE);
-    int cnt;
+    int cnt, used;
     populate_bloom_filter(&bf, ELEMENTS, 2);
 	printf("Bloom Filter insertion: ");
     if (bf.false_positive_probability == (float)FALSE_POSITIVE_RATE && bf.elements_added == ELEMENTS && roundf(100 * bloom_filter_current_false_positive_rate(&bf)) / 100 <= bf.false_positive_probability) {
@@ -185,9 +187,9 @@ int main(int argc, char** argv) {
 	BloomFilter bf1;
 	BloomFilter bf2;
 	printf("Bloom Filter Union / Intersection / Jaccard Index: setup Bloom Filters: ");
-	bloom_filter_init(&res, ELEMENTS * 2, FALSE_POSITIVE_RATE);
-	bloom_filter_init(&bf1, ELEMENTS * 2, FALSE_POSITIVE_RATE);
-	bloom_filter_init(&bf2, ELEMENTS * 2, FALSE_POSITIVE_RATE);
+	bloom_filter_init(&res, ELEMENTS * 4, FALSE_POSITIVE_RATE);
+	bloom_filter_init(&bf1, ELEMENTS * 4, FALSE_POSITIVE_RATE);
+	bloom_filter_init(&bf2, ELEMENTS * 4, FALSE_POSITIVE_RATE);
 
 	populate_bloom_filter(&bf1, ELEMENTS * 2, 2);
 	populate_bloom_filter(&bf2, ELEMENTS * 2, 3);
@@ -196,7 +198,6 @@ int main(int argc, char** argv) {
 	success_or_failure(cnt);
 
 	printf("Bloom Filter Union: \n");
-
 	printf("Bloom Filter Union: known values: ");
 	bloom_filter_union(&res, &bf1, &bf2);
 	cnt = check_known_values(&res, 2);
@@ -204,16 +205,42 @@ int main(int argc, char** argv) {
 	success_or_failure(cnt);
 
 	printf("Bloom Filter Union: unknown values: ");
-	cnt = check_unknown_values_alt(&res, 2, 3, 23);
-	if ((float)cnt / (ELEMENTS * 2) <= (float) FALSE_POSITIVE_RATE) {
+	cnt = check_unknown_values_alt(&res, 2, 3, 11, &used);
+	if ((float)cnt / used <= (float) FALSE_POSITIVE_RATE) {
 		success_or_failure(0);
 	} else {
 		success_or_failure(-1);
 	}
-    printf(KCYN "NOTE:" KNRM " %d flagged as possible hits! Or %f%%\n", cnt, (float)cnt / (ELEMENTS * 2));
+    printf(KCYN "NOTE:" KNRM " %d flagged as possible hits out of %d elements! Or %f%%\n", cnt, used, (float)cnt / used);
+    bloom_filter_stats(&res);
 
 	printf("Bloom Filter Union: count set bits without storing: ");
 	if (bloom_filter_count_union_bits_set(&bf1, &bf2) == bloom_filter_count_set_bits(&res)) {
+		success_or_failure(0);
+	} else {
+		success_or_failure(-1);
+	}
+
+    bloom_filter_clear(&res);
+    printf("Bloom Filter Intersection: \n");
+	printf("Bloom Filter Intersection: known values: ");
+    bloom_filter_clear(&res);
+	bloom_filter_intersect(&res, &bf1, &bf2);
+	cnt = check_known_values_alt(&res, 2, 3, &used);
+	success_or_failure(cnt);
+
+    printf("Bloom Filter Union: unknown values: ");
+    cnt = check_unknown_values_alt_2(&res, 2, 3, 23, &used);
+    if ((float)cnt / used <= (float) FALSE_POSITIVE_RATE) {
+        success_or_failure(0);
+    } else {
+        success_or_failure(-1);
+    }
+    printf(KCYN "NOTE:" KNRM " %d flagged as possible hits out of %d elements! Or %f%%\n", cnt, used, (float)cnt / used);
+    bloom_filter_stats(&res);
+
+    printf("Bloom Filter Intersection: count set bits without storing: ");
+	if (bloom_filter_count_intersection_bits_set(&bf1, &bf2) == bloom_filter_count_set_bits(&res)) {
 		success_or_failure(0);
 	} else {
 		success_or_failure(-1);
@@ -250,6 +277,23 @@ int check_known_values(BloomFilter *bf, int mult) {
 	return cnt;
 }
 
+int check_known_values_alt(BloomFilter *bf, int mult, int mult2, int* used) {
+    int i, cnt = 0;
+    int j = 0;
+    for (i = 0; i < ELEMENTS * mult; i+=mult) {
+        if (i % mult2 == 0 && i % mult == 0) {
+            char key[KEY_LEN] = {0};
+            sprintf(key, "%d", i);
+            if (bloom_filter_check_string(bf, key) == BLOOM_FAILURE) {
+                cnt++;
+            }
+            j++;
+        }
+    }
+    *used = j;
+	return cnt;
+}
+
 int check_unknown_values(BloomFilter *bf, int mult) {
 	int i, cnt = 0;
     for (i = 1; i < ELEMENTS * mult; i+=mult) {
@@ -262,8 +306,9 @@ int check_unknown_values(BloomFilter *bf, int mult) {
 	return cnt;
 }
 
-int check_unknown_values_alt(BloomFilter *bf, int mult, int mult2, int offset) {
+int check_unknown_values_alt(BloomFilter *bf, int mult, int mult2, int offset, int* used) {
 	int i, cnt = 0;
+    int j = 0;
     for (i = offset; i < ELEMENTS * offset; i+=offset) {
 		if (i % mult2 == 0 || i % mult == 0) {
 			// pass
@@ -273,8 +318,29 @@ int check_unknown_values_alt(BloomFilter *bf, int mult, int mult2, int offset) {
 	        if (bloom_filter_check_string(bf, key) == BLOOM_SUCCESS) {
 	            cnt++;
 	        }
+            j++;
 		}
     }
+    *used = j;
+	return cnt;
+}
+
+int check_unknown_values_alt_2(BloomFilter *bf, int mult, int mult2, int offset, int* used) {
+    int i, cnt = 0;
+    int j = 0;
+    for (i = offset; i < ELEMENTS * offset; i+=offset) {
+		if (i % mult2 == 0 && i % mult == 0) {
+			// pass
+		} else {
+			char key[KEY_LEN] = {0};
+	        sprintf(key, "%d", i);
+	        if (bloom_filter_check_string(bf, key) == BLOOM_SUCCESS) {
+	            cnt++;
+	        }
+            j++;
+		}
+    }
+    *used = j;
 	return cnt;
 }
 
