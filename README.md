@@ -1,7 +1,11 @@
 # bloom
 Bloom Filter implementation written in C.
 
-Bloom filters are a probabilistic data structure that allows for the storage and look up of elements. The data stored in a bloom filter is not retrievable. Once data is 'inserted', data can be checked to see if it likely has been seen or if it definitely has not. Bloom filters guarantee a 0% False Negative rate with a pre-selected false positive rate.
+Bloom Filters are a probabilistic data structure that allows for the storage and
+look up of elements. The data stored in a Bloom Filter is not retrievable. Once
+data is 'inserted', data can be checked to see if it likely has been seen or if
+it definitely has not. Bloom filters guarantee a 0% False Negative rate with a
+pre-selected false positive rate.
 
 
 ## License:
@@ -9,21 +13,25 @@ MIT 2015
 
 
 ## Main Features:
-* Set upper bound number of elements and desired false positive rate; the system will determine number of hashes and number of bits required
+* Set upper bound number of elements and desired false positive rate; the system
+will determine number of hashes and number of bits required
 * Custom hashing algorithms support
 * Import and export either as file or as hex string
 	* Keeps everything but the hashing algorithm
 	* Hex can be used if needing to store as a string
 	* File base can be loaded either on disk or into memory
-* Ability to read bloom filter on disk instead of in memory if needed
+* Ability to read Bloom Filter on disk instead of in memory if needed
 * Add or check for presence in the filter by using either the string or hashes
-    * Using hashes can be used to check many similar bloom filters while only needing to hash the string once
+    * Using hashes can be used to check many similar Bloom Filters while only
+	needing to hash the string once
 * Calculate current false positive rate
+* Union and Intersection of Bloom Filters
+* Calculate the Jaccard Index between two Bloom Filters
 * **OpenMP** support for generation and lookup
 
 
 ## Future Enhancements
-* Union and Intersection of bloom filters
+* To Be Determined
 
 
 ## Usage:

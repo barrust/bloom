@@ -3,11 +3,7 @@
 ***	 Author: Tyler Barrus
 ***	 email:  barrust@gmail.com
 ***
-<<<<<<< HEAD:src/bloom.h
 ***	 Version: 1.7.7
-=======
-***	 Version: 1.7.6
->>>>>>> master:src/bloom.h
 ***	 Purpose: Simple, yet effective, bloom filter implementation
 ***
 ***	 License: MIT 2015
