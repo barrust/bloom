@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <assert.h>
 #include <math.h>  /* roundf */
+#include <string.h> /* memset */
 #include "../src/bloom.h"
 
 
@@ -24,6 +25,9 @@ int check_unknown_values(BloomFilter *bf, int multiple);
 int check_known_values_alt(BloomFilter *bf,int f, int s);
 int check_unknown_values_alt(BloomFilter *bf, int mul, int f, int s);
 void success_or_failure(int res);
+static uint64_t* another_hash(int num_hashes, char *str);
+static uint64_t __fnv_1a(char *key);
+
 
 
 int main(int argc, char** argv) {
@@ -187,10 +191,11 @@ int main(int argc, char** argv) {
 
 	// test union and intersection
 	printf("Bloom Filter Union: \n");
-	BloomFilter bf1, bf2, res;
+	BloomFilter bf1, bf2, bf3, res;
 	bloom_filter_init(&res, ELEMENTS * 2, FALSE_POSITIVE_RATE);
 	bloom_filter_init(&bf1, ELEMENTS * 2, FALSE_POSITIVE_RATE);
 	bloom_filter_init(&bf2, ELEMENTS * 2, FALSE_POSITIVE_RATE);
+	bloom_filter_init_alt(&bf3, ELEMENTS * 2, FALSE_POSITIVE_RATE, &another_hash);
     for (i = 0; i < ELEMENTS * 2; i+=2) {
         char key[KEY_LEN] = {0};
         sprintf(key, "%d", i);
@@ -226,6 +231,13 @@ int main(int argc, char** argv) {
 		success_or_failure(-1);
 	}
 
+    printf("Bloom Filter Union: Check invalid hash check: ");
+    if (bloom_filter_count_union_bits_set(&bf1, &bf3) == BLOOM_FAILURE) {
+        success_or_failure(0);
+	} else {
+		success_or_failure(-1);
+	}
+
 	printf("Clear Union Bloom Filter\n");
 	bloom_filter_clear(&res);
 
@@ -255,8 +267,15 @@ int main(int argc, char** argv) {
 		success_or_failure(-1);
 	}
 
-	printf("Jaccard Index:\n");
-	printf("Jaccard Index: Identical Bloom Filters: ");
+    printf("Bloom Filter Intersection: Check invalid hash check: ");
+    if (bloom_filter_count_intersection_bits_set(&bf1, &bf3) == BLOOM_FAILURE) {
+        success_or_failure(0);
+	} else {
+		success_or_failure(-1);
+	}
+
+	printf("Bloom Filter Jaccard Index:\n");
+	printf("Bloom Filter Jaccard Index: Identical Bloom Filters: ");
 	if (bloom_filter_jacccard_index(&bf1, &bf1) == 1.0) {
 		printf("Jaccard index: %f\t", bloom_filter_jacccard_index(&bf1, &bf1));
 		success_or_failure(0);
@@ -264,10 +283,17 @@ int main(int argc, char** argv) {
 		success_or_failure(-1);
 	}
 
-	printf("Jaccard Index: Similar Bloom Filters: ");
+	printf("Bloom Filter Jaccard Index: Similar Bloom Filters: ");
 	if (bloom_filter_jacccard_index(&bf1, &bf2) > 0.25) {
 		printf("Jaccard index: %f\t", bloom_filter_jacccard_index(&bf1, &bf2));
 		success_or_failure(0);
+	} else {
+		success_or_failure(-1);
+	}
+
+    printf("Bloom Filter Jaccard Index: Check invalid hash check: ");
+    if (bloom_filter_jacccard_index(&bf1, &bf3) == BLOOM_FAILURE) {
+        success_or_failure(0);
 	} else {
 		success_or_failure(-1);
 	}
@@ -276,6 +302,7 @@ int main(int argc, char** argv) {
 	printf("Cleanup Intersection Bloom Filters: ");
     bloom_filter_destroy(&bf1);
 	bloom_filter_destroy(&bf2);
+    bloom_filter_destroy(&bf3);
 	bloom_filter_destroy(&res);
 
 	printf("\nCompleted tests!\n");
@@ -341,4 +368,36 @@ void success_or_failure(int res) {
 	} else {
 		printf(KRED "failure!\n" KNRM);
 	}
+}
+
+/* This is the same as the current defualt hash, but is used here to get a
+different hash pointer!
+*/
+static uint64_t* another_hash(int num_hashes, char *str) {
+	uint64_t *results = calloc(num_hashes, sizeof(uint64_t));
+	int i;
+	char *key = calloc(17, sizeof(char));  // largest value is 7FFF,FFFF,FFFF,FFFF
+	for (i = 0; i < num_hashes; i++) {
+		if (i == 0) {
+			results[i] = __fnv_1a(str);
+		} else {
+			uint64_t prev = results[i-1];
+			memset(key, 0, 17);
+			sprintf(key, "%" PRIx64 "", prev);
+			results[i] = __fnv_1a(key);
+		}
+	}
+	free(key);
+	return results;
+}
+
+static uint64_t __fnv_1a(char *key) {
+	// FNV-1a hash (http://www.isthe.com/chongo/tech/comp/fnv/)
+	int i, len = strlen(key);
+	uint64_t h = 14695981039346656073ULL; // FNV_OFFSET 64 bit
+	for (i = 0; i < len; i++){
+			h = h ^ (unsigned char) key[i];
+			h = h * 1099511628211ULL; // FNV_PRIME 64 bit
+	}
+	return h;
 }

@@ -49,6 +49,7 @@ static void __calculate_optimal_hashes(BloomFilter *bf);
 static void __read_from_file(BloomFilter *bf, FILE *fp, short on_disk, char *filename);
 static void __write_to_file(BloomFilter *bf, FILE *fp, short on_disk);
 static int __sum_bits_set_char(char c);
+static int __check_if_union_or_intersection_ok(BloomFilter *res, BloomFilter *bf1, BloomFilter *bf2);
 
 int bloom_filter_init_alt(BloomFilter *bf, uint64_t estimated_elements, float false_positive_rate, HashFunction hash_function) {
 	if(estimated_elements <= 0 || estimated_elements > UINT64_MAX || false_positive_rate <= 0.0 || false_positive_rate >= 1.0) {
@@ -326,8 +327,10 @@ uint64_t bloom_filter_estimate_elements_by_values(uint64_t m, uint64_t X, int k)
 }
 
 int bloom_filter_union(BloomFilter *res, BloomFilter *bf1, BloomFilter *bf2) {
-	// TODO: Ensure the bloom filters can be unioned
-
+	// Ensure the bloom filters can be unioned
+	if (__check_if_union_or_intersection_ok(res, bf1, bf2) == BLOOM_FAILURE) {
+		return BLOOM_FAILURE;
+	}
 	uint64_t i;
 	for (i = 0; i < bf1->bloom_length; i++) {
 		res->bloom[i] = bf1->bloom[i] | bf2->bloom[i];
@@ -337,8 +340,10 @@ int bloom_filter_union(BloomFilter *res, BloomFilter *bf1, BloomFilter *bf2) {
 }
 
 uint64_t bloom_filter_count_union_bits_set(BloomFilter *bf1, BloomFilter *bf2) {
-	// TODO: Ensure the bloom filters can be unioned
-
+	// Ensure the bloom filters can be unioned
+	if (__check_if_union_or_intersection_ok(bf1, bf1, bf2) == BLOOM_FAILURE) {  // use bf1 as res
+		return BLOOM_FAILURE;
+	}
 	uint64_t i, res = 0;
 	for (i = 0; i < bf1->bloom_length; i++) {
 		res  += __sum_bits_set_char(bf1->bloom[i] | bf2->bloom[i]);
@@ -347,8 +352,10 @@ uint64_t bloom_filter_count_union_bits_set(BloomFilter *bf1, BloomFilter *bf2) {
 }
 
 int bloom_filter_intersect(BloomFilter *res, BloomFilter *bf1, BloomFilter *bf2) {
-	// TODO: Ensure the bloom filters can be used in an intersection
-
+	// Ensure the bloom filters can be used in an intersection
+	if (__check_if_union_or_intersection_ok(res, bf1, bf2) == BLOOM_FAILURE) {
+		return BLOOM_FAILURE;
+	}
 	uint64_t i;
 	for (i = 0; i < bf1->bloom_length; i++) {
 		res->bloom[i] = bf1->bloom[i] & bf2->bloom[i];
@@ -358,7 +365,10 @@ int bloom_filter_intersect(BloomFilter *res, BloomFilter *bf1, BloomFilter *bf2)
 }
 
 uint64_t bloom_filter_count_intersection_bits_set(BloomFilter *bf1, BloomFilter *bf2) {
-	// TODO: Ensure the bloom filters can be unioned
+	// Ensure the bloom filters can be used in an intersection
+	if (__check_if_union_or_intersection_ok(bf1, bf1, bf2) == BLOOM_FAILURE) {  // use bf1 as res
+		return BLOOM_FAILURE;
+	}
 	uint64_t i, res = 0;
 	for (i = 0; i < bf1->bloom_length; i++) {
 		res  += __sum_bits_set_char(bf1->bloom[i] & bf2->bloom[i]);
@@ -367,6 +377,10 @@ uint64_t bloom_filter_count_intersection_bits_set(BloomFilter *bf1, BloomFilter 
 }
 
 float bloom_filter_jacccard_index(BloomFilter *bf1, BloomFilter *bf2) {
+	// Ensure the bloom filters can be used in an intersection and union
+	if (__check_if_union_or_intersection_ok(bf1, bf1, bf2) == BLOOM_FAILURE) {  // use bf1 as res
+		return (float)BLOOM_FAILURE;
+	}
 	return (float)bloom_filter_count_intersection_bits_set(bf1, bf2) / (float)bloom_filter_count_union_bits_set(bf1, bf2);
 }
 
@@ -392,6 +406,18 @@ static int __sum_bits_set_char(char c) {
 		res += (check_bit_char(c, j) != 0) ? 1 : 0;
 	}
 	return res;
+}
+
+static int __check_if_union_or_intersection_ok(BloomFilter *res, BloomFilter *bf1, BloomFilter *bf2) {
+	if (res->number_bits != bf1->number_bits || bf1->number_bits != bf2->number_bits) {
+		return BLOOM_FAILURE;
+	} else if (res->number_hashes != bf1->number_hashes || bf1->number_hashes != bf2->number_hashes) {
+		return BLOOM_FAILURE;
+	} else if (res->hash_function != bf1->hash_function || bf1->hash_function != bf2->hash_function) {
+		return BLOOM_FAILURE;
+	}
+
+	return BLOOM_SUCCESS;
 }
 
 /* NOTE: this assumes that the file handler is open and ready to use */
