@@ -56,9 +56,9 @@ int bloom_filter_init_alt(BloomFilter *bf, uint64_t estimated_elements, float fa
 		return BLOOM_FAILURE;
 	}
 	#if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-	    fprintf(stderr, "This version of bloom does not support big endian at the moment!\n");
+		fprintf(stderr, "This version of bloom does not support big endian at the moment!\n");
 		return BLOOM_FAILURE;
-    #endif
+	#endif
 	bf->estimated_elements = estimated_elements;
 	bf->false_positive_probability = false_positive_rate;
 	__calculate_optimal_hashes(bf);
