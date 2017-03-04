@@ -136,6 +136,9 @@ uint64_t bloom_filter_count_set_bits(BloomFilter *bf);
 uint64_t bloom_filter_estimate_elements(BloomFilter *bf);
 uint64_t bloom_filter_estimate_elements_by_values(uint64_t m, uint64_t X, int k);
 
+/* Wrapper to set the inserted elements count to the estimated elements calculation */
+int bloom_filter_set_elements_to_estimated(BloomFilter *bf);
+
 /*
 	Generate the desired number of hashes for the provided string
 	NOTE: It is up to the caller to free the allocated memory
@@ -154,7 +157,9 @@ uint64_t bloom_filter_export_size(BloomFilter *bf);
 int bloom_filter_union(BloomFilter *res, BloomFilter *bf1, BloomFilter *bf2);
 uint64_t bloom_filter_count_union_bits_set(BloomFilter *bf1, BloomFilter *bf2);
 
-/* Find the intersection of Bloom Filters - insert int res with the intersection */
+/*  Find the intersection of Bloom Filters - insert into res with the intersection
+	The number of inserted elements is updated to the estimated elements calculation
+*/
 int bloom_filter_intersect(BloomFilter *res, BloomFilter *bf1, BloomFilter *bf2);
 uint64_t bloom_filter_count_intersection_bits_set(BloomFilter *bf1, BloomFilter *bf2);
 

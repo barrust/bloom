@@ -322,7 +322,7 @@ uint64_t bloom_filter_estimate_elements(BloomFilter *bf) {
 uint64_t bloom_filter_estimate_elements_by_values(uint64_t m, uint64_t X, int k) {
 	/* 	m = number bits; X = count of flipped bits; k = number hashes */
 	double log_n = log(1 - ((double) X / (double) m));
-	return (uint64_t)-(((double) m / k ) * log_n) ;
+	return (uint64_t)-(((double) m / k ) * log_n);
 }
 
 int bloom_filter_union(BloomFilter *res, BloomFilter *bf1, BloomFilter *bf2) {
@@ -359,8 +359,13 @@ int bloom_filter_intersect(BloomFilter *res, BloomFilter *bf1, BloomFilter *bf2)
 	for (i = 0; i < bf1->bloom_length; i++) {
 		res->bloom[i] = bf1->bloom[i] & bf2->bloom[i];
 	}
-	res->elements_added = bloom_filter_estimate_elements(res);
+	bloom_filter_set_elements_to_estimated(res);
 	return BLOOM_SUCCESS;
+}
+
+int bloom_filter_set_elements_to_estimated(BloomFilter *bf) {
+	bf->elements_added = bloom_filter_estimate_elements(bf);
+	return BLOOM_SUCCESS;  // no real failure
 }
 
 uint64_t bloom_filter_count_intersection_bits_set(BloomFilter *bf1, BloomFilter *bf2) {

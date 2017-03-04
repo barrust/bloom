@@ -229,7 +229,7 @@ int main(int argc, char** argv) {
 	cnt = check_known_values_alt(&res, 2, 3, &used);
 	success_or_failure(cnt);
 
-	printf("Bloom Filter Union: unknown values: ");
+	printf("Bloom Filter Intersection: unknown values: ");
 	cnt = check_unknown_values_alt_2(&res, 2, 3, 23, &used);
 	if ((float)cnt / used <= (float) FALSE_POSITIVE_RATE) {
 		success_or_failure(0);
@@ -238,6 +238,13 @@ int main(int argc, char** argv) {
 	}
 	printf(KCYN "NOTE:" KNRM " %d flagged as possible hits out of %d elements! Or %f%%\n", cnt, used, (float)cnt / used);
 	bloom_filter_stats(&res);
+
+	printf("Bloom Filter Intersection: reset inserted elements: ");
+	if (res.elements_added == bloom_filter_estimate_elements(&res)) {
+		success_or_failure(0);
+	} else {
+		success_or_failure(-1);
+	}
 
 	printf("Bloom Filter Intersection: count set bits without storing: ");
 	if (bloom_filter_count_intersection_bits_set(&bf1, &bf2) == bloom_filter_count_set_bits(&res)) {
@@ -253,7 +260,8 @@ int main(int argc, char** argv) {
 	} else {
 		success_or_failure(-1);
 	}
-	
+	printf(KCYN "NOTE:" KNRM " similarity score: %f\n", bloom_filter_jacccard_index(&res, &res));
+
 	printf("Bloom Filter Jaccard Index: ~30 percent similar bloom: ");
 	if (bloom_filter_jacccard_index(&bf1, &bf2) < .35) {
 		success_or_failure(0);
@@ -261,6 +269,7 @@ int main(int argc, char** argv) {
 		success_or_failure(-1);
 	}
 	printf(KCYN "NOTE:" KNRM " similarity score: %f\n", bloom_filter_jacccard_index(&bf1, &bf2));
+
 
 
 
