@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <assert.h>
 #include <math.h>  /* roundf */
+#include <string.h>
 #include "../src/bloom.h"
 
 
@@ -26,6 +27,9 @@ int check_unknown_values_alt(BloomFilter *bf, int mult, int mult2, int offset, i
 int check_unknown_values_alt_2(BloomFilter *bf, int mult, int mult2, int offset, int* used);
 void success_or_failure(int res);
 void populate_bloom_filter(BloomFilter *bf, unsigned long long elements, int mult);
+static uint64_t __fnv_1a_mod(char *key);
+static uint64_t* __default_hash_mod(int num_hashes, char *str);
+
 
 
 int main(int argc, char** argv) {
@@ -271,12 +275,41 @@ int main(int argc, char** argv) {
 	printf(KCYN "NOTE:" KNRM " similarity score: %f\n", bloom_filter_jacccard_index(&bf1, &bf2));
 
 
+	printf("Bloom Filter Unable to Union or Intersect: \n");
+	bloom_filter_init(&bf, ELEMENTS, FALSE_POSITIVE_RATE);
+	printf("Bloom Filter Unable to Union or Intersect: Different number bits: ");
+	if (bloom_filter_union(&bf, &bf, &bf1) == BLOOM_FAILURE && bf.number_hashes == bf1.number_hashes) {
+		success_or_failure(0);
+	} else {
+		success_or_failure(-1);
+	}
 
+	bloom_filter_destroy(&bf2);
+	bloom_filter_init(&bf2, ELEMENTS, FALSE_POSITIVE_RATE - 0.01);
+	printf("Bloom Filter Unable to Union or Intersect: Different number hashes: ");
+	if (bloom_filter_union(&bf, &bf, &bf2) == BLOOM_FAILURE && bf.number_hashes != bf2.number_hashes) {
+		success_or_failure(0);
+	} else {
+		success_or_failure(-1);
+	}
 
+	// add one that uses a different hash function
+	bloom_filter_destroy(&bf2);
+	bloom_filter_init_alt(&bf2, ELEMENTS, FALSE_POSITIVE_RATE, &__default_hash_mod);
+	printf("Bloom Filter Unable to Union or Intersect: Different hash functions: ");
+	if (bloom_filter_union(&bf, &bf, &bf2) == BLOOM_FAILURE) {
+		success_or_failure(0);
+	} else {
+		success_or_failure(-1);
+	}
+	printf(KCYN "NOTE:" KNRM " this is actually the same hash function, just a different location/pointer; perhaps this should really test the hash function?\n");
 
+	printf("Cleanup Bloom Filter: ");
+	bloom_filter_destroy(&bf);
 	bloom_filter_destroy(&res);
 	bloom_filter_destroy(&bf1);
 	bloom_filter_destroy(&bf2);
+	success_or_failure(0);
 
 	printf("\nCompleted tests!\n");
 }
@@ -377,4 +410,34 @@ void success_or_failure(int res) {
 	} else {
 		printf(KRED "failure!\n" KNRM);
 	}
+}
+
+/* NOTE: The caller will free the results */
+static uint64_t* __default_hash_mod(int num_hashes, char *str) {
+	uint64_t *results = calloc(num_hashes, sizeof(uint64_t));
+	int i;
+	char *key = calloc(17, sizeof(char));  // largest value is 7FFF,FFFF,FFFF,FFFF
+	for (i = 0; i < num_hashes; i++) {
+		if (i == 0) {
+			results[i] = __fnv_1a_mod(str);
+		} else {
+			uint64_t prev = results[i-1];
+			memset(key, 0, 17);
+			sprintf(key, "%" PRIx64 "", prev);
+			results[i] = __fnv_1a_mod(key);
+		}
+	}
+	free(key);
+	return results;
+}
+
+static uint64_t __fnv_1a_mod(char *key) {
+	// FNV-1a hash (http://www.isthe.com/chongo/tech/comp/fnv/)
+	int i, len = strlen(key);
+	uint64_t h = 14695981039346656073ULL; // FNV_OFFSET 64 bit
+	for (i = 0; i < len; i++){
+			h = h ^ (unsigned char) key[i];
+			h = h * 1099511628211ULL; // FNV_PRIME 64 bit
+	}
+	return h;
 }

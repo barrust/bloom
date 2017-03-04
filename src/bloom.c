@@ -413,9 +413,9 @@ static int __sum_bits_set_char(char c) {
 }
 
 static int __check_if_union_or_intersection_ok(BloomFilter *res, BloomFilter *bf1, BloomFilter *bf2) {
-	if (res->number_bits != bf1->number_bits || bf1->number_bits != bf2->number_bits) {
+	if (res->number_hashes != bf1->number_hashes || bf1->number_hashes != bf2->number_hashes) {
 		return BLOOM_FAILURE;
-	} else if (res->number_hashes != bf1->number_hashes || bf1->number_hashes != bf2->number_hashes) {
+	} else if (res->number_bits != bf1->number_bits || bf1->number_bits != bf2->number_bits) {
 		return BLOOM_FAILURE;
 	} else if (res->hash_function != bf1->hash_function || bf1->hash_function != bf2->hash_function) {
 		return BLOOM_FAILURE;
