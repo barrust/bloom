@@ -20,11 +20,11 @@
 #include <unistd.h>         /* close */
 #include "bloom.h"
 
-// TODO: It would be faster if we didn't always have to calculate the array position
-//#define set_bit(A,k)	 (A[((k) / 8)] |=  (1 << ((k) % 8)))
+
 #define check_bit_char(c,k)   (c & (1 << (k)))
 #define check_bit(A, k)       (check_bit_char(A[((k) / 8)], ((k) % 8)))
-#define clear_bit(A,k)        (A[((k) / 8)] &= ~(1 << ((k) % 8))) /* not currently used */
+// #define set_bit(A,k)	 (A[((k) / 8)] |=  (1 << ((k) % 8)))
+// #define clear_bit(A,k)        (A[((k) / 8)] &= ~(1 << ((k) % 8)))
 
 
 #if defined (_OPENMP)
@@ -322,7 +322,7 @@ uint64_t bloom_filter_estimate_elements(BloomFilter *bf) {
 uint64_t bloom_filter_estimate_elements_by_values(uint64_t m, uint64_t X, int k) {
 	/* 	m = number bits; X = count of flipped bits; k = number hashes */
 	double log_n = log(1 - ((double) X / (double) m));
-	return (uint64_t)-(((double) m / k ) * log_n) ;
+	return (uint64_t)-(((double) m / k ) * log_n);
 }
 
 int bloom_filter_union(BloomFilter *res, BloomFilter *bf1, BloomFilter *bf2) {
@@ -334,7 +334,7 @@ int bloom_filter_union(BloomFilter *res, BloomFilter *bf1, BloomFilter *bf2) {
 	for (i = 0; i < bf1->bloom_length; i++) {
 		res->bloom[i] = bf1->bloom[i] | bf2->bloom[i];
 	}
-	res->elements_added = bf1->elements_added + bf2->elements_added;
+	bloom_filter_set_elements_to_estimated(res);
 	return BLOOM_SUCCESS;
 }
 
@@ -359,8 +359,13 @@ int bloom_filter_intersect(BloomFilter *res, BloomFilter *bf1, BloomFilter *bf2)
 	for (i = 0; i < bf1->bloom_length; i++) {
 		res->bloom[i] = bf1->bloom[i] & bf2->bloom[i];
 	}
-	res->elements_added = bloom_filter_estimate_elements(res);
+	bloom_filter_set_elements_to_estimated(res);
 	return BLOOM_SUCCESS;
+}
+
+int bloom_filter_set_elements_to_estimated(BloomFilter *bf) {
+	bf->elements_added = bloom_filter_estimate_elements(bf);
+	return BLOOM_SUCCESS;  // no real failure
 }
 
 uint64_t bloom_filter_count_intersection_bits_set(BloomFilter *bf1, BloomFilter *bf2) {
@@ -408,14 +413,13 @@ static int __sum_bits_set_char(char c) {
 }
 
 static int __check_if_union_or_intersection_ok(BloomFilter *res, BloomFilter *bf1, BloomFilter *bf2) {
-	if (res->number_bits != bf1->number_bits || bf1->number_bits != bf2->number_bits) {
+	if (res->number_hashes != bf1->number_hashes || bf1->number_hashes != bf2->number_hashes) {
 		return BLOOM_FAILURE;
-	} else if (res->number_hashes != bf1->number_hashes || bf1->number_hashes != bf2->number_hashes) {
+	} else if (res->number_bits != bf1->number_bits || bf1->number_bits != bf2->number_bits) {
 		return BLOOM_FAILURE;
 	} else if (res->hash_function != bf1->hash_function || bf1->hash_function != bf2->hash_function) {
 		return BLOOM_FAILURE;
 	}
-
 	return BLOOM_SUCCESS;
 }
 

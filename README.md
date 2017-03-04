@@ -4,7 +4,7 @@ Bloom Filter implementation written in C.
 Bloom Filters are a probabilistic data structure that allows for the storage and
 look up of elements. The data stored in a Bloom Filter is not retrievable. Once
 data is 'inserted', data can be checked to see if it likely has been seen or if
-it definitely has not. Bloom filters guarantee a 0% False Negative rate with a
+it definitely has not. Bloom Filters guarantee a 0% False Negative rate with a
 pre-selected false positive rate.
 
 
@@ -46,14 +46,14 @@ BloomFilter bf;
 bloom_filter_init(&bf, 10, 0.05);
 bloom_filter_add_string(&bf, "test");
 if (bloom_filter_check_string(&bf, "test") == BLOOM_FAILURE) {
-	printf("'test' is not in the bloom filter\n");
+	printf("'test' is not in the Bloom Filter\n");
 } else {
-	printf("'test' is in the bloom filter\n");
+	printf("'test' is in the Bloom Filter\n");
 }
 if (bloom_filter_check_string(&bf, "blah") == BLOOM_FAILURE) {
-	printf("'blah' is not in the bloom filter!\n");
+	printf("'blah' is not in the Bloom Filter!\n");
 } else {
-	printf("'blah' is in th bloom filter\n");
+	printf("'blah' is in th Bloom Filter\n");
 }
 bloom_filter_stats(&bf);
 bloom_filter_destroy(&bf);
@@ -95,14 +95,14 @@ BloomFilter bf;
 bloom_filter_init_alt(&bf, 10, 0.05, &sha256_hash);
 bloom_filter_add_string(&bf, "test");
 if (bloom_filter_check_string(&bf, "test") == BLOOM_FAILURE) {
-	printf("'test' is not in the bloom filter\n");
+	printf("'test' is not in the Bloom Filter\n");
 } else {
-	printf("'test' is in the bloom filter\n");
+	printf("'test' is in the Bloom Filter\n");
 }
 if (bloom_filter_check_string(&bf, "blah") == BLOOM_FAILURE) {
-	printf("'blah' is not in the bloom filter!\n");
+	printf("'blah' is not in the Bloom Filter!\n");
 } else {
-	printf("'blah' is in th bloom filter\n");
+	printf("'blah' is in th Bloom Filter\n");
 }
 bloom_filter_stats(&bf);
 bloom_filter_destroy(&bf);
