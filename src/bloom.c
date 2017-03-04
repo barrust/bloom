@@ -20,11 +20,11 @@
 #include <unistd.h>         /* close */
 #include "bloom.h"
 
-// TODO: It would be faster if we didn't always have to calculate the array position
-//#define set_bit(A,k)	 (A[((k) / 8)] |=  (1 << ((k) % 8)))
+
 #define check_bit_char(c,k)   (c & (1 << (k)))
 #define check_bit(A, k)       (check_bit_char(A[((k) / 8)], ((k) % 8)))
-#define clear_bit(A,k)        (A[((k) / 8)] &= ~(1 << ((k) % 8))) /* not currently used */
+// #define set_bit(A,k)	 (A[((k) / 8)] |=  (1 << ((k) % 8)))
+// #define clear_bit(A,k)        (A[((k) / 8)] &= ~(1 << ((k) % 8)))
 
 
 #if defined (_OPENMP)
@@ -334,7 +334,7 @@ int bloom_filter_union(BloomFilter *res, BloomFilter *bf1, BloomFilter *bf2) {
 	for (i = 0; i < bf1->bloom_length; i++) {
 		res->bloom[i] = bf1->bloom[i] | bf2->bloom[i];
 	}
-	res->elements_added = bf1->elements_added + bf2->elements_added;
+	bloom_filter_set_elements_to_estimated(res);
 	return BLOOM_SUCCESS;
 }
 
@@ -420,7 +420,6 @@ static int __check_if_union_or_intersection_ok(BloomFilter *res, BloomFilter *bf
 	} else if (res->hash_function != bf1->hash_function || bf1->hash_function != bf2->hash_function) {
 		return BLOOM_FAILURE;
 	}
-
 	return BLOOM_SUCCESS;
 }
 

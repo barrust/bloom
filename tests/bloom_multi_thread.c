@@ -12,8 +12,8 @@ int main(int argc, char** argv) {
 
 	int THREADS = 1;
 	#if defined (_OPENMP)
-		printf("OpenMP Enabled\n\n");
-		THREADS =  omp_get_max_threads();
+	printf("OpenMP Enabled\n\n");
+	THREADS =  omp_get_max_threads();
 	#endif
 
 	Timing t;
@@ -28,7 +28,7 @@ int main(int argc, char** argv) {
 		bloom_filter_add_string(&bf, str);
 	}
 	timing_end(&t);
-	printf("Completed the single threaded bloom filter in %f seconds!\n", timing_get_difference(t));
+	printf("Completed the single threaded Bloom Filter in %f seconds!\n", timing_get_difference(t));
 
 	// build another one to test multi-thread
 	timing_start(&t);
@@ -47,9 +47,9 @@ int main(int argc, char** argv) {
 	}
 	timing_end(&t);
 	#if defined (_OPENMP)
-	printf("Completed the multi-threaded bloom filter in %f seconds using %d threads!\n", timing_get_difference(t), THREADS);
+	printf("Completed the multi-threaded Bloom Filter in %f seconds using %d threads!\n", timing_get_difference(t), THREADS);
 	#else
-	printf("Completed the multi-threaded bloom filter in %f seconds!\n", timing_get_difference(t));
+	printf("Completed the multi-threaded Bloom Filter in %f seconds!\n", timing_get_difference(t));
 	#endif
 	bloom_filter_stats(&bf);
 	bloom_filter_stats(&bf2);
@@ -65,9 +65,9 @@ int main(int argc, char** argv) {
 		}
 	}
 	if (errors == 0) {
-		printf("Completed checking the bloom filters! They are identical!\n");
+		printf("Completed checking the Bloom Filters! They are identical!\n");
 	} else {
-		printf("Completed checking the bloom filters! There were %d errors detected.\n", errors);
+		printf("Completed checking the Bloom Filters! There were %d errors detected.\n", errors);
 	}
 
 	errors = 0;
@@ -84,19 +84,19 @@ int main(int argc, char** argv) {
 			}
 		}
 	}
-	printf("There were %d errors in checking the bloom filters\n", errors);
+	printf("There were %d errors in checking the Bloom Filters\n", errors);
 
-	// '99' should be in the bloom filter!
+	// '99' should be in the Bloom Filter!
 	if (bloom_filter_check_string(&bf2, "99") == BLOOM_FAILURE) {
-		printf("'99' is not in the bloom filter!\n");
+		printf("'99' is not in the Bloom Filter!\n");
 	} else {
-		printf("'99' is in the bloom filter!\n");
+		printf("'99' is in the Bloom Filter!\n");
 	}
 
 	if (bloom_filter_check_string(&bf2, "test") == BLOOM_FAILURE) {
-		printf("'test' is not in the bloom filter!\n");
+		printf("'test' is not in the Bloom Filter!\n");
 	} else {
-		printf("'test' is in the bloom filter!\n");
+		printf("'test' is in the Bloom Filter!\n");
 	}
 
 	// clean up memory

@@ -64,11 +64,11 @@ int main(int argc, char** argv) {
 	printf(KCYN "NOTE:" KNRM " %d flagged as possible hits! Or %f%%\n", cnt, (float)cnt / ELEMENTS);
 
 
-	printf("Bloom filter export: ");
+	printf("Bloom Filter export: ");
 	int ex_res = bloom_filter_export(&bf, "./dist/test_bloom.blm");
 	success_or_failure(ex_res);
 
-	printf("Clear bloom filter: ");
+	printf("Clear Bloom Filter: ");
 	bloom_filter_clear(&bf);
 	assert(bf.false_positive_probability == (float)FALSE_POSITIVE_RATE);
 	assert(bf.elements_added == 0);  // should be empty!
@@ -112,7 +112,7 @@ int main(int argc, char** argv) {
 	printf(KCYN "NOTE:" KNRM " %d flagged as possible hits! Or %f%%\n", cnt, (float)cnt / ELEMENTS);
 
 
-	printf("Export bloom filter as hex string: ");
+	printf("Export Bloom Filter as hex string: ");
 	char* bloom_hex = bloom_filter_export_hex_string(&bfi);
 	if (bloom_hex != NULL) {
 		success_or_failure(0);
@@ -258,7 +258,7 @@ int main(int argc, char** argv) {
 	}
 
 	printf("Bloom Filter Jaccard Index: \n");
-	printf("Bloom Filter Jaccard Index: same bloom: ");
+	printf("Bloom Filter Jaccard Index: same Bloom Filter: ");
 	if (bloom_filter_jacccard_index(&res, &res) == 1) {
 		success_or_failure(0);
 	} else {
@@ -266,7 +266,7 @@ int main(int argc, char** argv) {
 	}
 	printf(KCYN "NOTE:" KNRM " similarity score: %f\n", bloom_filter_jacccard_index(&res, &res));
 
-	printf("Bloom Filter Jaccard Index: ~30 percent similar bloom: ");
+	printf("Bloom Filter Jaccard Index: ~30 percent similar Bloom Filter: ");
 	if (bloom_filter_jacccard_index(&bf1, &bf2) < .35) {
 		success_or_failure(0);
 	} else {
