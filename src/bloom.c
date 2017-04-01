@@ -3,7 +3,7 @@
 ***	 Author: Tyler Barrus
 ***	 email:  barrust@gmail.com
 ***
-***	 Version: 1.7.7
+***	 Version: 1.7.8
 ***
 ***	 License: MIT 2015
 ***
@@ -35,6 +35,7 @@
 #define CRITICAL
 #endif
 
+/* define some constant magic looking numbers */
 #define CHAR_LEN 8
 #define LOG_TWO_SQUARED 0.4804530139182
 #define LOG_TWO 0.6931471805599453
@@ -61,7 +62,7 @@ int bloom_filter_init_alt(BloomFilter *bf, uint64_t estimated_elements, float fa
 	bf->estimated_elements = estimated_elements;
 	bf->false_positive_probability = false_positive_rate;
 	__calculate_optimal_hashes(bf);
-	bf->bloom = calloc(bf->bloom_length, sizeof(char));
+	bf->bloom = calloc(bf->bloom_length + 1, sizeof(char)); // pad to ensure no running off the end
 	bf->elements_added = 0;
 	bloom_filter_set_hash_function(bf, hash_function);
 	bf->__is_on_disk = 0; // not on disk
@@ -293,7 +294,7 @@ int bloom_filter_import_hex_string_alt(BloomFilter *bf, char *hex, HashFunction 
 	bloom_filter_set_hash_function(bf, hash_function);
 
 	__calculate_optimal_hashes(bf);
-	bf->bloom = calloc(bf->bloom_length, sizeof(char));
+	bf->bloom = calloc(bf->bloom_length + 1, sizeof(char));  // pad
 	bf->__is_on_disk = 0; // not on disk
 
 	uint64_t i;
@@ -449,7 +450,7 @@ static void __read_from_file(BloomFilter *bf, FILE *fp, short on_disk, char *fil
 	__calculate_optimal_hashes(bf);
 	rewind(fp);
 	if(on_disk == 0) {
-		bf->bloom = calloc(bf->bloom_length, sizeof(char));
+		bf->bloom = calloc(bf->bloom_length + 1, sizeof(char));
 		fread(bf->bloom, sizeof(char), bf->bloom_length, fp);
 	} else {
 		struct stat buf;

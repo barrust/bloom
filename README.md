@@ -39,10 +39,8 @@ will determine number of hashes and number of bits required
 #include "bloom.h"
 
 BloomFilter bf;
-/*
-	elements = 10;
-	false positive rate = 5%
-*/
+/*  elements = 10;
+    false positive rate = 5% */
 bloom_filter_init(&bf, 10, 0.05);
 bloom_filter_add_string(&bf, "test");
 if (bloom_filter_check_string(&bf, "test") == BLOOM_FAILURE) {
@@ -87,11 +85,9 @@ uint64_t* sha256_hash(int num_hashes, char* str) {
 }
 
 BloomFilter bf;
-/*
-	elements = 10;
-	false positive rate = 5%
-	custom hashing algorithm = sha256_hash function
-*/
+/*  elements = 10;
+    false positive rate = 5%
+    custom hashing algorithm = sha256_hash function */
 bloom_filter_init_alt(&bf, 10, 0.05, &sha256_hash);
 bloom_filter_add_string(&bf, "test");
 if (bloom_filter_check_string(&bf, "test") == BLOOM_FAILURE) {
