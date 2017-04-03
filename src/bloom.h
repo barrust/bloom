@@ -10,18 +10,6 @@
 ***
 ***	 URL: https://github.com/barrust/bloom
 ***
-***	 Usage:
-***			BloomFilter bf;
-***			bloom_filter_init(&bf, 100000, 0.05, NULL); // 5% false positive rate
-***			bloom_filter_add_string(&bf, "google");
-***			bloom_filter_add_string(&bf, "twitter");
-***			if (bloom_filter_check_string(&bf, "facebook") == BLOOM_FAILURE) {
-***				printf("facebook is not present!\n");
-***			}
-***			bloom_filter_destroy(&bf);
-***
-***	Required Compile Flags: -lm
-***
 *******************************************************************************/
 #ifndef BARRUST_BLOOM_FILTER_H__
 #define BARRUST_BLOOM_FILTER_H__

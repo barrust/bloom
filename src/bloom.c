@@ -323,7 +323,7 @@ uint64_t bloom_filter_estimate_elements(BloomFilter *bf) {
 uint64_t bloom_filter_estimate_elements_by_values(uint64_t m, uint64_t X, int k) {
 	/* 	m = number bits; X = count of flipped bits; k = number hashes */
 	double log_n = log(1 - ((double) X / (double) m));
-	return (uint64_t)-(((double) m / k ) * log_n);
+	return (uint64_t)-(((double) m / k) * log_n);
 }
 
 int bloom_filter_union(BloomFilter *res, BloomFilter *bf1, BloomFilter *bf2) {
