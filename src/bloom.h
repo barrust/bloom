@@ -3,28 +3,16 @@
 ***	 Author: Tyler Barrus
 ***	 email:  barrust@gmail.com
 ***
-***	 Version: 1.7.7
+***	 Version: 1.7.8
 ***	 Purpose: Simple, yet effective, bloom filter implementation
 ***
 ***	 License: MIT 2015
 ***
 ***	 URL: https://github.com/barrust/bloom
 ***
-***	 Usage:
-***			BloomFilter bf;
-***			bloom_filter_init(&bf, 100000, 0.05, NULL); // 5% false positive rate
-***			bloom_filter_add_string(&bf, "google");
-***			bloom_filter_add_string(&bf, "twitter");
-***			if (bloom_filter_check_string(&bf, "facebook") == BLOOM_FAILURE) {
-***				printf("facebook is not present!\n");
-***			}
-***			bloom_filter_destroy(&bf);
-***
-***	Required Compile Flags: -lm -lcrypto
-***
 *******************************************************************************/
-#ifndef __BLOOM_FILTER_H__
-#define __BLOOM_FILTER_H__
+#ifndef BARRUST_BLOOM_FILTER_H__
+#define BARRUST_BLOOM_FILTER_H__
 
 #include <inttypes.h>       /* PRIu64 */
 
@@ -32,10 +20,10 @@
 	#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #endif
 
-#define BLOOMFILTER_VERSION "1.7.7"
+#define BLOOMFILTER_VERSION "1.7.8"
 #define BLOOMFILTER_MAJOR 1
 #define BLOOMFILTER_MINOR 7
-#define BLOOMFILTER_REVISION 7
+#define BLOOMFILTER_REVISION 8
 
 #define BLOOM_SUCCESS 0
 #define BLOOM_FAILURE -1
@@ -139,8 +127,7 @@ uint64_t bloom_filter_estimate_elements_by_values(uint64_t m, uint64_t X, int k)
 /* Wrapper to set the inserted elements count to the estimated elements calculation */
 int bloom_filter_set_elements_to_estimated(BloomFilter *bf);
 
-/*
-	Generate the desired number of hashes for the provided string
+/*  Generate the desired number of hashes for the provided string
 	NOTE: It is up to the caller to free the allocated memory
 */
 uint64_t* bloom_filter_calculate_hashes(BloomFilter *bf, char *str, unsigned int number_hashes);
@@ -150,7 +137,8 @@ uint64_t bloom_filter_export_size(BloomFilter *bf);
 
 /*******************************************************************************
 	Merging, Intersection, Jaccard Index Functions
-	NOTE: Requires that the bloom filters be of the same type: hash, estimated elements, etc.
+	NOTE: Requires that the bloom filters be of the same type: hash, estimated
+	elements, etc.
 *******************************************************************************/
 
 /* Merge Bloom Filters - inserts information into res */

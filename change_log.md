@@ -1,3 +1,6 @@
+### Version 1.7.8
+* Pad bloom array with an additional null char
+
 ### Version 1.7.7
 * Added calculating union and intersection of Bloom filters
 * Added calculating the Jaccard Index of two Bloom filters
