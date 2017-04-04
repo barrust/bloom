@@ -3,7 +3,7 @@
 ***	 Author: Tyler Barrus
 ***	 email:  barrust@gmail.com
 ***
-***	 Version: 1.7.8
+***	 Version: 1.7.9
 ***	 Purpose: Simple, yet effective, bloom filter implementation
 ***
 ***	 License: MIT 2015
@@ -20,10 +20,10 @@
 	#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #endif
 
-#define BLOOMFILTER_VERSION "1.7.8"
+#define BLOOMFILTER_VERSION "1.7.9"
 #define BLOOMFILTER_MAJOR 1
 #define BLOOMFILTER_MINOR 7
-#define BLOOMFILTER_REVISION 8
+#define BLOOMFILTER_REVISION 9
 
 #define BLOOM_SUCCESS 0
 #define BLOOM_FAILURE -1
@@ -55,22 +55,22 @@ typedef struct bloom_filter {
 	Estimated elements is 0 < x <= UINT64_MAX.
 	False positive rate is 0.0 < x < 1.0
 */
-#define bloom_filter_init(bf, estimated_elements, false_positive_rate) {bloom_filter_init_alt(bf, estimated_elements, false_positive_rate, NULL);}
+int bloom_filter_init(BloomFilter *bf, uint64_t estimated_elements, float false_positive_rate);
 int bloom_filter_init_alt(BloomFilter *bf, uint64_t estimated_elements, float false_positive_rate, HashFunction hash_function);
 
 /* Initialize a bloom filter directly into file; useful if the bloom filter is larger than available RAM */
-#define bloom_filter_init_on_disk(bf, estimated_elements, false_positive_rate, filepath) {bloom_filter_init_on_disk_alt(bf, estimated_elements, false_positive_rate, filepath, NULL);}
+int bloom_filter_init_on_disk(BloomFilter *bf, uint64_t estimated_elements, float false_positive_rate, char *filepath);
 int bloom_filter_init_on_disk_alt(BloomFilter *bf, uint64_t estimated_elements, float false_positive_rate, char *filepath, HashFunction hash_function);
 
 /* Import a previously exported bloom filter from a file into memory */
-#define bloom_filter_import(bf, filepath) {bloom_filter_import_alt(bf, filepath, NULL);}
+int bloom_filter_import(BloomFilter *bf, char *filepath);
 int bloom_filter_import_alt(BloomFilter *bf, char *filepath, HashFunction hash_function);
 
 /*  Import a previously exported bloom filter from a file but do not pull the full bloom into memory.
 	This is allows for the speed / storage trade off of not needing to put the full bloom filter
 	into RAM.
 */
-#define bloom_filter_import_on_disk(bf,filepath) {bloom_filter_import_on_disk_alt(bf, filepath, NULL);}
+int bloom_filter_import_on_disk(BloomFilter *bf, char *filepath);
 int bloom_filter_import_on_disk_alt(BloomFilter *bf, char *filepath, HashFunction hash_function);
 
 /* Export the current bloom filter to file */
@@ -82,7 +82,7 @@ int bloom_filter_export(BloomFilter *bf, char *filepath);
 	NOTE: It is up to the caller to free the allocated memory
 */
 char* bloom_filter_export_hex_string(BloomFilter *bf);
-#define bloom_filter_import_hex_string(bf, hex) {bloom_filter_import_hex_string_alt(bf, hex, NULL);}
+int bloom_filter_import_hex_string(BloomFilter *bf, char *hex);
 int bloom_filter_import_hex_string_alt(BloomFilter *bf, char *hex, HashFunction hash_function);
 
 /* Set or change the hashing function */

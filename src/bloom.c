@@ -3,7 +3,7 @@
 ***	 Author: Tyler Barrus
 ***	 email:  barrust@gmail.com
 ***
-***	 Version: 1.7.8
+***	 Version: 1.7.9
 ***
 ***	 License: MIT 2015
 ***
@@ -51,6 +51,10 @@ static void __write_to_file(BloomFilter *bf, FILE *fp, short on_disk);
 static int __sum_bits_set_char(char c);
 static int __check_if_union_or_intersection_ok(BloomFilter *res, BloomFilter *bf1, BloomFilter *bf2);
 
+int bloom_filter_init(BloomFilter *bf, uint64_t estimated_elements, float false_positive_rate) {
+	return bloom_filter_init_alt(bf, estimated_elements, false_positive_rate, NULL);
+}
+
 int bloom_filter_init_alt(BloomFilter *bf, uint64_t estimated_elements, float false_positive_rate, HashFunction hash_function) {
 	if(estimated_elements <= 0 || estimated_elements > UINT64_MAX || false_positive_rate <= 0.0 || false_positive_rate >= 1.0) {
 		return BLOOM_FAILURE;
@@ -67,6 +71,10 @@ int bloom_filter_init_alt(BloomFilter *bf, uint64_t estimated_elements, float fa
 	bloom_filter_set_hash_function(bf, hash_function);
 	bf->__is_on_disk = 0; // not on disk
 	return BLOOM_SUCCESS;
+}
+
+int bloom_filter_init_on_disk(BloomFilter *bf, uint64_t estimated_elements, float false_positive_rate, char *filepath) {
+	return bloom_filter_init_on_disk_alt(bf, estimated_elements, false_positive_rate, filepath, NULL);
 }
 
 int bloom_filter_init_on_disk_alt(BloomFilter *bf, uint64_t estimated_elements, float false_positive_rate, char *filepath, HashFunction hash_function) {
@@ -231,6 +239,10 @@ int bloom_filter_export(BloomFilter *bf, char *filepath) {
 	return BLOOM_SUCCESS;
 }
 
+int bloom_filter_import(BloomFilter *bf, char *filepath) {
+	return bloom_filter_import_alt(bf, filepath, NULL);
+}
+
 int bloom_filter_import_alt(BloomFilter *bf, char *filepath, HashFunction hash_function) {
 	FILE *fp;
 	fp = fopen(filepath, "r+b");
@@ -243,6 +255,10 @@ int bloom_filter_import_alt(BloomFilter *bf, char *filepath, HashFunction hash_f
 	bloom_filter_set_hash_function(bf, hash_function);
 	bf->__is_on_disk = 0; // not on disk
 	return BLOOM_SUCCESS;
+}
+
+int bloom_filter_import_on_disk(BloomFilter *bf, char *filepath) {
+	return bloom_filter_import_on_disk_alt(bf, filepath, NULL);
 }
 
 int bloom_filter_import_on_disk_alt(BloomFilter *bf, char *filepath, HashFunction hash_function) {
@@ -271,6 +287,10 @@ char* bloom_filter_export_hex_string(BloomFilter *bf) {
 	i += 16; // 8 bytes * 2 for hex
 	sprintf(hex + i,   "%08x", *(unsigned int*)&bf->false_positive_probability);
 	return hex;
+}
+
+int bloom_filter_import_hex_string(BloomFilter *bf, char *hex) {
+	return bloom_filter_import_hex_string_alt(bf, hex, NULL);
 }
 
 int bloom_filter_import_hex_string_alt(BloomFilter *bf, char *hex, HashFunction hash_function) {
