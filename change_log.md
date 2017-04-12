@@ -1,5 +1,8 @@
 ## Current Version
 
+### Version 1.7.10
+* Unique HashFunction type when using with related libraries
+
 ### Version 1.7.9
 * Remove `#define` construct to allow functions to better be used directly in
 if-statements

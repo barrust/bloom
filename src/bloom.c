@@ -3,7 +3,7 @@
 ***	 Author: Tyler Barrus
 ***	 email:  barrust@gmail.com
 ***
-***	 Version: 1.7.9
+***	 Version: 1.7.10
 ***
 ***	 License: MIT 2015
 ***
@@ -21,9 +21,9 @@
 #include "bloom.h"
 
 
-#define check_bit_char(c,k)   (c & (1 << (k)))
-#define check_bit(A, k)       (check_bit_char(A[((k) / 8)], ((k) % 8)))
-// #define set_bit(A,k)	 (A[((k) / 8)] |=  (1 << ((k) % 8)))
+#define CHECK_BIT_CHAR(c,k)   (c & (1 << (k)))
+#define CHECK_BIT(A, k)       (CHECK_BIT_CHAR(A[((k) / 8)], ((k) % 8)))
+// #define set_bit(A,k)          (A[((k) / 8)] |=  (1 << ((k) % 8)))
 // #define clear_bit(A,k)        (A[((k) / 8)] &= ~(1 << ((k) % 8)))
 
 
@@ -55,7 +55,7 @@ int bloom_filter_init(BloomFilter *bf, uint64_t estimated_elements, float false_
 	return bloom_filter_init_alt(bf, estimated_elements, false_positive_rate, NULL);
 }
 
-int bloom_filter_init_alt(BloomFilter *bf, uint64_t estimated_elements, float false_positive_rate, HashFunction hash_function) {
+int bloom_filter_init_alt(BloomFilter *bf, uint64_t estimated_elements, float false_positive_rate, BloomHashFunction hash_function) {
 	if(estimated_elements <= 0 || estimated_elements > UINT64_MAX || false_positive_rate <= 0.0 || false_positive_rate >= 1.0) {
 		return BLOOM_FAILURE;
 	}
@@ -77,7 +77,7 @@ int bloom_filter_init_on_disk(BloomFilter *bf, uint64_t estimated_elements, floa
 	return bloom_filter_init_on_disk_alt(bf, estimated_elements, false_positive_rate, filepath, NULL);
 }
 
-int bloom_filter_init_on_disk_alt(BloomFilter *bf, uint64_t estimated_elements, float false_positive_rate, char *filepath, HashFunction hash_function) {
+int bloom_filter_init_on_disk_alt(BloomFilter *bf, uint64_t estimated_elements, float false_positive_rate, char *filepath, BloomHashFunction hash_function) {
 	if(estimated_elements <= 0 || estimated_elements > UINT64_MAX || false_positive_rate <= 0.0 || false_positive_rate >= 1.0) {
 		return BLOOM_FAILURE;
 	}
@@ -97,7 +97,7 @@ int bloom_filter_init_on_disk_alt(BloomFilter *bf, uint64_t estimated_elements, 
 	return bloom_filter_import_on_disk_alt(bf, filepath, hash_function);
 }
 
-void bloom_filter_set_hash_function(BloomFilter *bf, HashFunction hash_function) {
+void bloom_filter_set_hash_function(BloomFilter *bf, BloomHashFunction hash_function) {
 	bf->hash_function = (hash_function == NULL) ? __default_hash : hash_function;
 }
 
@@ -207,7 +207,7 @@ int bloom_filter_check_string_alt(BloomFilter *bf, uint64_t *hashes, unsigned in
 
 	int i, r = BLOOM_SUCCESS;
 	for (i = 0; i < bf->number_hashes; i++) {
-		int tmp_check = check_bit(bf->bloom, (hashes[i] % bf->number_bits));
+		int tmp_check = CHECK_BIT(bf->bloom, (hashes[i] % bf->number_bits));
 		if (tmp_check == 0) {
 			r = BLOOM_FAILURE;
 			break; // no need to continue checking
@@ -243,7 +243,7 @@ int bloom_filter_import(BloomFilter *bf, char *filepath) {
 	return bloom_filter_import_alt(bf, filepath, NULL);
 }
 
-int bloom_filter_import_alt(BloomFilter *bf, char *filepath, HashFunction hash_function) {
+int bloom_filter_import_alt(BloomFilter *bf, char *filepath, BloomHashFunction hash_function) {
 	FILE *fp;
 	fp = fopen(filepath, "r+b");
 	if (fp == NULL) {
@@ -261,7 +261,7 @@ int bloom_filter_import_on_disk(BloomFilter *bf, char *filepath) {
 	return bloom_filter_import_on_disk_alt(bf, filepath, NULL);
 }
 
-int bloom_filter_import_on_disk_alt(BloomFilter *bf, char *filepath, HashFunction hash_function) {
+int bloom_filter_import_on_disk_alt(BloomFilter *bf, char *filepath, BloomHashFunction hash_function) {
 	bf->filepointer = fopen(filepath, "r+b");
 	if (bf->filepointer == NULL) {
 		fprintf(stderr, "Can't open file %s!\n", filepath);
@@ -293,7 +293,7 @@ int bloom_filter_import_hex_string(BloomFilter *bf, char *hex) {
 	return bloom_filter_import_hex_string_alt(bf, hex, NULL);
 }
 
-int bloom_filter_import_hex_string_alt(BloomFilter *bf, char *hex, HashFunction hash_function) {
+int bloom_filter_import_hex_string_alt(BloomFilter *bf, char *hex, BloomHashFunction hash_function) {
 	uint64_t len = strlen(hex);
 	if (len % 2 != 0) {
 		fprintf(stderr, "Unable to parse; exiting\n");
@@ -428,7 +428,7 @@ static void __calculate_optimal_hashes(BloomFilter *bf) {
 static int __sum_bits_set_char(char c) {
 	int j, res = 0;
 	for (j = 0; j < CHAR_LEN; j++) {
-		res += (check_bit_char(c, j) != 0) ? 1 : 0;
+		res += (CHECK_BIT_CHAR(c, j) != 0) ? 1 : 0;
 	}
 	return res;
 }
