@@ -114,15 +114,14 @@ int main(int argc, char** argv) {
 
 	printf("Export Bloom Filter as hex string: ");
 	char* bloom_hex = bloom_filter_export_hex_string(&bfi);
+	// printf("\n%s\n\n\n", bloom_hex);
 	if (bloom_hex != NULL) {
 		success_or_failure(0);
 	} else {
 		success_or_failure(-1);
 	}
 
-	printf("Cleanup imported Bloom Filter: ");
-	bloom_filter_destroy(&bfi);
-	success_or_failure(0);  // there is basically no failure mode
+
 
 
 	printf("Bloom Filter Hex Import: ");
@@ -138,6 +137,27 @@ int main(int argc, char** argv) {
 	printf(KCYN "NOTE:" KNRM " Free bloom hex string\n");
 	free(bloom_hex);
 
+	printf("Bloom Filter Hex: Check same as imported: ");
+	int qres = 0;
+	if (bfh.false_positive_probability != bfi.false_positive_probability || bfh.elements_added != bfi.elements_added || bloom_filter_current_false_positive_rate(&bfh) != bloom_filter_current_false_positive_rate(&bfi)) {
+		qres = -1;
+	}
+	uint64_t t;
+	for (t = 0; t < bfh.bloom_length; t++) {
+		if (bfh.bloom[t] != bfi.bloom[t]) {
+			qres = 1;
+			break;
+		}
+	}
+	if (qres == 0) {
+		success_or_failure(0);
+	} else {
+		success_or_failure(-1);
+	}
+
+	printf("Cleanup imported Bloom Filter: ");
+	bloom_filter_destroy(&bfi);
+	success_or_failure(0);  // there is basically no failure mode
 
 	printf("Bloom Filter Hex: Check known values (all should be found): ");
 	cnt = check_known_values(&bfh, 2);

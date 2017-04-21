@@ -1,7 +1,7 @@
 TESTDIR=tests
 DISTDIR=dist
 SRCDIR=src
-CCFLAGS=-lm -Wall -Wpedantic
+CCFLAGS=-lm -Wall -Wpedantic -O3
 
 all: clean bloom
 	gcc $(DISTDIR)/bloom.o $(TESTDIR)/bloom_test.c $(CCFLAGS) -o ./$(DISTDIR)/blm

@@ -284,8 +284,11 @@ char* bloom_filter_export_hex_string(BloomFilter *bf) {
 	sprintf(hex + i,   "%016" PRIx64 "", bf->estimated_elements);
 	i += 16; // 8 bytes * 2 for hex
 	sprintf(hex + i,   "%016" PRIx64 "", bf->elements_added);
+
+	unsigned int ui;
+	memcpy(&ui, &bf->false_positive_probability, sizeof (ui));
 	i += 16; // 8 bytes * 2 for hex
-	sprintf(hex + i,   "%08x", *(unsigned int*)&bf->false_positive_probability);
+	sprintf(hex + i,   "%08x", ui);
 	return hex;
 }
 
@@ -310,7 +313,9 @@ int bloom_filter_import_hex_string_alt(BloomFilter *bf, char *hex, BloomHashFunc
 	bf->estimated_elements = strtoull(est_els, NULL, 16);
 	bf->elements_added = strtoull(ins_els, NULL, 16);
 	sscanf(fpr, "%x", &t_fpr);
-	bf->false_positive_probability = *((float*)&t_fpr);
+	float f;
+	memcpy(&f, &t_fpr, sizeof(float));
+	bf->false_positive_probability = f;
 	bloom_filter_set_hash_function(bf, hash_function);
 
 	__calculate_optimal_hashes(bf);
@@ -464,14 +469,19 @@ static void __write_to_file(BloomFilter *bf, FILE *fp, short on_disk) {
 static void __read_from_file(BloomFilter *bf, FILE *fp, short on_disk, char *filename) {
 	int offset = sizeof(uint64_t) * 2 + sizeof(float);
 	fseek(fp, offset * -1, SEEK_END);
-	fread(&bf->estimated_elements, sizeof(uint64_t), 1, fp);
-	fread(&bf->elements_added, sizeof(uint64_t), 1, fp);
-	fread(&bf->false_positive_probability, sizeof(float), 1, fp);
+	size_t read;
+	read = fread(&bf->estimated_elements, sizeof(uint64_t), 1, fp);
+	read = fread(&bf->elements_added, sizeof(uint64_t), 1, fp);
+	read = fread(&bf->false_positive_probability, sizeof(float), 1, fp);
 	__calculate_optimal_hashes(bf);
 	rewind(fp);
 	if(on_disk == 0) {
 		bf->bloom = calloc(bf->bloom_length + 1, sizeof(char));
-		fread(bf->bloom, sizeof(char), bf->bloom_length, fp);
+		read = fread(bf->bloom, sizeof(char), bf->bloom_length, fp);
+		if (read != bf->bloom_length) {
+			perror("__read_from_file: ");
+			exit(1);
+		}
 	} else {
 		struct stat buf;
 		int fd = open(filename, O_RDWR);
@@ -482,7 +492,7 @@ static void __read_from_file(BloomFilter *bf, FILE *fp, short on_disk, char *fil
 		fstat(fd, &buf);
 		bf->__filesize = buf.st_size;
 		bf->bloom = mmap((caddr_t)0, bf->__filesize, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-		if (bf->bloom == (unsigned char*)-1) {
+		if (bf->bloom == (unsigned char*) - 1) {
 			perror("mmap: ");
 			exit(1);
 		}
