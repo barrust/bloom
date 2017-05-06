@@ -16,6 +16,11 @@
 
 #include <inttypes.h>       /* PRIu64 */
 
+/* https://gcc.gnu.org/onlinedocs/gcc/Alternate-Keywords.html#Alternate-Keywords */
+#ifndef __GNUC__
+#define __inline__ inline
+#endif
+
 #ifdef __APPLE__
     #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #endif
@@ -54,22 +59,30 @@ typedef struct bloom_filter {
 
     Estimated elements is 0 < x <= UINT64_MAX.
     False positive rate is 0.0 < x < 1.0 */
-int bloom_filter_init(BloomFilter *bf, uint64_t estimated_elements, float false_positive_rate);
 int bloom_filter_init_alt(BloomFilter *bf, uint64_t estimated_elements, float false_positive_rate, BloomHashFunction hash_function);
+static int __inline__ bloom_filter_init(BloomFilter *bf, uint64_t estimated_elements, float false_positive_rate) {
+    return bloom_filter_init_alt(bf, estimated_elements, false_positive_rate, NULL);
+}
 
 /* Initialize a bloom filter directly into file; useful if the bloom filter is larger than available RAM */
-int bloom_filter_init_on_disk(BloomFilter *bf, uint64_t estimated_elements, float false_positive_rate, char *filepath);
 int bloom_filter_init_on_disk_alt(BloomFilter *bf, uint64_t estimated_elements, float false_positive_rate, char *filepath, BloomHashFunction hash_function);
+static int __inline__ bloom_filter_init_on_disk(BloomFilter *bf, uint64_t estimated_elements, float false_positive_rate, char *filepath) {
+    return bloom_filter_init_on_disk_alt(bf, estimated_elements, false_positive_rate, filepath, NULL);
+}
 
 /* Import a previously exported bloom filter from a file into memory */
-int bloom_filter_import(BloomFilter *bf, char *filepath);
 int bloom_filter_import_alt(BloomFilter *bf, char *filepath, BloomHashFunction hash_function);
+static int __inline__ bloom_filter_import(BloomFilter *bf, char *filepath) {
+    return bloom_filter_import_alt(bf, filepath, NULL);
+}
 
 /*  Import a previously exported bloom filter from a file but do not pull the full bloom into memory.
     This is allows for the speed / storage trade off of not needing to put the full bloom filter
     into RAM. */
-int bloom_filter_import_on_disk(BloomFilter *bf, char *filepath);
 int bloom_filter_import_on_disk_alt(BloomFilter *bf, char *filepath, BloomHashFunction hash_function);
+static int __inline__ bloom_filter_import_on_disk(BloomFilter *bf, char *filepath) {
+    return bloom_filter_import_on_disk_alt(bf, filepath, NULL);
+}
 
 /* Export the current bloom filter to file */
 int bloom_filter_export(BloomFilter *bf, char *filepath);
@@ -79,8 +92,10 @@ int bloom_filter_export(BloomFilter *bf, char *filepath);
 
     NOTE: It is up to the caller to free the allocated memory */
 char* bloom_filter_export_hex_string(BloomFilter *bf);
-int bloom_filter_import_hex_string(BloomFilter *bf, char *hex);
 int bloom_filter_import_hex_string_alt(BloomFilter *bf, char *hex, BloomHashFunction hash_function);
+static int __inline__ bloom_filter_import_hex_string(BloomFilter *bf, char *hex) {
+    return bloom_filter_import_hex_string_alt(bf, hex, NULL);
+}
 
 /* Set or change the hashing function */
 void bloom_filter_set_hash_function(BloomFilter *bf, BloomHashFunction hash_function);
@@ -121,7 +136,7 @@ uint64_t bloom_filter_estimate_elements(BloomFilter *bf);
 uint64_t bloom_filter_estimate_elements_by_values(uint64_t m, uint64_t X, int k);
 
 /* Wrapper to set the inserted elements count to the estimated elements calculation */
-int bloom_filter_set_elements_to_estimated(BloomFilter *bf);
+void bloom_filter_set_elements_to_estimated(BloomFilter *bf);
 
 /*  Generate the desired number of hashes for the provided string
     NOTE: It is up to the caller to free the allocated memory */
@@ -131,7 +146,7 @@ uint64_t* bloom_filter_calculate_hashes(BloomFilter *bf, char *str, unsigned int
 uint64_t bloom_filter_export_size(BloomFilter *bf);
 
 /*******************************************************************************
-    Merging, Intersection, Jaccard Index Functions
+    Merging, Intersection, and Jaccard Index Functions
     NOTE: Requires that the bloom filters be of the same type: hash, estimated
     elements, etc.
 *******************************************************************************/

@@ -7,6 +7,7 @@
 #include <assert.h>
 #include <math.h>  /* roundf */
 #include <string.h>
+#include "timing.h"  /* URL: https://github.com/barrust/timing-c */
 #include "../src/bloom.h"
 
 
@@ -33,6 +34,10 @@ static uint64_t* __default_hash_mod(int num_hashes, char *str);
 
 
 int main(int argc, char** argv) {
+    Timing tm;
+    timing_start(&tm);
+
+
     printf("Testing BloomFilter version %s\n\n", bloom_filter_get_version());
     BloomFilter bf;
     // add a few additional spaces just in case!
@@ -341,6 +346,8 @@ int main(int argc, char** argv) {
     bloom_filter_destroy(&bf2);
     success_or_failure(0);
 
+    timing_end(&tm);
+    printf("\nCompleted Bloom Filter tests in %f seconds!\n", timing_get_difference(tm));
     printf("\nCompleted tests!\n");
 }
 

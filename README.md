@@ -31,7 +31,7 @@ will determine number of hashes and number of bits required
 
 
 ## Future Enhancements
-* To Be Determined
+* What would the difference between two Bloom Filters signify?
 
 
 ## Usage:

@@ -4,6 +4,7 @@
 * Remove big endian check since exported blooms are identical on these systems
 * Set critical section to a named critical section
 * Fix divide by zero issue for Jaccard Index
+* Inline wrapper functions where possible
 
 ### Version 1.7.10
 * Unique HashFunction type when using with related libraries

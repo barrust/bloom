@@ -41,7 +41,7 @@
 #define LOG_TWO 0.6931471805599453
 
 /*******************************************************************************
-***        PRIVATE FUNCTIONS
+***  PRIVATE FUNCTIONS
 *******************************************************************************/
 static uint64_t* __default_hash(int num_hashes, char *str);
 static uint64_t __fnv_1a(char *key);
@@ -51,9 +51,6 @@ static void __write_to_file(BloomFilter *bf, FILE *fp, short on_disk);
 static int __sum_bits_set_char(char c);
 static int __check_if_union_or_intersection_ok(BloomFilter *res, BloomFilter *bf1, BloomFilter *bf2);
 
-int bloom_filter_init(BloomFilter *bf, uint64_t estimated_elements, float false_positive_rate) {
-    return bloom_filter_init_alt(bf, estimated_elements, false_positive_rate, NULL);
-}
 
 int bloom_filter_init_alt(BloomFilter *bf, uint64_t estimated_elements, float false_positive_rate, BloomHashFunction hash_function) {
     if(estimated_elements <= 0 || estimated_elements > UINT64_MAX || false_positive_rate <= 0.0 || false_positive_rate >= 1.0) {
@@ -67,10 +64,6 @@ int bloom_filter_init_alt(BloomFilter *bf, uint64_t estimated_elements, float fa
     bloom_filter_set_hash_function(bf, hash_function);
     bf->__is_on_disk = 0; // not on disk
     return BLOOM_SUCCESS;
-}
-
-int bloom_filter_init_on_disk(BloomFilter *bf, uint64_t estimated_elements, float false_positive_rate, char *filepath) {
-    return bloom_filter_init_on_disk_alt(bf, estimated_elements, false_positive_rate, filepath, NULL);
 }
 
 int bloom_filter_init_on_disk_alt(BloomFilter *bf, uint64_t estimated_elements, float false_positive_rate, char *filepath, BloomHashFunction hash_function) {
@@ -178,7 +171,7 @@ int bloom_filter_add_string_alt(BloomFilter *bf, uint64_t *hashes, unsigned int 
     int i;
     for (i = 0; i < bf->number_hashes; i++) {
         ATOMIC
-        bf->bloom[(hashes[i] % bf->number_bits) / 8] |=  (1 << ((hashes[i] % bf->number_bits) % 8)); // set the bit
+        bf->bloom[(hashes[i] % bf->number_bits) / 8] |= (1 << ((hashes[i] % bf->number_bits) % 8)); // set the bit
     }
 
     ATOMIC
@@ -235,10 +228,6 @@ int bloom_filter_export(BloomFilter *bf, char *filepath) {
     return BLOOM_SUCCESS;
 }
 
-int bloom_filter_import(BloomFilter *bf, char *filepath) {
-    return bloom_filter_import_alt(bf, filepath, NULL);
-}
-
 int bloom_filter_import_alt(BloomFilter *bf, char *filepath, BloomHashFunction hash_function) {
     FILE *fp;
     fp = fopen(filepath, "r+b");
@@ -251,10 +240,6 @@ int bloom_filter_import_alt(BloomFilter *bf, char *filepath, BloomHashFunction h
     bloom_filter_set_hash_function(bf, hash_function);
     bf->__is_on_disk = 0; // not on disk
     return BLOOM_SUCCESS;
-}
-
-int bloom_filter_import_on_disk(BloomFilter *bf, char *filepath) {
-    return bloom_filter_import_on_disk_alt(bf, filepath, NULL);
 }
 
 int bloom_filter_import_on_disk_alt(BloomFilter *bf, char *filepath, BloomHashFunction hash_function) {
@@ -277,19 +262,15 @@ char* bloom_filter_export_hex_string(BloomFilter *bf) {
         sprintf(hex + (i * 2), "%02x", bf->bloom[i]); // not the fastest way, but works
     }
     i = bf->bloom_length * 2;
-    sprintf(hex + i,   "%016" PRIx64 "", bf->estimated_elements);
+    sprintf(hex + i, "%016" PRIx64 "", bf->estimated_elements);
     i += 16; // 8 bytes * 2 for hex
-    sprintf(hex + i,   "%016" PRIx64 "", bf->elements_added);
+    sprintf(hex + i, "%016" PRIx64 "", bf->elements_added);
 
     unsigned int ui;
     memcpy(&ui, &bf->false_positive_probability, sizeof (ui));
     i += 16; // 8 bytes * 2 for hex
-    sprintf(hex + i,   "%08x", ui);
+    sprintf(hex + i, "%08x", ui);
     return hex;
-}
-
-int bloom_filter_import_hex_string(BloomFilter *bf, char *hex) {
-    return bloom_filter_import_hex_string_alt(bf, hex, NULL);
 }
 
 int bloom_filter_import_hex_string_alt(BloomFilter *bf, char *hex, BloomHashFunction hash_function) {
@@ -342,7 +323,7 @@ uint64_t bloom_filter_estimate_elements(BloomFilter *bf) {
 }
 
 uint64_t bloom_filter_estimate_elements_by_values(uint64_t m, uint64_t X, int k) {
-    /*     m = number bits; X = count of flipped bits; k = number hashes */
+    /* m = number bits; X = count of flipped bits; k = number hashes */
     double log_n = log(1 - ((double) X / (double) m));
     return (uint64_t)-(((double) m / k) * log_n);
 }
@@ -367,7 +348,7 @@ uint64_t bloom_filter_count_union_bits_set(BloomFilter *bf1, BloomFilter *bf2) {
     }
     uint64_t i, res = 0;
     for (i = 0; i < bf1->bloom_length; i++) {
-        res  += __sum_bits_set_char(bf1->bloom[i] | bf2->bloom[i]);
+        res += __sum_bits_set_char(bf1->bloom[i] | bf2->bloom[i]);
     }
     return res;
 }
@@ -385,9 +366,8 @@ int bloom_filter_intersect(BloomFilter *res, BloomFilter *bf1, BloomFilter *bf2)
     return BLOOM_SUCCESS;
 }
 
-int bloom_filter_set_elements_to_estimated(BloomFilter *bf) {
+void bloom_filter_set_elements_to_estimated(BloomFilter *bf) {
     bf->elements_added = bloom_filter_estimate_elements(bf);
-    return BLOOM_SUCCESS;  // no real failure
 }
 
 uint64_t bloom_filter_count_intersection_bits_set(BloomFilter *bf1, BloomFilter *bf2) {
@@ -397,10 +377,35 @@ uint64_t bloom_filter_count_intersection_bits_set(BloomFilter *bf1, BloomFilter 
     }
     uint64_t i, res = 0;
     for (i = 0; i < bf1->bloom_length; i++) {
-        res  += __sum_bits_set_char(bf1->bloom[i] & bf2->bloom[i]);
+        res += __sum_bits_set_char(bf1->bloom[i] & bf2->bloom[i]);
     }
     return res;
 }
+
+/*
+int bloom_filter_symmetric_difference(BloomFilter *res, BloomFilter *bf1, BloomFilter *bf2) {
+    if (__check_if_union_or_intersection_ok(res, bf1, bf2) == BLOOM_FAILURE) {
+        return BLOOM_FAILURE;
+    }
+    uint64_t i;
+    for (i = 0; i < bf1->bloom_length; i++) {
+        res->bloom[i] = bf1->bloom[i] ^ bf2->bloom[i];
+    }
+    bloom_filter_set_elements_to_estimated(res);
+    return BLOOM_SUCCESS;
+}
+
+uint64_t bloom_filter_symmetric_difference_bits_set(BloomFilter *bf1, BloomFilter *bf2) {
+    if (__check_if_union_or_intersection_ok(bf1, bf1, bf2) == BLOOM_FAILURE) {  // use bf1 as res
+        return BLOOM_FAILURE;
+    }
+    uint64_t i, res = 0;
+    for (i = 0; i < bf1->bloom_length; i++) {
+        res += __sum_bits_set_char(bf1->bloom[i] ^ bf2->bloom[i]);
+    }
+    return res;
+}
+*/
 
 float bloom_filter_jaccard_index(BloomFilter *bf1, BloomFilter *bf2) {
     // Ensure the bloom filters can be used in an intersection and union
