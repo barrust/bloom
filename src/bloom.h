@@ -3,7 +3,7 @@
 ***	 Author: Tyler Barrus
 ***	 email:  barrust@gmail.com
 ***
-***	 Version: 1.7.10
+***	 Version: 1.7.11
 ***	 Purpose: Simple, yet effective, bloom filter implementation
 ***
 ***	 License: MIT 2015
@@ -151,12 +151,16 @@ uint64_t bloom_filter_count_union_bits_set(BloomFilter *bf1, BloomFilter *bf2);
 int bloom_filter_intersect(BloomFilter *res, BloomFilter *bf1, BloomFilter *bf2);
 uint64_t bloom_filter_count_intersection_bits_set(BloomFilter *bf1, BloomFilter *bf2);
 
+/* Symmetric Difference between Bloom Filters - inserts information into res */
+// int bloom_filter_symmetric_difference(BloomFilter *res, BloomFilter *bf1, BloomFilter *bf2);
+// uint64_t bloom_filter_symmetric_difference_bits_set(BloomFilter *bf1, BloomFilter *bf2);
+
 /*  Calculate the Jacccard Index of the Bloom Filters
 	NOTE: The closer to 1 the index, the closer in bloom filters. If it is 1, then
 	the Bloom Filters contain the same elements, 0.5 would mean about 1/2 the same
 	elements are in common. 0 would mean the Bloom Filters are completely different.
 */
-float bloom_filter_jacccard_index(BloomFilter *bf1, BloomFilter *bf2);
+float bloom_filter_jaccard_index(BloomFilter *bf1, BloomFilter *bf2);
 
 
 #endif /* END BLOOM FILTER HEADER */

@@ -3,7 +3,7 @@
 ***	 Author: Tyler Barrus
 ***	 email:  barrust@gmail.com
 ***
-***	 Version: 1.7.10
+***	 Version: 1.7.11
 ***
 ***	 License: MIT 2015
 ***
@@ -29,7 +29,7 @@
 
 #if defined (_OPENMP)
 #define ATOMIC _Pragma ("omp atomic")
-#define CRITICAL _Pragma ("omp critical")
+#define CRITICAL _Pragma ("omp critical (bloom_filter_critical)")
 #else
 #define ATOMIC
 #define CRITICAL
@@ -59,10 +59,6 @@ int bloom_filter_init_alt(BloomFilter *bf, uint64_t estimated_elements, float fa
 	if(estimated_elements <= 0 || estimated_elements > UINT64_MAX || false_positive_rate <= 0.0 || false_positive_rate >= 1.0) {
 		return BLOOM_FAILURE;
 	}
-	#if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-		fprintf(stderr, "This version of bloom does not support big endian at the moment!\n");
-		return BLOOM_FAILURE;
-	#endif
 	bf->estimated_elements = estimated_elements;
 	bf->false_positive_probability = false_positive_rate;
 	__calculate_optimal_hashes(bf);
@@ -406,12 +402,16 @@ uint64_t bloom_filter_count_intersection_bits_set(BloomFilter *bf1, BloomFilter 
 	return res;
 }
 
-float bloom_filter_jacccard_index(BloomFilter *bf1, BloomFilter *bf2) {
+float bloom_filter_jaccard_index(BloomFilter *bf1, BloomFilter *bf2) {
 	// Ensure the bloom filters can be used in an intersection and union
 	if (__check_if_union_or_intersection_ok(bf1, bf1, bf2) == BLOOM_FAILURE) {  // use bf1 as res
 		return (float)BLOOM_FAILURE;
 	}
-	return (float)bloom_filter_count_intersection_bits_set(bf1, bf2) / (float)bloom_filter_count_union_bits_set(bf1, bf2);
+    float set_union_bits = (float)bloom_filter_count_union_bits_set(bf1, bf2);
+    if (set_union_bits == 0) {  // check for divide by 0 error
+        return 1.0; // they must be both empty for this to occur and are therefore the same
+    }
+	return (float)bloom_filter_count_intersection_bits_set(bf1, bf2) / set_union_bits;
 }
 
 /*******************************************************************************

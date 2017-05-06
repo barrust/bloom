@@ -279,20 +279,30 @@ int main(int argc, char** argv) {
 
 	printf("Bloom Filter Jaccard Index: \n");
 	printf("Bloom Filter Jaccard Index: same Bloom Filter: ");
-	if (bloom_filter_jacccard_index(&res, &res) == 1) {
+	if (bloom_filter_jaccard_index(&res, &res) == 1) {
 		success_or_failure(0);
 	} else {
 		success_or_failure(-1);
 	}
-	printf(KCYN "NOTE:" KNRM " similarity score: %f\n", bloom_filter_jacccard_index(&res, &res));
+	printf(KCYN "NOTE:" KNRM " similarity score: %f\n", bloom_filter_jaccard_index(&res, &res));
 
 	printf("Bloom Filter Jaccard Index: ~30 percent similar Bloom Filter: ");
-	if (bloom_filter_jacccard_index(&bf1, &bf2) < .35) {
+	if (bloom_filter_jaccard_index(&bf1, &bf2) < .35) {
 		success_or_failure(0);
 	} else {
 		success_or_failure(-1);
 	}
-	printf(KCYN "NOTE:" KNRM " similarity score: %f\n", bloom_filter_jacccard_index(&bf1, &bf2));
+	printf(KCYN "NOTE:" KNRM " similarity score: %f\n", bloom_filter_jaccard_index(&bf1, &bf2));
+
+	printf("Bloom Filter Jaccard Index: empty union: ");
+	BloomFilter empty;
+	bloom_filter_init(&empty, 500, 0.05);
+	if (bloom_filter_jaccard_index(&empty, &empty) == 1.0) {
+		success_or_failure(0);
+	} else {
+		success_or_failure(-1);
+	}
+	bloom_filter_destroy(&empty);
 
 
 	printf("Bloom Filter Unable to Union or Intersect: \n");
