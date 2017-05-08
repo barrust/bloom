@@ -3,8 +3,8 @@
 ### Version 1.7.11
 * Remove big endian check since exported blooms are identical on these systems
 * Set critical section to a named critical section
-* Fix divide by zero issue for Jaccard Index
-* Inline wrapper functions where possible
+* Fix divide by zero issue for Jaccard Index on empty Bloom Filters
+* In-line wrapper functions where possible
 
 ### Version 1.7.10
 * Unique HashFunction type when using with related libraries
