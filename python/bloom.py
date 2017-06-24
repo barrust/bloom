@@ -40,45 +40,69 @@ class BloomFilter(object):
     def init(self, estimated_elements, false_positive_rate, hash_function=None):
         ''' initialize the bloom filter '''
         self.__optimized_params(estimated_elements, false_positive_rate, 0, hash_function)
-        self.bloom = [0] * self.bloom_length
+
+    def hashes(self, key, depth=None):
+        ''' calculate the hashes for the passed in key '''
+        tmp = depth if depth is not None else self.number_hashes
+        return self.hash_function(key, tmp)
 
     def add(self, key):
         ''' add the key to the bloom filter '''
-        hashes = self.hash_function(key, self.number_hashes)
+        hashes = self.hashes(key)
         self.add_alt(hashes)
 
     def add_alt(self, hashes):
         ''' add the element represented by hashes into the bloom filter '''
-        for x in range(0, self.number_hashes):
+        for x in list(range(0, self.number_hashes)):
             k = int(hashes[x]) % self.number_bits
             idx = k // 8
             self.bloom[idx] = int(self.bloom[idx]) | int((1 << (k % 8)))
-
-
-        # for t_hash in hashes:
-        #     t_bin = long(t_hash) % self.number_bits
-        #     idx = t_bin // 8
-        #     self.bloom[idx] = int(self.bloom[idx]) | int(1 << (t_bin & 8))
         self.els_added += 1
 
     def check(self, key):
         ''' check if the key is likely in the bloom filter '''
-        hashes = self.hash_function(key, self.number_hashes)
+        hashes = self.hashes(key)
         return self.check_alt(hashes)
 
     def check_alt(self, hashes):
         ''' check if the element represented by hashes is in the bloom filter '''
-        for x in range(0, self.number_hashes):
+        for x in list(range(0, self.number_hashes)):
             k = int(hashes[x]) % self.number_bits
             if (int(self.bloom[k // 8]) & int((1 << (k % 8)))) == 0:
                 return False
         return True
 
     def intersection(self, second):
-        pass
+        ''' return a new Bloom Filter that contains the intersection of the two '''
+        if self.number_hashes != second.number_hashes or self.number_bits != second.number_bits:
+            print('Unable to calculate the intersection')
+            return None
+        if self.hashes("test") != second.hashes("test"):
+            print('Unable to calculate the intersection due to incompatible hash functions')
+            return None
+        res = BloomFilter()
+        res.init(self.est_elements, self.fpr, self.hash_function)
+
+        for i in list(range(0, self.bloom_length)):
+            res.bloom[i] = self.bloom[i] & second.bloom[i]
+
+        return res
 
     def union(self, second):
-        pass
+        ''' return a new Bloom Filter that contains the union of the two '''
+        if self.number_hashes != second.number_hashes or self.number_bits != second.number_bits:
+            print('Unable to calculate the intersection')
+            return None
+        if self.hashes("test") != second.hashes("test"):
+            print('Unable to calculate the intersection due to incompatible hash functions')
+            return None
+        res = BloomFilter()
+        res.init(self.est_elements, self.fpr, self.hash_function)
+
+        for i in list(range(0, self.bloom_length)):
+            res.bloom[i] = self.bloom[i] | second.bloom[i]
+
+        return res
 
     def jaccard_index(self, second):
         pass
@@ -86,7 +110,7 @@ class BloomFilter(object):
     def export(self, filename):
         ''' export the bloom filter to disk '''
         with open(filename, 'wb') as fp:
-            for x in range(0, self.bloom_length):
+            for x in list(range(0, self.bloom_length)):
                 fp.write(struct.pack('B', int(self.bloom[x])))
             fp.flush()
             fp.write(struct.pack('QQf', self.est_elements, self.els_added, self.fpr))
@@ -96,7 +120,22 @@ class BloomFilter(object):
     def load(self, filename, hash_function=None):
         # read in the needed information, and then call __optimized_params
         # to set everything correctly
-        pass
+        with open(filename, 'rb') as fp:
+            offset = struct.calcsize('QQf')
+            fp.seek(offset * -1, os.SEEK_END)
+            mybytes = struct.unpack('QQf', fp.read(offset))
+            self.est_elements = mybytes[0]
+            self.els_added = mybytes[1]
+            self.fpr = mybytes[2]
+
+            self.__optimized_params(self.est_elements, self.fpr, self.els_added, hash_function)
+
+            fp.seek(0, os.SEEK_SET)
+            bytesize = struct.calcsize('B')
+            # now read in the bit array!
+            for i in list(range(0, self.bloom_length)):
+                val = struct.unpack('B', fp.read(bytesize))[0]
+                self.bloom[i] = val
 
     def export_hex(self):
         pass
@@ -119,12 +158,13 @@ class BloomFilter(object):
         self.number_hashes = int(k)
         self.number_bits = int(m)
         self.bloom_length = int(math.ceil(m / (8 * 1.0)))
+        self.bloom = [0] * self.bloom_length
 
     def __default_hash(self, key, depth):
         ''' the default fnv-1a hashing routine '''
         res = list()
         tmp = key
-        for i in range(0, depth):
+        for i in list(range(0, depth)):
             if tmp != key:
                 tmp = self.__fnv_1a("{0:x}".format(tmp))
             else:
@@ -153,3 +193,26 @@ if __name__ == '__main__':
     print(blm)
     print(blm.bloom)
     blm.export('./dist/py_bloom.blm')
+
+    print('\n\ncheck imported BloomFilter!')
+
+    blm2 = BloomFilter()
+    blm2.load('./dist/py_bloom.blm')
+    print(blm2.check("this is a test"))
+    print(blm2.check("blah"))
+    print(blm2)
+    print(blm2.bloom)
+
+    blm2.add('yet another test')
+
+    print("\n\ncheck intersection")
+    blm3 = blm.intersection(blm2)
+    print(blm3)
+    print(blm3.check("this is a test"))
+    print(blm3.check("yet another test"))
+
+    print("\n\ncheck union")
+    blm3 = blm.union(blm2)
+    print(blm3)
+    print(blm3.check("this is a test"))
+    print(blm3.check("yet another test"))
