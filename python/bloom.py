@@ -112,13 +112,13 @@ class BloomFilter(object):
         if self.__verify_bloom_similarity(second) is False:
             return None
         count_union = 0
-        count_intersection = 0
+        count_int = 0
         for i in list(range(0, self.bloom_length)):
             count_union += self.__set_bits(self.bloom[i] | second.bloom[i])
-            count_intersection += self.__set_bits(self.bloom[i] & second.bloom[i])
+            count_int += self.__set_bits(self.bloom[i] & second.bloom[i])
         if count_union == 0:
             return 1.0
-        return float(count_intersection) / float(count_union)
+        return float(count_int) / float(count_union)
 
     def export(self, filename):
         ''' export the bloom filter to disk '''
@@ -162,13 +162,15 @@ class BloomFilter(object):
 
     def export_size(self):
         ''' calculate the size of the bloom on disk '''
-        return (self.bloom_length * struct.calcsize('B')) + struct.calcsize('QQf')
+        tmp_b = struct.calcsize('B')
+        return (self.bloom_length * tmp_b) + struct.calcsize('QQf')
 
     def estimate_elements(self):
         ''' estimate the number of elements added '''
         setbits = self.__number_bits_set()
         log_n = math.log(1 - (float(setbits) / float(self.number_bits)))
-        return int(-1 * (float(self.number_bits) / float(self.number_hashes)) * log_n)
+        tmp = float(self.number_bits) / float(self.number_hashes)
+        return int(-1 * tmp * log_n)
 
     def __optimized_params(self, estimated_elements, false_positive_rate,
                            elements_added, hash_function):
@@ -194,7 +196,10 @@ class BloomFilter(object):
 
     def __verify_bloom_similarity(self, second):
         ''' can the blooms be used in intersection, union, or jaccard index '''
-        if self.number_hashes != second.number_hashes or self.number_bits != second.number_bits or self.hashes("test") != second.hashes("test"):
+        hash_match = self.number_hashes != second.number_hashes
+        same_bits = self.number_bits != second.number_bits
+        next_hash = self.hashes("test") != second.hashes("test")
+        if hash_match or same_bits or next_hash:
             return False
         return True
 
