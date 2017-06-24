@@ -37,6 +37,18 @@ int main(int argc, char** argv) {
     Timing tm;
     timing_start(&tm);
 
+    /* need something that can be replicated in the python version */
+    BloomFilter b;
+    bloom_filter_init(&b, 10, 0.050);
+    bloom_filter_add_string(&b, "this is a test");
+    bloom_filter_stats(&b);
+    int tt;
+    for (tt = 0; tt < b.bloom_length; tt++) {
+        printf("%d\t", b.bloom[tt]);
+    }
+    printf("\n");
+    bloom_filter_export(&b, "./dist/c_bloom.blm");
+    bloom_filter_destroy(&b);
 
     printf("Testing BloomFilter version %s\n\n", bloom_filter_get_version());
     BloomFilter bf;
@@ -53,6 +65,8 @@ int main(int argc, char** argv) {
         // TODO: add why these failed!
     }
     printf(KCYN "NOTE:" KNRM "Bloom Filter Current False Positive Rate: %f\n", bloom_filter_current_false_positive_rate(&bf));
+
+    bloom_filter_stats(&bf);
 
     printf("Bloom Filter: Check known values (all should be found): ");
     cnt = check_known_values(&bf, 2);
