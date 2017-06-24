@@ -30,12 +30,12 @@ class BloomFilter(object):
                 '\tmax false positive rate: {3:.6f}\n'
                 '\tbloom length (8 bits): {4}\n'
                 '\telements added: {5}\n'
-                '\testimated elements added: \n'
+                '\testimated elements added: {6}\n'
                 '\tcurrent false positive rate: \n'
                 '\texport size (bytes): \n'
-                '\tnumber bits set: \n'
-                '\tis on disk: {6}\n')
-        return stats.format(self.number_bits, self.est_elements, self.number_hashes, self.fpr, self.bloom_length, self.els_added, on_disk)
+                '\tnumber bits set: {7}\n'
+                '\tis on disk: {8}\n')
+        return stats.format(self.number_bits, self.est_elements, self.number_hashes, self.fpr, self.bloom_length, self.els_added, self.estimate_elements(), self.__number_bits_set(), on_disk)
 
     def init(self, estimated_elements, false_positive_rate, hash_function=None):
         ''' initialize the bloom filter '''
@@ -81,6 +81,7 @@ class BloomFilter(object):
 
         for i in list(range(0, self.bloom_length)):
             res.bloom[i] = self.bloom[i] & second.bloom[i]
+        res.els_added = res.estimate_elements()
         return res
 
     def union(self, second):
@@ -92,9 +93,11 @@ class BloomFilter(object):
 
         for i in list(range(0, self.bloom_length)):
             res.bloom[i] = self.bloom[i] | second.bloom[i]
+        res.els_added = res.estimate_elements()
         return res
 
     def jaccard_index(self, second):
+        ''' calculate the jaccard similarity score '''
         if self.__verify_bloom_similarity(second) is False:
             return None
         count_union = 0
@@ -117,6 +120,7 @@ class BloomFilter(object):
 
 
     def load(self, filename, hash_function=None):
+        ''' load the bloom filter from file '''
         # read in the needed information, and then call __optimized_params
         # to set everything correctly
         with open(filename, 'rb') as fp:
@@ -142,7 +146,14 @@ class BloomFilter(object):
     def load_hex(self, string):
         pass
 
+    def estimate_elements(self):
+        ''' estimate the number of elements added '''
+        setbits = self.__number_bits_set()
+        log_n = math.log(1 - (float(setbits) / float(self.number_bits)))
+        return int(-1 * (float(self.number_bits) / float(self.number_hashes)) * log_n)
+
     def __optimized_params(self, estimated_elements, false_positive_rate, elements_added, hash_function):
+        ''' set the parameters to the optimal sizes '''
         self.hash_function = hash_function if hash_function is not None else self.__default_hash
         self.est_elements = estimated_elements
         fpr = struct.pack('f', float(false_positive_rate))
@@ -167,7 +178,15 @@ class BloomFilter(object):
 
     @staticmethod
     def __set_bits(i):
+        ''' count number of bits set '''
         return bin(i).count("1")
+
+    def __number_bits_set(self):
+        ''' calculate the total number of set bits in the bloom '''
+        setbits = 0
+        for i in list(range(0, self.bloom_length)):
+            setbits += self.__set_bits(self.bloom[i])
+        return setbits
 
     def __default_hash(self, key, depth):
         ''' the default fnv-1a hashing routine '''
@@ -181,7 +200,8 @@ class BloomFilter(object):
             res.append(tmp)
         return res
 
-    def __fnv_1a(self, key):
+    @staticmethod
+    def __fnv_1a(key):
         ''' 64 bit fnv-1a hash '''
         hval = 14695981039346656073
         fnv_64_prime = 1099511628211
@@ -225,5 +245,6 @@ if __name__ == '__main__':
     print(blm3)
     print(blm3.check("this is a test"))
     print(blm3.check("yet another test"))
+    print(blm3.estimate_elements())
 
     print(blm.jaccard_index(blm2))
