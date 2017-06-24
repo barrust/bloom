@@ -32,10 +32,10 @@ class BloomFilter(object):
                 '\telements added: {5}\n'
                 '\testimated elements added: {6}\n'
                 '\tcurrent false positive rate: \n'
-                '\texport size (bytes): \n'
-                '\tnumber bits set: {7}\n'
-                '\tis on disk: {8}\n')
-        return stats.format(self.number_bits, self.est_elements, self.number_hashes, self.fpr, self.bloom_length, self.els_added, self.estimate_elements(), self.__number_bits_set(), on_disk)
+                '\texport size (bytes): {7}\n'
+                '\tnumber bits set: {8}\n'
+                '\tis on disk: {9}\n')
+        return stats.format(self.number_bits, self.est_elements, self.number_hashes, self.fpr, self.bloom_length, self.els_added, self.estimate_elements(), self.export_size(), self.__number_bits_set(), on_disk)
 
     def init(self, estimated_elements, false_positive_rate, hash_function=None):
         ''' initialize the bloom filter '''
@@ -145,6 +145,10 @@ class BloomFilter(object):
 
     def load_hex(self, string):
         pass
+
+    def export_size(self):
+        ''' calculate the size of the bloom on disk '''
+        return (self.bloom_length * struct.calcsize('B')) + struct.calcsize('QQf')
 
     def estimate_elements(self):
         ''' estimate the number of elements added '''
