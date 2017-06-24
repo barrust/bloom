@@ -74,38 +74,37 @@ class BloomFilter(object):
 
     def intersection(self, second):
         ''' return a new Bloom Filter that contains the intersection of the two '''
-        if self.number_hashes != second.number_hashes or self.number_bits != second.number_bits:
-            print('Unable to calculate the intersection')
-            return None
-        if self.hashes("test") != second.hashes("test"):
-            print('Unable to calculate the intersection due to incompatible hash functions')
+        if self.__verify_bloom_similarity(second) is False:
             return None
         res = BloomFilter()
         res.init(self.est_elements, self.fpr, self.hash_function)
 
         for i in list(range(0, self.bloom_length)):
             res.bloom[i] = self.bloom[i] & second.bloom[i]
-
         return res
 
     def union(self, second):
         ''' return a new Bloom Filter that contains the union of the two '''
-        if self.number_hashes != second.number_hashes or self.number_bits != second.number_bits:
-            print('Unable to calculate the intersection')
-            return None
-        if self.hashes("test") != second.hashes("test"):
-            print('Unable to calculate the intersection due to incompatible hash functions')
+        if self.__verify_bloom_similarity(second) is False:
             return None
         res = BloomFilter()
         res.init(self.est_elements, self.fpr, self.hash_function)
 
         for i in list(range(0, self.bloom_length)):
             res.bloom[i] = self.bloom[i] | second.bloom[i]
-
         return res
 
     def jaccard_index(self, second):
-        pass
+        if self.__verify_bloom_similarity(second) is False:
+            return None
+        count_union = 0
+        count_intersection = 0
+        for i in list(range(0, self.bloom_length)):
+            count_union += self.__set_bits(self.bloom[i] | second.bloom[i])
+            count_intersection += self.__set_bits(self.bloom[i] & second.bloom[i])
+        if count_union == 0:
+            return 1.0
+        return float(count_intersection) / float(count_union)
 
     def export(self, filename):
         ''' export the bloom filter to disk '''
@@ -159,6 +158,16 @@ class BloomFilter(object):
         self.number_bits = int(m)
         self.bloom_length = int(math.ceil(m / (8 * 1.0)))
         self.bloom = [0] * self.bloom_length
+
+    def __verify_bloom_similarity(self, second):
+        ''' can the blooms be used in intersection, union, or jaccard index '''
+        if self.number_hashes != second.number_hashes or self.number_bits != second.number_bits or self.hashes("test") != second.hashes("test"):
+            return False
+        return True
+
+    @staticmethod
+    def __set_bits(i):
+        return bin(i).count("1")
 
     def __default_hash(self, key, depth):
         ''' the default fnv-1a hashing routine '''
@@ -216,3 +225,5 @@ if __name__ == '__main__':
     print(blm3)
     print(blm3.check("this is a test"))
     print(blm3.check("yet another test"))
+
+    print(blm.jaccard_index(blm2))
