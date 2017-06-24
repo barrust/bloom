@@ -35,13 +35,14 @@ class BloomFilter(object):
                  '\tbloom length (8 bits): {4}\n'
                  '\telements added: {5}\n'
                  '\testimated elements added: {6}\n'
-                 '\tcurrent false positive rate: \n'
-                 '\texport size (bytes): {7}\n'
-                 '\tnumber bits set: {8}\n'
-                 '\tis on disk: {9}\n')
+                 '\tcurrent false positive rate: {7:.6f}\n'
+                 '\texport size (bytes): {8}\n'
+                 '\tnumber bits set: {9}\n'
+                 '\tis on disk: {10}\n')
         return stats.format(self.number_bits, self.est_elements,
                             self.number_hashes, self.fpr, self.bloom_length,
                             self.els_added, self.estimate_elements(),
+                            self.current_false_positive_rate(),
                             self.export_size(), self.__number_bits_set(),
                             on_disk)
 
@@ -171,6 +172,13 @@ class BloomFilter(object):
         log_n = math.log(1 - (float(setbits) / float(self.number_bits)))
         tmp = float(self.number_bits) / float(self.number_hashes)
         return int(-1 * tmp * log_n)
+
+    def current_false_positive_rate(self):
+        ''' calculate the current false positive rate '''
+        num = self.number_hashes * -1 * self.els_added
+        dbl = num / float(self.number_bits)
+        exp = math.exp(dbl)
+        return math.pow((1 - exp), self.number_hashes)
 
     def __optimized_params(self, estimated_elements, false_positive_rate,
                            elements_added, hash_function):
