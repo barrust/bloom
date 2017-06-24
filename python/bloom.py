@@ -1,6 +1,10 @@
 ''' BloomFilter, python implementation '''
 from __future__ import print_function
-import math, hashlib, struct, os
+import math
+import hashlib
+import struct
+import os
+
 
 class BloomFilter(object):
     ''' '''
@@ -24,22 +28,27 @@ class BloomFilter(object):
         ''' string / unicode representation of the bloom filter '''
         on_disk = "no" if self.__on_disk is False else "yes"
         stats = ('BloomFilter: \n'
-                '\tbits: {0}\n'
-                '\testimated elements: {1}\n'
-                '\tnumber hashes: {2}\n'
-                '\tmax false positive rate: {3:.6f}\n'
-                '\tbloom length (8 bits): {4}\n'
-                '\telements added: {5}\n'
-                '\testimated elements added: {6}\n'
-                '\tcurrent false positive rate: \n'
-                '\texport size (bytes): {7}\n'
-                '\tnumber bits set: {8}\n'
-                '\tis on disk: {9}\n')
-        return stats.format(self.number_bits, self.est_elements, self.number_hashes, self.fpr, self.bloom_length, self.els_added, self.estimate_elements(), self.export_size(), self.__number_bits_set(), on_disk)
+                 '\tbits: {0}\n'
+                 '\testimated elements: {1}\n'
+                 '\tnumber hashes: {2}\n'
+                 '\tmax false positive rate: {3:.6f}\n'
+                 '\tbloom length (8 bits): {4}\n'
+                 '\telements added: {5}\n'
+                 '\testimated elements added: {6}\n'
+                 '\tcurrent false positive rate: \n'
+                 '\texport size (bytes): {7}\n'
+                 '\tnumber bits set: {8}\n'
+                 '\tis on disk: {9}\n')
+        return stats.format(self.number_bits, self.est_elements,
+                            self.number_hashes, self.fpr, self.bloom_length,
+                            self.els_added, self.estimate_elements(),
+                            self.export_size(), self.__number_bits_set(),
+                            on_disk)
 
-    def init(self, estimated_elements, false_positive_rate, hash_function=None):
+    def init(self, est_elements, false_positive_rate, hash_function=None):
         ''' initialize the bloom filter '''
-        self.__optimized_params(estimated_elements, false_positive_rate, 0, hash_function)
+        self.__optimized_params(est_elements, false_positive_rate, 0,
+                                hash_function)
 
     def hashes(self, key, depth=None):
         ''' calculate the hashes for the passed in key '''
@@ -65,7 +74,8 @@ class BloomFilter(object):
         return self.check_alt(hashes)
 
     def check_alt(self, hashes):
-        ''' check if the element represented by hashes is in the bloom filter '''
+        ''' check if the element represented by hashes is in the bloom filter
+        '''
         for x in list(range(0, self.number_hashes)):
             k = int(hashes[x]) % self.number_bits
             if (int(self.bloom[k // 8]) & int((1 << (k % 8)))) == 0:
@@ -73,7 +83,8 @@ class BloomFilter(object):
         return True
 
     def intersection(self, second):
-        ''' return a new Bloom Filter that contains the intersection of the two '''
+        ''' return a new Bloom Filter that contains the intersection of the two
+        '''
         if self.__verify_bloom_similarity(second) is False:
             return None
         res = BloomFilter()
@@ -115,9 +126,9 @@ class BloomFilter(object):
             for x in list(range(0, self.bloom_length)):
                 fp.write(struct.pack('B', int(self.bloom[x])))
             fp.flush()
-            fp.write(struct.pack('QQf', self.est_elements, self.els_added, self.fpr))
+            fp.write(struct.pack('QQf', self.est_elements, self.els_added,
+                                 self.fpr))
             fp.flush()
-
 
     def load(self, filename, hash_function=None):
         ''' load the bloom filter from file '''
@@ -131,7 +142,8 @@ class BloomFilter(object):
             self.els_added = mybytes[1]
             self.fpr = mybytes[2]
 
-            self.__optimized_params(self.est_elements, self.fpr, self.els_added, hash_function)
+            self.__optimized_params(self.est_elements, self.fpr,
+                                    self.els_added, hash_function)
 
             fp.seek(0, os.SEEK_SET)
             bytesize = struct.calcsize('B')
@@ -141,9 +153,11 @@ class BloomFilter(object):
                 self.bloom[i] = val
 
     def export_hex(self):
+        ''' placeholder for exporting to hex string '''
         pass
 
     def load_hex(self, string):
+        ''' placeholder for loading from hex string '''
         pass
 
     def export_size(self):
@@ -156,18 +170,22 @@ class BloomFilter(object):
         log_n = math.log(1 - (float(setbits) / float(self.number_bits)))
         return int(-1 * (float(self.number_bits) / float(self.number_hashes)) * log_n)
 
-    def __optimized_params(self, estimated_elements, false_positive_rate, elements_added, hash_function):
+    def __optimized_params(self, estimated_elements, false_positive_rate,
+                           elements_added, hash_function):
         ''' set the parameters to the optimal sizes '''
-        self.hash_function = hash_function if hash_function is not None else self.__default_hash
+        if hash_function is None:
+            self.hash_function = self.__default_hash
+        else:
+            self.hash_function = hash_function
         self.est_elements = estimated_elements
         fpr = struct.pack('f', float(false_positive_rate))
-        self.fpr = struct.unpack('f', fpr)[0] # to mimic the c version!
+        self.fpr = struct.unpack('f', fpr)[0]  # to mimic the c version!
         # self.fpr = false_positive_rate
         self.els_added = elements_added
         # optimal caluclations
         n = self.est_elements
         p = float(self.fpr)
-        m = math.ceil((-n * math.log(p)) / 0.4804530139182) # LOG_TWO_SQUARED
+        m = math.ceil((-n * math.log(p)) / 0.4804530139182)  # LOG_TWO_SQUARED
         k = round(math.log(2.0) * m / n)
         self.number_hashes = int(k)
         self.number_bits = int(m)
@@ -214,7 +232,6 @@ class BloomFilter(object):
             hval = hval ^ ord(s)
             hval = (hval * fnv_64_prime) % uint64_max
         return hval
-
 
 
 if __name__ == '__main__':
