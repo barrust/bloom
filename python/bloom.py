@@ -186,12 +186,11 @@ class BloomFilter(object):
             self.__optimized_params(self.__est_elements, self.__fpr,
                                     self.__els_added, hash_function)
 
-            filepointer.seek(0, os.SEEK_SET)
-            bytesize = struct.calcsize('B')
             # now read in the bit array!
-            for i in list(range(0, self.__bloom_length)):
-                val = struct.unpack('B', filepointer.read(bytesize))[0]
-                self.__bloom[i] = val
+            filepointer.seek(0, os.SEEK_SET)
+            offset = struct.calcsize('B') * self.__bloom_length
+            rep = 'B' * self.__bloom_length
+            self.__bloom = list(struct.unpack(rep, filepointer.read(offset)))
 
     def export_hex(self):
         ''' export Bloom Filter to hex string '''
