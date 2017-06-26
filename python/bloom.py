@@ -3,7 +3,7 @@ from __future__ import print_function
 import math
 import struct
 import os
-from binascii import hexlify
+from binascii import (hexlify, unhexlify)
 
 
 class BloomFilter(object):
@@ -198,9 +198,16 @@ class BloomFilter(object):
                               self.__fpr)
         return hexlify(bytearray(self.__bloom)) + hexlify(mybytes)
 
-    def load_hex(self, string, hash_function=None):
+    def load_hex(self, hex_string, hash_function=None):
         ''' placeholder for loading from hex string '''
-        pass
+        offset = struct.calcsize('>QQf') * 2
+        stct = struct.Struct('>QQf')
+        tmp_data = stct.unpack_from(unhexlify(hex_string[-offset:]))
+        self.__optimized_params(tmp_data[0], tmp_data[2], tmp_data[1],
+                                hash_function)
+        tmp_bloom = unhexlify(hex_string[:-offset])
+        rep = 'B' * self.__bloom_length
+        self.__bloom = list(struct.unpack(rep, tmp_bloom))
 
     def export_size(self):
         ''' calculate the size of the bloom on disk '''
@@ -322,4 +329,11 @@ if __name__ == '__main__':
     print(blm3.estimate_elements())
 
     print(blm.jaccard_index(blm2))
-    print(blm.export_hex())
+
+    print ('\n\nexport to hex')
+    hex_out = blm.export_hex()
+    print(hex_out)
+    print('import hex')
+    blm4 = BloomFilter()
+    blm4.load_hex(hex_out)
+    print(blm4)
