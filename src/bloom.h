@@ -3,7 +3,7 @@
 ***     Author: Tyler Barrus
 ***     email:  barrust@gmail.com
 ***
-***     Version: 1.7.11
+***     Version: 1.7.12
 ***     Purpose: Simple, yet effective, bloom filter implementation
 ***
 ***     License: MIT 2015
@@ -25,10 +25,10 @@
     #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #endif
 
-#define BLOOMFILTER_VERSION "1.7.11"
+#define BLOOMFILTER_VERSION "1.7.12"
 #define BLOOMFILTER_MAJOR 1
 #define BLOOMFILTER_MINOR 7
-#define BLOOMFILTER_REVISION 11
+#define BLOOMFILTER_REVISION 12
 
 #define BLOOM_SUCCESS 0
 #define BLOOM_FAILURE -1
@@ -159,10 +159,6 @@ uint64_t bloom_filter_count_union_bits_set(BloomFilter *bf1, BloomFilter *bf2);
     The number of inserted elements is updated to the estimated elements calculation */
 int bloom_filter_intersect(BloomFilter *res, BloomFilter *bf1, BloomFilter *bf2);
 uint64_t bloom_filter_count_intersection_bits_set(BloomFilter *bf1, BloomFilter *bf2);
-
-/* Symmetric Difference between Bloom Filters - inserts information into res */
-// int bloom_filter_symmetric_difference(BloomFilter *res, BloomFilter *bf1, BloomFilter *bf2);
-// uint64_t bloom_filter_symmetric_difference_bits_set(BloomFilter *bf1, BloomFilter *bf2);
 
 /*  Calculate the Jacccard Index of the Bloom Filters
     NOTE: The closer to 1 the index, the closer in bloom filters. If it is 1, then

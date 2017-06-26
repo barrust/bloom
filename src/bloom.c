@@ -3,7 +3,7 @@
 ***     Author: Tyler Barrus
 ***     email:  barrust@gmail.com
 ***
-***     Version: 1.7.11
+***     Version: 1.7.12
 ***
 ***     License: MIT 2015
 ***
@@ -381,31 +381,6 @@ uint64_t bloom_filter_count_intersection_bits_set(BloomFilter *bf1, BloomFilter 
     }
     return res;
 }
-
-/*
-int bloom_filter_symmetric_difference(BloomFilter *res, BloomFilter *bf1, BloomFilter *bf2) {
-    if (__check_if_union_or_intersection_ok(res, bf1, bf2) == BLOOM_FAILURE) {
-        return BLOOM_FAILURE;
-    }
-    uint64_t i;
-    for (i = 0; i < bf1->bloom_length; i++) {
-        res->bloom[i] = bf1->bloom[i] ^ bf2->bloom[i];
-    }
-    bloom_filter_set_elements_to_estimated(res);
-    return BLOOM_SUCCESS;
-}
-
-uint64_t bloom_filter_symmetric_difference_bits_set(BloomFilter *bf1, BloomFilter *bf2) {
-    if (__check_if_union_or_intersection_ok(bf1, bf1, bf2) == BLOOM_FAILURE) {  // use bf1 as res
-        return BLOOM_FAILURE;
-    }
-    uint64_t i, res = 0;
-    for (i = 0; i < bf1->bloom_length; i++) {
-        res += __sum_bits_set_char(bf1->bloom[i] ^ bf2->bloom[i]);
-    }
-    return res;
-}
-*/
 
 float bloom_filter_jaccard_index(BloomFilter *bf1, BloomFilter *bf2) {
     // Ensure the bloom filters can be used in an intersection and union
