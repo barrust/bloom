@@ -1,13 +1,15 @@
 ''' BloomFilter, python implementation '''
 from __future__ import print_function
 import math
-import hashlib
 import struct
 import os
+from binascii import hexlify
 
 
 class BloomFilter(object):
-    ''' '''
+    ''' Simple Bloom Filter implementation for use in python;
+    It can read and write the same format as the c version
+    NOTE: Does not support the 'on disk' opperations!'''
     def __init__(self):
         ''' setup the basic values needed '''
         self.bloom = None
@@ -63,8 +65,8 @@ class BloomFilter(object):
 
     def add_alt(self, hashes):
         ''' add the element represented by hashes into the bloom filter '''
-        for x in list(range(0, self.number_hashes)):
-            k = int(hashes[x]) % self.number_bits
+        for i in list(range(0, self.number_hashes)):
+            k = int(hashes[i]) % self.number_bits
             idx = k // 8
             self.bloom[idx] = int(self.bloom[idx]) | int((1 << (k % 8)))
         self.els_added += 1
@@ -77,8 +79,8 @@ class BloomFilter(object):
     def check_alt(self, hashes):
         ''' check if the element represented by hashes is in the bloom filter
         '''
-        for x in list(range(0, self.number_hashes)):
-            k = int(hashes[x]) % self.number_bits
+        for i in list(range(0, self.number_hashes)):
+            k = int(hashes[i]) % self.number_bits
             if (int(self.bloom[k // 8]) & int((1 << (k % 8)))) == 0:
                 return False
         return True
@@ -124,8 +126,8 @@ class BloomFilter(object):
     def export(self, filename):
         ''' export the bloom filter to disk '''
         with open(filename, 'wb') as fp:
-            for x in list(range(0, self.bloom_length)):
-                fp.write(struct.pack('B', int(self.bloom[x])))
+            for i in list(range(0, self.bloom_length)):
+                fp.write(struct.pack('B', int(self.bloom[i])))
             fp.flush()
             fp.write(struct.pack('QQf', self.est_elements, self.els_added,
                                  self.fpr))
@@ -154,8 +156,10 @@ class BloomFilter(object):
                 self.bloom[i] = val
 
     def export_hex(self):
-        ''' placeholder for exporting to hex string '''
-        pass
+        ''' export Bloom Filter to hex string '''
+        mybytes = struct.pack('>QQf', self.est_elements, self.els_added,
+                              self.fpr)
+        return hexlify(bytearray(self.bloom)) + hexlify(mybytes)
 
     def load_hex(self, string):
         ''' placeholder for loading from hex string '''
@@ -227,7 +231,7 @@ class BloomFilter(object):
         ''' the default fnv-1a hashing routine '''
         res = list()
         tmp = key
-        for i in list(range(0, depth)):
+        for _ in list(range(0, depth)):
             if tmp != key:
                 tmp = self.__fnv_1a("{0:x}".format(tmp))
             else:
@@ -241,8 +245,8 @@ class BloomFilter(object):
         hval = 14695981039346656073
         fnv_64_prime = 1099511628211
         uint64_max = 2 ** 64
-        for s in key:
-            hval = hval ^ ord(s)
+        for tmp_s in key:
+            hval = hval ^ ord(tmp_s)
             hval = (hval * fnv_64_prime) % uint64_max
         return hval
 
@@ -282,3 +286,4 @@ if __name__ == '__main__':
     print(blm3.estimate_elements())
 
     print(blm.jaccard_index(blm2))
+    print(blm.export_hex())
