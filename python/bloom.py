@@ -164,12 +164,10 @@ class BloomFilter(object):
     def export(self, filename):
         ''' export the bloom filter to disk '''
         with open(filename, 'wb') as filepointer:
-            for i in list(range(0, self.__bloom_length)):
-                filepointer.write(struct.pack('B', int(self.__bloom[i])))
-            filepointer.flush()
+            rep = 'B' * self.__bloom_length
+            filepointer.write(struct.pack(rep, *self.__bloom))
             filepointer.write(struct.pack('QQf', self.__est_elements,
                                           self.__els_added, self.__fpr))
-            filepointer.flush()
 
     def load(self, filename, hash_function=None):
         ''' load the bloom filter from file '''
@@ -238,7 +236,6 @@ class BloomFilter(object):
         self.__est_elements = estimated_elements
         fpr = struct.pack('f', float(false_positive_rate))
         self.__fpr = struct.unpack('f', fpr)[0]  # to mimic the c version!
-        # self.__fpr = false_positive_rate
         self.__els_added = elements_added
         # optimal caluclations
         n_els = self.__est_elements
