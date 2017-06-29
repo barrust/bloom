@@ -1,4 +1,8 @@
-''' BloomFilter, python implementation '''
+''' BloomFilter, python implementation
+    License: MIT
+    Author: Tyler Barrus (barrust@gmail.com)
+    URL: https://github.com/barrust/bloom
+'''
 from __future__ import print_function
 import math
 import struct
@@ -9,7 +13,9 @@ from binascii import (hexlify, unhexlify)
 class BloomFilter(object):
     ''' Simple Bloom Filter implementation for use in python;
     It can read and write the same format as the c version
+
     NOTE: Does *not* support the 'on disk' opperations!'''
+
     def __init__(self):
         ''' setup the basic values needed '''
         self.__bloom = None
