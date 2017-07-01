@@ -107,7 +107,7 @@ class BloomFilter(object):
     def init(self, est_elements, false_positive_rate, hash_function=None):
         ''' initialize the bloom filter '''
         self._set_optimized_params(est_elements, false_positive_rate, 0,
-                                hash_function)
+                                   hash_function)
         self._bloom = [0] * self.bloom_length
 
     def hashes(self, key, depth=None):
@@ -125,7 +125,8 @@ class BloomFilter(object):
         for i in list(range(0, self.number_hashes)):
             k = int(hashes[i]) % self.number_bits
             idx = k // 8
-            self.bloom_array[idx] = int(self._get_elm(idx)) | int((1 << (k % 8)))
+            elm = self._get_elm(idx)
+            self.bloom_array[idx] = int(elm) | int((1 << (k % 8)))
         self.elements_added += 1
 
     def check(self, key):
@@ -206,8 +207,8 @@ class BloomFilter(object):
             self._fpr = mybytes[2]
 
             self._set_optimized_params(self.estimated_elements,
-                                    self.false_positive_rate,
-                                    self.elements_added, hash_function)
+                                       self.false_positive_rate,
+                                       self.elements_added, hash_function)
 
             # now read in the bit array!
             filepointer.seek(0, os.SEEK_SET)
@@ -227,7 +228,7 @@ class BloomFilter(object):
         stct = struct.Struct('>QQf')
         tmp_data = stct.unpack_from(unhexlify(hex_string[-offset:]))
         self._set_optimized_params(tmp_data[0], tmp_data[2], tmp_data[1],
-                                hash_function)
+                                   hash_function)
         tmp_bloom = unhexlify(hex_string[:-offset])
         rep = 'B' * self.bloom_length
         self._bloom = list(struct.unpack(rep, tmp_bloom))
@@ -252,7 +253,7 @@ class BloomFilter(object):
         return math.pow((1 - exp), self.number_hashes)
 
     def _set_optimized_params(self, estimated_elements, false_positive_rate,
-                           elements_added, hash_function):
+                              elements_added, hash_function):
         ''' set the parameters to the optimal sizes '''
         if hash_function is None:
             self.__hash_func = self._default_hash
@@ -325,13 +326,13 @@ class BloomFilterOnDisk(BloomFilter):
 
     def __del__(self):
         self.close()
-        
-    def initialize(self, filepath, est_elements, false_positive_rate, hash_function=None):
+
+    def initialize(self, filepath, est_elements, false_positive_rate,
+                   hash_function=None):
         ''' initialize the Bloom Filter on disk '''
         fpr = false_positive_rate
-        super(BloomFilterOnDisk, self)._set_optimized_params(est_elements,
-                                                             fpr, 0,
-                                                             hash_function)
+        super(BloomFilterOnDisk,
+              self)._set_optimized_params(est_elements, fpr, 0, hash_function)
         # do the on disk things
         with open(filepath, 'wb') as filepointer:
             for i in range(self.bloom_length):
@@ -346,7 +347,6 @@ class BloomFilterOnDisk(BloomFilter):
         ''' clean up the memory '''
         self.__file_pointer.close()
 
-
     def load(self, filepath, hash_function=None):
         ''' load the bloom filter on disk '''
         # read the file, set the optimal params
@@ -358,7 +358,8 @@ class BloomFilterOnDisk(BloomFilter):
             self._est_elements = mybytes[0]
             self.elements_added = mybytes[1]
             self._fpr = mybytes[2]
-            self._set_optimized_params(mybytes[0], mybytes[2], mybytes[1], hash_function)
+            self._set_optimized_params(mybytes[0], mybytes[2], mybytes[1],
+                                       hash_function)
         self.__file_pointer = open(filepath, 'r+b')
         self._bloom = mmap.mmap(self.__file_pointer.fileno(), 0)
         self._on_disk = True
@@ -371,14 +372,16 @@ class BloomFilterOnDisk(BloomFilter):
         # otherwise, nothing to do!
 
     def add_alt(self, hashes):
-        ''' add the element represented by the hashes to the Bloom Filter on disk '''
+        ''' add the element represented by the hashes to the Bloom Filter
+            on disk '''
         for x in range(self.number_hashes):
             k = long(hashes[x]) % self.number_bits
             idx = k / 8
             c = struct.unpack('B', self.bloom_array[idx])[0]
-            self.bloom_array[idx] = struct.pack('B', int(c) | int((1 << (k % 8))))
+            tmp_bit = int(c) | int((1 << (k % 8)))
+            self.bloom_array[idx] = struct.pack('B', tmp_bit)
         self.elements_added += 1
-        self.__file_pointer.seek(-12, os.SEEK_END)  # TODO: not hard code offset
+        self.__file_pointer.seek(-12, os.SEEK_END)  # TODO: no hard code offset
         self.__file_pointer.write(struct.pack('Q', self.elements_added))
         self.__file_pointer.flush()  # make sure everything is out to disk
 
@@ -400,7 +403,7 @@ class BloomFilterOnDisk(BloomFilter):
         return setbits
 
     def _get_elm(self, idx):
-        ''' wrappper '''
+        ''' wrappper to use similar functions always! '''
         return struct.unpack('B', self.bloom_array[idx])[0]
 
 if __name__ == '__main__':
