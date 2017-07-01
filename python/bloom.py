@@ -28,6 +28,8 @@ class BloomFilter(object):
         self.__hash_func = self._default_hash
         self.__els_added = 0
         self._on_disk = False  # not on disk
+        self.__file_pointer = None
+        self.__filename = None
 
     @property
     def bloom_array(self):
@@ -75,6 +77,7 @@ class BloomFilter(object):
 
     @property
     def bloom_length(self):
+        ''' get the length of the bloom filter in bytes '''
         return self.__bloom_length
 
     def __str__(self):
@@ -125,7 +128,7 @@ class BloomFilter(object):
         for i in list(range(0, self.number_hashes)):
             k = int(hashes[i]) % self.number_bits
             idx = k // 8
-            elm = self._get_elm(idx)
+            elm = self.get_element(idx)
             self.bloom_array[idx] = int(elm) | int((1 << (k % 8)))
         self.elements_added += 1
 
@@ -139,7 +142,7 @@ class BloomFilter(object):
         '''
         for i in list(range(0, self.number_hashes)):
             k = int(hashes[i]) % self.number_bits
-            if (int(self._get_elm(k // 8)) & int((1 << (k % 8)))) == 0:
+            if (int(self.get_element(k // 8)) & int((1 << (k % 8)))) == 0:
                 return False
         return True
 
@@ -153,7 +156,7 @@ class BloomFilter(object):
                  self.__hash_func)
 
         for i in list(range(0, self.bloom_length)):
-            res.bloom_array[i] = self._get_elm(i) & second._get_elm(i)
+            res.bloom_array[i] = self.get_element(i) & second.get_element(i)
         res.elements_added = res.estimate_elements()
         return res
 
@@ -166,7 +169,7 @@ class BloomFilter(object):
                  self.__hash_func)
 
         for i in list(range(0, self.bloom_length)):
-            res.bloom_array[i] = self._get_elm(i) | second._get_elm(i)
+            res.bloom_array[i] = self.get_element(i) | second.get_element(i)
         res.elements_added = res.estimate_elements()
         return res
 
@@ -177,8 +180,8 @@ class BloomFilter(object):
         count_union = 0
         count_int = 0
         for i in list(range(0, self.bloom_length)):
-            t_union = self._get_elm(i) | second._get_elm(i)
-            t_intersection = self._get_elm(i) & second._get_elm(i)
+            t_union = self.get_element(i) | second.get_element(i)
+            t_intersection = self.get_element(i) & second.get_element(i)
             count_union += self._cnt_set_bits(t_union)
             count_int += self._cnt_set_bits(t_intersection)
         if count_union == 0:
@@ -280,7 +283,7 @@ class BloomFilter(object):
             return False
         return True
 
-    def _get_elm(self, idx):
+    def get_element(self, idx):
         ''' wrappper '''
         return self.bloom_array[idx]
 
@@ -321,6 +324,7 @@ class BloomFilter(object):
 
 
 class BloomFilterOnDisk(BloomFilter):
+    ''' Bloom Filter on disk implementation '''
     def __init__(self):
         super(BloomFilterOnDisk, self).__init__()
 
@@ -335,7 +339,7 @@ class BloomFilterOnDisk(BloomFilter):
               self)._set_optimized_params(est_elements, fpr, 0, hash_function)
         # do the on disk things
         with open(filepath, 'wb') as filepointer:
-            for i in range(self.bloom_length):
+            for _ in range(self.bloom_length):
                 filepointer.write(struct.pack('B', int(0)))
             filepointer.write(struct.pack('QQf', est_elements,
                                           0,
@@ -345,6 +349,7 @@ class BloomFilterOnDisk(BloomFilter):
 
     def close(self):
         ''' clean up the memory '''
+        self._bloom.close()  # close the mmap
         self.__file_pointer.close()
 
     def load(self, filepath, hash_function=None):
@@ -374,13 +379,14 @@ class BloomFilterOnDisk(BloomFilter):
     def add_alt(self, hashes):
         ''' add the element represented by the hashes to the Bloom Filter
             on disk '''
-        for x in range(self.number_hashes):
-            k = long(hashes[x]) % self.number_bits
-            idx = k / 8
-            c = struct.unpack('B', self.bloom_array[idx])[0]
-            tmp_bit = int(c) | int((1 << (k % 8)))
+        for i in range(self.number_hashes):
+            bit_i = int(hashes[i]) % self.number_bits
+            idx = bit_i // 8
+            tmp_bin = struct.unpack('B', self.bloom_array[idx])[0]
+            tmp_bit = int(tmp_bin) | int((1 << (bit_i % 8)))
             self.bloom_array[idx] = struct.pack('B', tmp_bit)
         self.elements_added += 1
+        self._bloom.flush()
         self.__file_pointer.seek(-12, os.SEEK_END)  # TODO: no hard code offset
         self.__file_pointer.write(struct.pack('Q', self.elements_added))
         self.__file_pointer.flush()  # make sure everything is out to disk
@@ -388,9 +394,9 @@ class BloomFilterOnDisk(BloomFilter):
     def check_alt(self, hashes):
         ''' check if the hashes relate '''
         for i in range(0, self.number_hashes):
-            k = long(hashes[i]) % self.number_bits
-            c = struct.unpack('B', self.bloom_array[k / 8])[0]
-            if (c & int(1 << (k % 8))) == 0:
+            bit_i = int(hashes[i]) % self.number_bits
+            tmp_bin = struct.unpack('B', self.bloom_array[bit_i // 8])[0]
+            if (tmp_bin & int(1 << (bit_i % 8))) == 0:
                 return False
         return True
 
@@ -402,7 +408,7 @@ class BloomFilterOnDisk(BloomFilter):
             setbits += self._cnt_set_bits(tmp_bin)
         return setbits
 
-    def _get_elm(self, idx):
+    def get_element(self, idx):
         ''' wrappper to use similar functions always! '''
         return struct.unpack('B', self.bloom_array[idx])[0]
 
