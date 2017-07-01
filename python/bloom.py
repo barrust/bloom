@@ -125,7 +125,7 @@ class BloomFilter(object):
         for i in list(range(0, self.number_hashes)):
             k = int(hashes[i]) % self.number_bits
             idx = k // 8
-            self.bloom_array[idx] = int(self.bloom_array[idx]) | int((1 << (k % 8)))
+            self.bloom_array[idx] = int(self._get_elm(idx)) | int((1 << (k % 8)))
         self.elements_added += 1
 
     def check(self, key):
@@ -138,7 +138,7 @@ class BloomFilter(object):
         '''
         for i in list(range(0, self.number_hashes)):
             k = int(hashes[i]) % self.number_bits
-            if (int(self.bloom_array[k // 8]) & int((1 << (k % 8)))) == 0:
+            if (int(self._get_elm(k // 8)) & int((1 << (k % 8)))) == 0:
                 return False
         return True
 
@@ -152,7 +152,7 @@ class BloomFilter(object):
                  self.__hash_func)
 
         for i in list(range(0, self.bloom_length)):
-            res.bloom_array[i] = self.bloom_array[i] & second.bloom_array[i]
+            res.bloom_array[i] = self._get_elm(i) & second._get_elm(i)
         res.elements_added = res.estimate_elements()
         return res
 
@@ -165,7 +165,7 @@ class BloomFilter(object):
                  self.__hash_func)
 
         for i in list(range(0, self.bloom_length)):
-            res.bloom_array[i] = self.bloom_array[i] | second.bloom_array[i]
+            res.bloom_array[i] = self._get_elm(i) | second._get_elm(i)
         res.elements_added = res.estimate_elements()
         return res
 
@@ -176,8 +176,8 @@ class BloomFilter(object):
         count_union = 0
         count_int = 0
         for i in list(range(0, self.bloom_length)):
-            t_union = self.bloom_array[i] | second.bloom_array[i]
-            t_intersection = self.bloom_array[i] & second.bloom_array[i]
+            t_union = self._get_elm(i) | second._get_elm(i)
+            t_intersection = self._get_elm(i) & second._get_elm(i)
             count_union += self._cnt_set_bits(t_union)
             count_int += self._cnt_set_bits(t_intersection)
         if count_union == 0:
@@ -279,6 +279,10 @@ class BloomFilter(object):
             return False
         return True
 
+    def _get_elm(self, idx):
+        ''' wrappper '''
+        return self.bloom_array[idx]
+
     @staticmethod
     def _cnt_set_bits(i):
         ''' count number of bits set '''
@@ -319,6 +323,9 @@ class BloomFilterOnDisk(BloomFilter):
     def __init__(self):
         super(BloomFilterOnDisk, self).__init__()
 
+    def __del__(self):
+        self.close()
+        
     def initialize(self, filepath, est_elements, false_positive_rate, hash_function=None):
         ''' initialize the Bloom Filter on disk '''
         fpr = false_positive_rate
@@ -370,12 +377,10 @@ class BloomFilterOnDisk(BloomFilter):
             idx = k / 8
             c = struct.unpack('B', self.bloom_array[idx])[0]
             self.bloom_array[idx] = struct.pack('B', int(c) | int((1 << (k % 8))))
-            self.bloom_array.flush()
         self.elements_added += 1
-        self.__file_pointer.seek(-12, os.SEEK_END)
+        self.__file_pointer.seek(-12, os.SEEK_END)  # TODO: not hard code offset
         self.__file_pointer.write(struct.pack('Q', self.elements_added))
-        self.bloom_array.flush()
-        self.__file_pointer.flush() # make sure everything is out to disk
+        self.__file_pointer.flush()  # make sure everything is out to disk
 
     def check_alt(self, hashes):
         ''' check if the hashes relate '''
@@ -393,6 +398,10 @@ class BloomFilterOnDisk(BloomFilter):
             tmp_bin = struct.unpack('B', self.bloom_array[i])[0]
             setbits += self._cnt_set_bits(tmp_bin)
         return setbits
+
+    def _get_elm(self, idx):
+        ''' wrappper '''
+        return struct.unpack('B', self.bloom_array[idx])[0]
 
 if __name__ == '__main__':
     blm = BloomFilter()
@@ -439,16 +448,14 @@ if __name__ == '__main__':
     print(blm4)
 
     # on disk code check
+    print('\n\nbloom filter on disk')
     blmd = BloomFilterOnDisk()
     blmd.initialize('./dist/py_ondisk.blm', 10, 0.05)
     blmd.add('this is a test')
-    print(blmd.current_false_positive_rate())
-    print(blmd.estimate_elements())  # doesn't work with on disk
-    print(blmd.export_size())
     print(blmd.check('this is a test'))
-    print(blmd.check('this is a test... again'))
+    print(blmd.check('yet another test'))
+    blmd.union(blm4)
+    blmd.intersection(blm)
+    print(blmd.jaccard_index(blm2))
     print(blmd)
-
-    # print(blmd.intersection(blm))  # doesn't work on disk... yet
-    # print(blmd.union(blmd))  # doesn't work on disk... yet
-    # print(blmd.jaccard_index(blm))  # doesn't work on disk... yet
+    blmd.close()
