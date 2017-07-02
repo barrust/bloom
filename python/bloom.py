@@ -4,6 +4,7 @@
     URL: https://github.com/barrust/bloom
 '''
 from __future__ import (print_function)
+import sys
 import math
 import struct
 import os
@@ -129,7 +130,8 @@ class BloomFilter(object):
             k = int(hashes[i]) % self.number_bits
             idx = k // 8
             elm = self.get_element(idx)
-            self.bloom_array[idx] = int(elm) | int((1 << (k % 8)))
+            tmp_bit = int(elm) | int((1 << (k % 8)))
+            self.bloom_array[idx] = self.get_set_element(tmp_bit)
         self.elements_added += 1
 
     def check(self, key):
@@ -322,6 +324,11 @@ class BloomFilter(object):
             hval = (hval * fnv_64_prime) % uint64_max
         return hval
 
+    @staticmethod
+    def get_set_element(tmp_bit):
+        ''' wrappper to use similar functions always! '''
+        return tmp_bit
+
 
 class BloomFilterOnDisk(BloomFilter):
     ''' Bloom Filter on disk implementation '''
@@ -341,8 +348,7 @@ class BloomFilterOnDisk(BloomFilter):
         with open(filepath, 'wb') as filepointer:
             for _ in range(self.bloom_length):
                 filepointer.write(struct.pack('B', int(0)))
-            filepointer.write(struct.pack('QQf', est_elements,
-                                          0,
+            filepointer.write(struct.pack('QQf', est_elements, 0,
                                           false_positive_rate))
             filepointer.flush()
         self.load(filepath, hash_function)
@@ -382,9 +388,10 @@ class BloomFilterOnDisk(BloomFilter):
         for i in range(self.number_hashes):
             bit_i = int(hashes[i]) % self.number_bits
             idx = bit_i // 8
-            tmp_bin = struct.unpack('B', self.bloom_array[idx])[0]
+            tmp_bin = self.get_element(idx)
             tmp_bit = int(tmp_bin) | int((1 << (bit_i % 8)))
-            self.bloom_array[idx] = struct.pack('B', tmp_bit)
+            # python 2
+            self.bloom_array[idx] = self.get_set_element(tmp_bit)
         self.elements_added += 1
         self._bloom.flush()
         self.__file_pointer.seek(-12, os.SEEK_END)  # TODO: no hard code offset
@@ -395,7 +402,8 @@ class BloomFilterOnDisk(BloomFilter):
         ''' check if the hashes relate '''
         for i in range(0, self.number_hashes):
             bit_i = int(hashes[i]) % self.number_bits
-            tmp_bin = struct.unpack('B', self.bloom_array[bit_i // 8])[0]
+            tmp_bin = self.get_element(bit_i // 8)
+            # struct.unpack('B', self.bloom_array[bit_i // 8])[0]
             if (tmp_bin & int(1 << (bit_i % 8))) == 0:
                 return False
         return True
@@ -404,13 +412,24 @@ class BloomFilterOnDisk(BloomFilter):
         ''' override this to handle the on disk mmap '''
         setbits = 0
         for i in list(range(0, self.bloom_length)):
-            tmp_bin = struct.unpack('B', self.bloom_array[i])[0]
+            tmp_bin = self.get_element(i)
             setbits += self._cnt_set_bits(tmp_bin)
         return setbits
 
     def get_element(self, idx):
         ''' wrappper to use similar functions always! '''
+        if sys.version_info > (3, 0):  # python 3 wants a byte
+            return struct.unpack('B', bytes([self.bloom_array[idx]]))[0]
+        # python 2 wants a string
         return struct.unpack('B', self.bloom_array[idx])[0]
+
+    @staticmethod
+    def get_set_element(tmp_bit):
+        ''' wrappper to use similar functions always! '''
+        if sys.version_info > (3, 0):  # python 3 wants a byte
+            return tmp_bit
+        return struct.pack('B', tmp_bit)
+
 
 if __name__ == '__main__':
     blm = BloomFilter()
