@@ -385,28 +385,11 @@ class BloomFilterOnDisk(BloomFilter):
     def add_alt(self, hashes):
         ''' add the element represented by the hashes to the Bloom Filter
             on disk '''
-        for i in range(self.number_hashes):
-            bit_i = int(hashes[i]) % self.number_bits
-            idx = bit_i // 8
-            tmp_bin = self.get_element(idx)
-            tmp_bit = int(tmp_bin) | int((1 << (bit_i % 8)))
-            # python 2
-            self.bloom_array[idx] = self.get_set_element(tmp_bit)
-        self.elements_added += 1
+        super(BloomFilterOnDisk, self).add_alt(hashes)
         self._bloom.flush()
         self.__file_pointer.seek(-12, os.SEEK_END)  # TODO: no hard code offset
         self.__file_pointer.write(struct.pack('Q', self.elements_added))
         self.__file_pointer.flush()  # make sure everything is out to disk
-
-    def check_alt(self, hashes):
-        ''' check if the hashes relate '''
-        for i in range(0, self.number_hashes):
-            bit_i = int(hashes[i]) % self.number_bits
-            tmp_bin = self.get_element(bit_i // 8)
-            # struct.unpack('B', self.bloom_array[bit_i // 8])[0]
-            if (tmp_bin & int(1 << (bit_i % 8))) == 0:
-                return False
-        return True
 
     def _cnt_number_bits_set(self):
         ''' override this to handle the on disk mmap '''
