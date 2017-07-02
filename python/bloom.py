@@ -29,8 +29,6 @@ class BloomFilter(object):
         self.__hash_func = self._default_hash
         self.__els_added = 0
         self._on_disk = False  # not on disk
-        self.__file_pointer = None
-        self.__filename = None
 
     @property
     def bloom_array(self):
@@ -105,7 +103,7 @@ class BloomFilter(object):
                             self.bloom_length, self.elements_added,
                             self.estimate_elements(),
                             self.current_false_positive_rate(),
-                            self.export_size(), self._cnt_number_bits_set(),
+                            self.export_size(), self.__cnt_number_bits_set(),
                             on_disk)
 
     def init(self, est_elements, false_positive_rate, hash_function=None):
@@ -129,8 +127,8 @@ class BloomFilter(object):
         for i in list(range(0, self.number_hashes)):
             k = int(hashes[i]) % self.number_bits
             idx = k // 8
-            elm = self.get_element(idx)
-            tmp_bit = int(elm) | int((1 << (k % 8)))
+            j = self.get_element(idx)
+            tmp_bit = int(j) | int((1 << (k % 8)))
             self.bloom_array[idx] = self.get_set_element(tmp_bit)
         self.elements_added += 1
 
@@ -149,8 +147,8 @@ class BloomFilter(object):
         return True
 
     def intersection(self, second):
-        ''' return a new Bloom Filter that contains the intersection of the two
-        '''
+        ''' return a new Bloom Filter that contains the intersection of the
+            two '''
         if self.__verify_bloom_similarity(second) is False:
             return None
         res = BloomFilter()
@@ -184,8 +182,8 @@ class BloomFilter(object):
         for i in list(range(0, self.bloom_length)):
             t_union = self.get_element(i) | second.get_element(i)
             t_intersection = self.get_element(i) & second.get_element(i)
-            count_union += self._cnt_set_bits(t_union)
-            count_int += self._cnt_set_bits(t_intersection)
+            count_union += self.__cnt_set_bits(t_union)
+            count_int += self.__cnt_set_bits(t_intersection)
         if count_union == 0:
             return 1.0
         return float(count_int) / float(count_union)
@@ -245,7 +243,7 @@ class BloomFilter(object):
 
     def estimate_elements(self):
         ''' estimate the number of elements added '''
-        setbits = self._cnt_number_bits_set()
+        setbits = self.__cnt_number_bits_set()
         log_n = math.log(1 - (float(setbits) / float(self.number_bits)))
         tmp = float(self.number_bits) / float(self.number_hashes)
         return int(-1 * tmp * log_n)
@@ -290,15 +288,15 @@ class BloomFilter(object):
         return self.bloom_array[idx]
 
     @staticmethod
-    def _cnt_set_bits(i):
+    def __cnt_set_bits(i):
         ''' count number of bits set '''
         return bin(i).count("1")
 
-    def _cnt_number_bits_set(self):
+    def __cnt_number_bits_set(self):
         ''' calculate the total number of set bits in the bloom '''
         setbits = 0
         for i in list(range(0, self.bloom_length)):
-            setbits += self._cnt_set_bits(self.bloom_array[i])
+            setbits += self.__cnt_set_bits(self.get_element(i))
         return setbits
 
     def _default_hash(self, key, depth):
@@ -334,8 +332,12 @@ class BloomFilterOnDisk(BloomFilter):
     ''' Bloom Filter on disk implementation '''
     def __init__(self):
         super(BloomFilterOnDisk, self).__init__()
+        self.__file_pointer = None
+        self.__filename = None
+        self.__export_offset = struct.calcsize('Qf')
 
     def __del__(self):
+        ''' handle if user doesn't close the on disk bloom filter '''
         self.close()
 
     def initialize(self, filepath, est_elements, false_positive_rate,
@@ -355,8 +357,11 @@ class BloomFilterOnDisk(BloomFilter):
 
     def close(self):
         ''' clean up the memory '''
-        self._bloom.close()  # close the mmap
-        self.__file_pointer.close()
+        if self.__file_pointer is not None:
+            self.__update()
+            self._bloom.close()  # close the mmap
+            self.__file_pointer.close()
+            self.__file_pointer = None
 
     def load(self, filepath, hash_function=None):
         ''' load the bloom filter on disk '''
@@ -386,18 +391,27 @@ class BloomFilterOnDisk(BloomFilter):
         ''' add the element represented by the hashes to the Bloom Filter
             on disk '''
         super(BloomFilterOnDisk, self).add_alt(hashes)
-        self._bloom.flush()
-        self.__file_pointer.seek(-12, os.SEEK_END)  # TODO: no hard code offset
-        self.__file_pointer.write(struct.pack('Q', self.elements_added))
-        self.__file_pointer.flush()  # make sure everything is out to disk
+        self.__update()
 
-    def _cnt_number_bits_set(self):
-        ''' override this to handle the on disk mmap '''
-        setbits = 0
-        for i in list(range(0, self.bloom_length)):
-            tmp_bin = self.get_element(i)
-            setbits += self._cnt_set_bits(tmp_bin)
-        return setbits
+    def union(self, second):
+        ''' union using an on disk bloom filter '''
+        super(BloomFilterOnDisk, self).union(second)
+        self.__update()
+
+    def intersection(self, second):
+        ''' intersection using an on disk bloom filter '''
+        super(BloomFilterOnDisk, self).intersection(second)
+        self.__update()
+
+    def export_hex(self):
+        ''' export to a hex string '''
+        msg = "Currently not supported by the on disk Bloom Filter!"
+        raise NotImplementedError(msg)
+
+    def load_hex(self, hex_string, hash_function=None):
+        ''' load from hex ... '''
+        msg = "Unable to load a hex string into an on disk Bloom Filter!"
+        raise NotImplementedError(msg)
 
     def get_element(self, idx):
         ''' wrappper to use similar functions always! '''
@@ -413,60 +427,71 @@ class BloomFilterOnDisk(BloomFilter):
             return tmp_bit
         return struct.pack('B', tmp_bit)
 
+    def __update(self):
+        ''' update the on disk bloom filter and ensure everything is out
+            to disk '''
+        self._bloom.flush()
+        self.__file_pointer.seek(-self.__export_offset, os.SEEK_END)
+        self.__file_pointer.write(struct.pack('Q', self.elements_added))
+        self.__file_pointer.flush()
+
 
 if __name__ == '__main__':
-    blm = BloomFilter()
-    blm.init(10, 0.05)
-    blm.add("this is a test")
-    print(blm.check("this is a test"))
-    print(blm.check("blah"))
-    print(blm)
-    print(blm.bloom_array)
-    blm.export('./dist/py_bloom.blm')
+    BLM = BloomFilter()
+    BLM.init(10, 0.05)
+    BLM.add("this is a test")
+    print(BLM.check("this is a test"))
+    print(BLM.check("blah"))
+    print(BLM)
+    print(BLM.bloom_array)
+    BLM.export('./dist/py_bloom.blm')
 
     print('\n\ncheck imported BloomFilter!')
 
-    blm2 = BloomFilter()
-    blm2.load('./dist/py_bloom.blm')
-    print(blm2.check("this is a test"))
-    print(blm2.check("blah"))
-    print(blm2)
-    print(blm2.bloom_array)
+    BLM2 = BloomFilter()
+    BLM2.load('./dist/py_bloom.blm')
+    print(BLM2.check("this is a test"))
+    print(BLM2.check("blah"))
+    print(BLM2)
+    print(BLM2.bloom_array)
 
-    blm2.add('yet another test')
+    BLM2.add('yet another test')
 
     print("\n\ncheck intersection")
-    blm3 = blm.intersection(blm2)
-    print(blm3)
-    print(blm3.check("this is a test"))
-    print(blm3.check("yet another test"))
+    BLM3 = BLM.intersection(BLM2)
+    print(BLM3)
+    print(BLM3.check("this is a test"))
+    print(BLM3.check("yet another test"))
 
     print("\n\ncheck union")
-    blm3 = blm.union(blm2)
-    print(blm3)
-    print(blm3.check("this is a test"))
-    print(blm3.check("yet another test"))
-    print(blm3.estimate_elements())
+    BLM3 = BLM.union(BLM2)
+    print(BLM3)
+    print(BLM3.check("this is a test"))
+    print(BLM3.check("yet another test"))
+    print(BLM3.estimate_elements())
 
-    print(blm.jaccard_index(blm2))
+    print(BLM.jaccard_index(BLM2))
 
     print ('\n\nexport to hex')
-    hex_out = blm.export_hex()
-    print(hex_out)
+    HEX_OUT = BLM.export_hex()
+    print(HEX_OUT)
     print('import hex')
-    blm4 = BloomFilter()
-    blm4.load_hex(hex_out)
-    print(blm4)
+    BLM4 = BloomFilter()
+    BLM4.load_hex(HEX_OUT)
+    print(BLM4)
 
     # on disk code check
     print('\n\nbloom filter on disk')
-    blmd = BloomFilterOnDisk()
-    blmd.initialize('./dist/py_ondisk.blm', 10, 0.05)
-    blmd.add('this is a test')
-    print(blmd.check('this is a test'))
-    print(blmd.check('yet another test'))
-    blmd.union(blm4)
-    blmd.intersection(blm)
-    print(blmd.jaccard_index(blm2))
-    print(blmd)
-    blmd.close()
+    BLMD = BloomFilterOnDisk()
+    BLMD.initialize('./dist/py_ondisk.blm', 10, 0.05)
+    BLMD.add("this is a test")
+    print(BLMD.check('this is a test'))
+    print(BLMD.check('yet another test'))
+    # BLMD.union(BLM4)
+    # BLMD.intersection(BLM)
+    # print(BLMD.jaccard_index(BLM2))
+    print(BLMD)
+    # print ('\n\nexport to hex')
+    # HEX_OUT = BLMD.export_hex()
+    # print(HEX_OUT)
+    BLMD.close()
