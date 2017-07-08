@@ -7,6 +7,7 @@ from bloom import (BloomFilter, BloomFilterOnDisk)
 
 
 def test():
+    ''' basic testing functions '''
     blm = BloomFilter()
     blm.init(10, 0.05)
     blm.add("this is a test")
@@ -45,28 +46,30 @@ def test():
     print(blm.jaccard_index(blm2))
 
     print ('\n\nexport to hex')
-    HEX_OUT = blm.export_hex()
-    print(HEX_OUT)
+    hex_out = blm.export_hex()
+    print(hex_out)
     print('import hex')
     blm4 = BloomFilter()
-    blm4.load_hex(HEX_OUT)
+    blm4.load_hex(hex_out)
     print(blm4)
 
     # on disk code check
     print('\n\nbloom filter on disk')
-    blmD = BloomFilterOnDisk()
-    blmD.initialize('./dist/py_ondisk.blm', 10, 0.05)
-    blmD.add("this is a test")
-    print(blmD.check('this is a test'))
-    print(blmD.check('yet another test'))
-    # blmD.union(blm4)
-    # blmD.intersection(blm)
-    # print(blmD.jaccard_index(blm2))
-    print(blmD)
+    blmd = BloomFilterOnDisk()
+    blmd.initialize('./dist/py_ondisk.blm', 10, 0.05)
+    blmd.add("this is a test")
+    print(blmd.check('this is a test'))
+    print('Check use of in keyword ("this is a test" in blmd): ',
+          'this is a test' in blmd)
+    print(blmd.check('yet another test'))
+    # blmd.union(blm4)
+    # blmd.intersection(blm)
+    # print(blmd.jaccard_index(blm2))
+    print(blmd)
     # print ('\n\nexport to hex')
-    # HEX_OUT = blmD.export_hex()
-    # print(HEX_OUT)
-    blmD.close()
+    # hex_out = blmd.export_hex()
+    # print(hex_out)
+    blmd.close()
 
 if __name__ == '__main__':
     test()
