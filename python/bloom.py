@@ -106,6 +106,10 @@ class BloomFilter(object):
                             self.export_size(), self.__cnt_number_bits_set(),
                             on_disk)
 
+    def __contains__(self, key):
+        ''' setup the `in` keyword '''
+        return self.check(key)
+
     def init(self, est_elements, false_positive_rate, hash_function=None):
         ''' initialize the bloom filter '''
         self._set_optimized_params(est_elements, false_positive_rate, 0,
@@ -434,64 +438,3 @@ class BloomFilterOnDisk(BloomFilter):
         self.__file_pointer.seek(-self.__export_offset, os.SEEK_END)
         self.__file_pointer.write(struct.pack('Q', self.elements_added))
         self.__file_pointer.flush()
-
-
-if __name__ == '__main__':
-    BLM = BloomFilter()
-    BLM.init(10, 0.05)
-    BLM.add("this is a test")
-    print(BLM.check("this is a test"))
-    print(BLM.check("blah"))
-    print(BLM)
-    print(BLM.bloom_array)
-    BLM.export('./dist/py_bloom.blm')
-
-    print('\n\ncheck imported BloomFilter!')
-
-    BLM2 = BloomFilter()
-    BLM2.load('./dist/py_bloom.blm')
-    print(BLM2.check("this is a test"))
-    print(BLM2.check("blah"))
-    print(BLM2)
-    print(BLM2.bloom_array)
-
-    BLM2.add('yet another test')
-
-    print("\n\ncheck intersection")
-    BLM3 = BLM.intersection(BLM2)
-    print(BLM3)
-    print(BLM3.check("this is a test"))
-    print(BLM3.check("yet another test"))
-
-    print("\n\ncheck union")
-    BLM3 = BLM.union(BLM2)
-    print(BLM3)
-    print(BLM3.check("this is a test"))
-    print(BLM3.check("yet another test"))
-    print(BLM3.estimate_elements())
-
-    print(BLM.jaccard_index(BLM2))
-
-    print ('\n\nexport to hex')
-    HEX_OUT = BLM.export_hex()
-    print(HEX_OUT)
-    print('import hex')
-    BLM4 = BloomFilter()
-    BLM4.load_hex(HEX_OUT)
-    print(BLM4)
-
-    # on disk code check
-    print('\n\nbloom filter on disk')
-    BLMD = BloomFilterOnDisk()
-    BLMD.initialize('./dist/py_ondisk.blm', 10, 0.05)
-    BLMD.add("this is a test")
-    print(BLMD.check('this is a test'))
-    print(BLMD.check('yet another test'))
-    # BLMD.union(BLM4)
-    # BLMD.intersection(BLM)
-    # print(BLMD.jaccard_index(BLM2))
-    print(BLMD)
-    # print ('\n\nexport to hex')
-    # HEX_OUT = BLMD.export_hex()
-    # print(HEX_OUT)
-    BLMD.close()
