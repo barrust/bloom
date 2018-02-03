@@ -1,5 +1,5 @@
 # bloom
-Bloom Filter implementation written in **C** and **python**.
+Bloom Filter implementation written in **C**
 
 Bloom Filters are a probabilistic data structure that allows for the storage and
 look up of elements. The data stored in a Bloom Filter is not retrievable. Once
