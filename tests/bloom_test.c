@@ -37,22 +37,6 @@ int main(int argc, char** argv) {
     Timing tm;
     timing_start(&tm);
 
-    /* need something that can be replicated in the python version */
-    BloomFilter b;
-    bloom_filter_init(&b, 10, 0.050);
-    bloom_filter_add_string(&b, "this is a test");
-    bloom_filter_stats(&b);
-    int tt;
-    for (tt = 0; tt < b.bloom_length; tt++) {
-        printf("%d\t", b.bloom[tt]);
-    }
-    printf("\n");
-    bloom_filter_export(&b, "./dist/c_bloom.blm");
-    char* thex = bloom_filter_export_hex_string(&b);
-    printf("%s\n", thex);
-    free(thex);
-    bloom_filter_destroy(&b);
-
     printf("Testing BloomFilter version %s\n\n", bloom_filter_get_version());
     BloomFilter bf;
     // add a few additional spaces just in case!

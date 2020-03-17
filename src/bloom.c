@@ -112,7 +112,7 @@ int bloom_filter_destroy(BloomFilter *bf) {
 
 int bloom_filter_clear(BloomFilter *bf) {
     long i;
-    for (i = 0; i < bf->bloom_length; i++) {
+    for (i = 0; i < bf->bloom_length; ++i) {
         bf->bloom[i] = 0;
     }
     bf->elements_added = 0;
@@ -169,13 +169,13 @@ int bloom_filter_add_string_alt(BloomFilter *bf, uint64_t *hashes, unsigned int 
     }
 
     int i;
-    for (i = 0; i < bf->number_hashes; i++) {
+    for (i = 0; i < bf->number_hashes; ++i) {
         ATOMIC
         bf->bloom[(hashes[i] % bf->number_bits) / 8] |= (1 << ((hashes[i] % bf->number_bits) % 8)); // set the bit
     }
 
     ATOMIC
-    bf->elements_added++;
+    ++bf->elements_added;
     if (bf->__is_on_disk == 1) { // only do this if it is on disk!
         int offset = sizeof(uint64_t) + sizeof(float);
         CRITICAL
@@ -195,7 +195,7 @@ int bloom_filter_check_string_alt(BloomFilter *bf, uint64_t *hashes, unsigned in
     }
 
     int i, r = BLOOM_SUCCESS;
-    for (i = 0; i < bf->number_hashes; i++) {
+    for (i = 0; i < bf->number_hashes; ++i) {
         int tmp_check = CHECK_BIT(bf->bloom, (hashes[i] % bf->number_bits));
         if (tmp_check == 0) {
             r = BLOOM_FAILURE;
@@ -258,7 +258,7 @@ int bloom_filter_import_on_disk_alt(BloomFilter *bf, char *filepath, BloomHashFu
 char* bloom_filter_export_hex_string(BloomFilter *bf) {
     uint64_t i, bytes = sizeof(uint64_t) * 2 + sizeof(float) + (bf->bloom_length);
     char* hex = malloc((bytes * 2 + 1) * sizeof(char));
-    for (i = 0; i < bf->bloom_length; i++) {
+    for (i = 0; i < bf->bloom_length; ++i) {
         sprintf(hex + (i * 2), "%02x", bf->bloom[i]); // not the fastest way, but works
     }
     i = bf->bloom_length * 2;
@@ -300,7 +300,7 @@ int bloom_filter_import_hex_string_alt(BloomFilter *bf, char *hex, BloomHashFunc
     bf->__is_on_disk = 0; // not on disk
 
     uint64_t i;
-    for (i = 0; i < bf->bloom_length; i++) {
+    for (i = 0; i < bf->bloom_length; ++i) {
         sscanf(hex + (i * 2), "%2hhx", &bf->bloom[i]);
     }
     return BLOOM_SUCCESS;
@@ -312,7 +312,7 @@ uint64_t bloom_filter_export_size(BloomFilter *bf) {
 
 uint64_t bloom_filter_count_set_bits(BloomFilter *bf) {
     uint64_t i, res = 0;
-    for (i = 0; i < bf->bloom_length; i++) {
+    for (i = 0; i < bf->bloom_length; ++i) {
         res += __sum_bits_set_char(bf->bloom[i]);
     }
     return res;
@@ -334,7 +334,7 @@ int bloom_filter_union(BloomFilter *res, BloomFilter *bf1, BloomFilter *bf2) {
         return BLOOM_FAILURE;
     }
     uint64_t i;
-    for (i = 0; i < bf1->bloom_length; i++) {
+    for (i = 0; i < bf1->bloom_length; ++i) {
         res->bloom[i] = bf1->bloom[i] | bf2->bloom[i];
     }
     bloom_filter_set_elements_to_estimated(res);
@@ -347,7 +347,7 @@ uint64_t bloom_filter_count_union_bits_set(BloomFilter *bf1, BloomFilter *bf2) {
         return BLOOM_FAILURE;
     }
     uint64_t i, res = 0;
-    for (i = 0; i < bf1->bloom_length; i++) {
+    for (i = 0; i < bf1->bloom_length; ++i) {
         res += __sum_bits_set_char(bf1->bloom[i] | bf2->bloom[i]);
     }
     return res;
@@ -359,7 +359,7 @@ int bloom_filter_intersect(BloomFilter *res, BloomFilter *bf1, BloomFilter *bf2)
         return BLOOM_FAILURE;
     }
     uint64_t i;
-    for (i = 0; i < bf1->bloom_length; i++) {
+    for (i = 0; i < bf1->bloom_length; ++i) {
         res->bloom[i] = bf1->bloom[i] & bf2->bloom[i];
     }
     bloom_filter_set_elements_to_estimated(res);
@@ -376,7 +376,7 @@ uint64_t bloom_filter_count_intersection_bits_set(BloomFilter *bf1, BloomFilter 
         return BLOOM_FAILURE;
     }
     uint64_t i, res = 0;
-    for (i = 0; i < bf1->bloom_length; i++) {
+    for (i = 0; i < bf1->bloom_length; ++i) {
         res += __sum_bits_set_char(bf1->bloom[i] & bf2->bloom[i]);
     }
     return res;
@@ -412,7 +412,7 @@ static void __calculate_optimal_hashes(BloomFilter *bf) {
 
 static int __sum_bits_set_char(char c) {
     int j, res = 0;
-    for (j = 0; j < CHAR_LEN; j++) {
+    for (j = 0; j < CHAR_LEN; ++j) {
         res += (CHECK_BIT_CHAR(c, j) != 0) ? 1 : 0;
     }
     return res;
@@ -436,7 +436,7 @@ static void __write_to_file(BloomFilter *bf, FILE *fp, short on_disk) {
     } else {
         // will need to write out everything by hand
         uint64_t i;
-        for (i = 0; i < bf->bloom_length; i++) {
+        for (i = 0; i < bf->bloom_length; ++i) {
             fputc(0, fp);
         }
     }
@@ -486,7 +486,7 @@ static uint64_t* __default_hash(int num_hashes, char *str) {
     uint64_t *results = calloc(num_hashes, sizeof(uint64_t));
     int i;
     char *key = calloc(17, sizeof(char));  // largest value is 7FFF,FFFF,FFFF,FFFF
-    for (i = 0; i < num_hashes; i++) {
+    for (i = 0; i < num_hashes; ++i) {
         if (i == 0) {
             results[i] = __fnv_1a(str);
         } else {
@@ -504,7 +504,7 @@ static uint64_t __fnv_1a(char *key) {
     // FNV-1a hash (http://www.isthe.com/chongo/tech/comp/fnv/)
     int i, len = strlen(key);
     uint64_t h = 14695981039346656073ULL; // FNV_OFFSET 64 bit
-    for (i = 0; i < len; i++){
+    for (i = 0; i < len; ++i){
             h = h ^ (unsigned char) key[i];
             h = h * 1099511628211ULL; // FNV_PRIME 64 bit
     }

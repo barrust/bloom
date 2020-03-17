@@ -3,7 +3,7 @@
 ***     Author: Tyler Barrus
 ***     email:  barrust@gmail.com
 ***
-***     Version: 1.7.12
+***     Version: 1.7.13
 ***     Purpose: Simple, yet effective, bloom filter implementation
 ***
 ***     License: MIT 2015
@@ -25,10 +25,10 @@
     #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #endif
 
-#define BLOOMFILTER_VERSION "1.7.12"
+#define BLOOMFILTER_VERSION "1.7.13"
 #define BLOOMFILTER_MAJOR 1
 #define BLOOMFILTER_MINOR 7
-#define BLOOMFILTER_REVISION 12
+#define BLOOMFILTER_REVISION 13
 
 #define BLOOM_SUCCESS 0
 #define BLOOM_FAILURE -1
