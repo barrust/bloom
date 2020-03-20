@@ -1,5 +1,14 @@
 ## Current Version
 
+### Version 1.8.0
+* Removed python version - see [pyprobables](https://github.com/barrust/pyprobables)
+
+### Version 1.7.14
+* Micro optimizations
+
+## Version 1.7.12 and 1.7.13
+* Python implementation changes and improvements
+
 ### Version 1.7.11
 * Remove big endian check since exported blooms are identical on these systems
 * Set critical section to a named critical section
