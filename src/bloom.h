@@ -3,7 +3,7 @@
 ***     Author: Tyler Barrus
 ***     email:  barrust@gmail.com
 ***
-***     Version: 1.7.14
+***     Version: 1.8.0
 ***     Purpose: Simple, yet effective, bloom filter implementation
 ***
 ***     License: MIT 2015
@@ -25,17 +25,17 @@
     #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #endif
 
-#define BLOOMFILTER_VERSION "1.7.14"
+#define BLOOMFILTER_VERSION "1.8.0"
 #define BLOOMFILTER_MAJOR 1
-#define BLOOMFILTER_MINOR 7
-#define BLOOMFILTER_REVISION 14
+#define BLOOMFILTER_MINOR 8
+#define BLOOMFILTER_REVISION 0
 
 #define BLOOM_SUCCESS 0
 #define BLOOM_FAILURE -1
 
 #define bloom_filter_get_version()    (BLOOMFILTER_VERSION)
 
-typedef uint64_t* (*BloomHashFunction) (int num_hashes, char *str);
+typedef uint64_t* (*BloomHashFunction) (int num_hashes, const char *str);
 
 typedef struct bloom_filter {
     /* bloom parameters */
@@ -65,34 +65,34 @@ static int __inline__ bloom_filter_init(BloomFilter *bf, uint64_t estimated_elem
 }
 
 /* Initialize a bloom filter directly into file; useful if the bloom filter is larger than available RAM */
-int bloom_filter_init_on_disk_alt(BloomFilter *bf, uint64_t estimated_elements, float false_positive_rate, char *filepath, BloomHashFunction hash_function);
-static int __inline__ bloom_filter_init_on_disk(BloomFilter *bf, uint64_t estimated_elements, float false_positive_rate, char *filepath) {
+int bloom_filter_init_on_disk_alt(BloomFilter *bf, uint64_t estimated_elements, float false_positive_rate, const char *filepath, BloomHashFunction hash_function);
+static int __inline__ bloom_filter_init_on_disk(BloomFilter *bf, uint64_t estimated_elements, float false_positive_rate, const char *filepath) {
     return bloom_filter_init_on_disk_alt(bf, estimated_elements, false_positive_rate, filepath, NULL);
 }
 
 /* Import a previously exported bloom filter from a file into memory */
-int bloom_filter_import_alt(BloomFilter *bf, char *filepath, BloomHashFunction hash_function);
-static int __inline__ bloom_filter_import(BloomFilter *bf, char *filepath) {
+int bloom_filter_import_alt(BloomFilter *bf, const char *filepath, BloomHashFunction hash_function);
+static int __inline__ bloom_filter_import(BloomFilter *bf, const char *filepath) {
     return bloom_filter_import_alt(bf, filepath, NULL);
 }
 
 /*  Import a previously exported bloom filter from a file but do not pull the full bloom into memory.
     This is allows for the speed / storage trade off of not needing to put the full bloom filter
     into RAM. */
-int bloom_filter_import_on_disk_alt(BloomFilter *bf, char *filepath, BloomHashFunction hash_function);
-static int __inline__ bloom_filter_import_on_disk(BloomFilter *bf, char *filepath) {
+int bloom_filter_import_on_disk_alt(BloomFilter *bf, const char *filepath, BloomHashFunction hash_function);
+static int __inline__ bloom_filter_import_on_disk(BloomFilter *bf, const char *filepath) {
     return bloom_filter_import_on_disk_alt(bf, filepath, NULL);
 }
 
 /* Export the current bloom filter to file */
-int bloom_filter_export(BloomFilter *bf, char *filepath);
+int bloom_filter_export(BloomFilter *bf, const char *filepath);
 
 /*  Export and import as a hex string; not space effecient but allows for storing
     multiple blooms in a single file or in a database, etc.
 
     NOTE: It is up to the caller to free the allocated memory */
 char* bloom_filter_export_hex_string(BloomFilter *bf);
-int bloom_filter_import_hex_string_alt(BloomFilter *bf, char *hex, BloomHashFunction hash_function);
+int bloom_filter_import_hex_string_alt(BloomFilter *bf, const char *hex, BloomHashFunction hash_function);
 static int __inline__ bloom_filter_import_hex_string(BloomFilter *bf, char *hex) {
     return bloom_filter_import_hex_string_alt(bf, hex, NULL);
 }
@@ -110,13 +110,13 @@ int bloom_filter_destroy(BloomFilter *bf);
 int bloom_filter_clear(BloomFilter *bf);
 
 /* Add a string (or element) to the bloom filter */
-int bloom_filter_add_string(BloomFilter *bf, char *str);
+int bloom_filter_add_string(BloomFilter *bf, const char *str);
 
 /* Add a string to a bloom filter using the defined hashes */
 int bloom_filter_add_string_alt(BloomFilter *bf, uint64_t *hashes, unsigned int number_hashes_passed);
 
 /* Check to see if a string (or element) is or is not in the bloom filter */
-int bloom_filter_check_string(BloomFilter *bf, char *str);
+int bloom_filter_check_string(BloomFilter *bf, const char *str);
 
 /* Check if a string is in the bloom filter using the passed hashes */
 int bloom_filter_check_string_alt(BloomFilter *bf, uint64_t *hashes, unsigned int number_hashes_passed);
@@ -140,7 +140,7 @@ void bloom_filter_set_elements_to_estimated(BloomFilter *bf);
 
 /*  Generate the desired number of hashes for the provided string
     NOTE: It is up to the caller to free the allocated memory */
-uint64_t* bloom_filter_calculate_hashes(BloomFilter *bf, char *str, unsigned int number_hashes);
+uint64_t* bloom_filter_calculate_hashes(BloomFilter *bf, const char *str, unsigned int number_hashes);
 
 /* Calculate the size the bloom filter will take on disk when exported in bytes */
 uint64_t bloom_filter_export_size(BloomFilter *bf);

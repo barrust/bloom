@@ -3,7 +3,7 @@
 ***     Author: Tyler Barrus
 ***     email:  barrust@gmail.com
 ***
-***     Version: 1.7.14
+***     Version: 1.8.0
 ***
 ***     License: MIT 2015
 ***
@@ -43,10 +43,10 @@
 /*******************************************************************************
 ***  PRIVATE FUNCTIONS
 *******************************************************************************/
-static uint64_t* __default_hash(int num_hashes, char *str);
-static uint64_t __fnv_1a(char *key);
+static uint64_t* __default_hash(int num_hashes, const char *str);
+static uint64_t __fnv_1a(const char *key);
 static void __calculate_optimal_hashes(BloomFilter *bf);
-static void __read_from_file(BloomFilter *bf, FILE *fp, short on_disk, char *filename);
+static void __read_from_file(BloomFilter *bf, FILE *fp, short on_disk, const char *filename);
 static void __write_to_file(BloomFilter *bf, FILE *fp, short on_disk);
 static int __sum_bits_set_char(char c);
 static int __check_if_union_or_intersection_ok(BloomFilter *res, BloomFilter *bf1, BloomFilter *bf2);
@@ -66,7 +66,7 @@ int bloom_filter_init_alt(BloomFilter *bf, uint64_t estimated_elements, float fa
     return BLOOM_SUCCESS;
 }
 
-int bloom_filter_init_on_disk_alt(BloomFilter *bf, uint64_t estimated_elements, float false_positive_rate, char *filepath, BloomHashFunction hash_function) {
+int bloom_filter_init_on_disk_alt(BloomFilter *bf, uint64_t estimated_elements, float false_positive_rate, const char *filepath, BloomHashFunction hash_function) {
     if(estimated_elements <= 0 || estimated_elements > UINT64_MAX || false_positive_rate <= 0.0 || false_positive_rate >= 1.0) {
         return BLOOM_FAILURE;
     }
@@ -142,7 +142,7 @@ void bloom_filter_stats(BloomFilter *bf) {
     bloom_filter_count_set_bits(bf), is_on_disk);
 }
 
-int bloom_filter_add_string(BloomFilter *bf, char *str) {
+int bloom_filter_add_string(BloomFilter *bf, const char *str) {
     uint64_t *hashes = bloom_filter_calculate_hashes(bf, str, bf->number_hashes);
     int res = bloom_filter_add_string_alt(bf, hashes, bf->number_hashes);
     free(hashes);
@@ -150,14 +150,14 @@ int bloom_filter_add_string(BloomFilter *bf, char *str) {
 }
 
 
-int bloom_filter_check_string(BloomFilter *bf, char *str) {
+int bloom_filter_check_string(BloomFilter *bf, const char *str) {
     uint64_t *hashes = bloom_filter_calculate_hashes(bf, str, bf->number_hashes);
     int res = bloom_filter_check_string_alt(bf, hashes, bf->number_hashes);
     free(hashes);
     return res;
 }
 
-uint64_t* bloom_filter_calculate_hashes(BloomFilter *bf, char *str, unsigned int number_hashes) {
+uint64_t* bloom_filter_calculate_hashes(BloomFilter *bf, const char *str, unsigned int number_hashes) {
     return bf->hash_function(number_hashes, str);
 }
 
@@ -212,7 +212,7 @@ float bloom_filter_current_false_positive_rate(BloomFilter *bf) {
     return pow((1 - e), bf->number_hashes);
 }
 
-int bloom_filter_export(BloomFilter *bf, char *filepath) {
+int bloom_filter_export(BloomFilter *bf, const char *filepath) {
     // if the bloom is initialized on disk, no need to export it
     if (bf->__is_on_disk == 1) {
         return BLOOM_SUCCESS;
@@ -228,7 +228,7 @@ int bloom_filter_export(BloomFilter *bf, char *filepath) {
     return BLOOM_SUCCESS;
 }
 
-int bloom_filter_import_alt(BloomFilter *bf, char *filepath, BloomHashFunction hash_function) {
+int bloom_filter_import_alt(BloomFilter *bf, const char *filepath, BloomHashFunction hash_function) {
     FILE *fp;
     fp = fopen(filepath, "r+b");
     if (fp == NULL) {
@@ -242,7 +242,7 @@ int bloom_filter_import_alt(BloomFilter *bf, char *filepath, BloomHashFunction h
     return BLOOM_SUCCESS;
 }
 
-int bloom_filter_import_on_disk_alt(BloomFilter *bf, char *filepath, BloomHashFunction hash_function) {
+int bloom_filter_import_on_disk_alt(BloomFilter *bf, const char *filepath, BloomHashFunction hash_function) {
     bf->filepointer = fopen(filepath, "r+b");
     if (bf->filepointer == NULL) {
         fprintf(stderr, "Can't open file %s!\n", filepath);
@@ -273,7 +273,7 @@ char* bloom_filter_export_hex_string(BloomFilter *bf) {
     return hex;
 }
 
-int bloom_filter_import_hex_string_alt(BloomFilter *bf, char *hex, BloomHashFunction hash_function) {
+int bloom_filter_import_hex_string_alt(BloomFilter *bf, const char *hex, BloomHashFunction hash_function) {
     uint64_t len = strlen(hex);
     if (len % 2 != 0) {
         fprintf(stderr, "Unable to parse; exiting\n");
@@ -446,7 +446,7 @@ static void __write_to_file(BloomFilter *bf, FILE *fp, short on_disk) {
 }
 
 /* NOTE: this assumes that the file handler is open and ready to use */
-static void __read_from_file(BloomFilter *bf, FILE *fp, short on_disk, char *filename) {
+static void __read_from_file(BloomFilter *bf, FILE *fp, short on_disk, const char *filename) {
     int offset = sizeof(uint64_t) * 2 + sizeof(float);
     fseek(fp, offset * -1, SEEK_END);
     size_t read;
@@ -482,25 +482,19 @@ static void __read_from_file(BloomFilter *bf, FILE *fp, short on_disk, char *fil
 }
 
 /* NOTE: The caller will free the results */
-static uint64_t* __default_hash(int num_hashes, char *str) {
+static uint64_t* __default_hash(int num_hashes, const char *str) {
     uint64_t *results = calloc(num_hashes, sizeof(uint64_t));
     int i;
-    char *key = calloc(17, sizeof(char));  // largest value is 7FFF,FFFF,FFFF,FFFF
-    for (i = 0; i < num_hashes; ++i) {
-        if (i == 0) {
-            results[i] = __fnv_1a(str);
-        } else {
-            uint64_t prev = results[i-1];
-            memset(key, 0, 17);
-            sprintf(key, "%" PRIx64 "", prev);
-            results[i] = __fnv_1a(key);
-        }
+    char key[17] = {0}; // largest value is 7FFF,FFFF,FFFF,FFFF
+    results[0] = __fnv_1a(str);
+    for (i = 1; i < num_hashes; ++i) {
+        sprintf(key, "%" PRIx64 "", results[i-1]);
+        results[i] = __fnv_1a(key);
     }
-    free(key);
     return results;
 }
 
-static uint64_t __fnv_1a(char *key) {
+static uint64_t __fnv_1a(const char *key) {
     // FNV-1a hash (http://www.isthe.com/chongo/tech/comp/fnv/)
     int i, len = strlen(key);
     uint64_t h = 14695981039346656073ULL; // FNV_OFFSET 64 bit

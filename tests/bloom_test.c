@@ -28,8 +28,8 @@ int check_unknown_values_alt(BloomFilter *bf, int mult, int mult2, int offset, i
 int check_unknown_values_alt_2(BloomFilter *bf, int mult, int mult2, int offset, int* used);
 void success_or_failure(int res);
 void populate_bloom_filter(BloomFilter *bf, unsigned long long elements, int mult);
-static uint64_t __fnv_1a_mod(char *key);
-static uint64_t* __default_hash_mod(int num_hashes, char *str);
+static uint64_t __fnv_1a_mod(const char *key);
+static uint64_t* __default_hash_mod(int num_hashes, const char *str);
 
 
 
@@ -39,8 +39,6 @@ int main(int argc, char** argv) {
 
     printf("Testing BloomFilter version %s\n\n", bloom_filter_get_version());
     BloomFilter bf;
-    // add a few additional spaces just in case!
-    // bloom_filter_init_alt(&bf, ELEMENTS, FALSE_POSITIVE_RATE, &sha256_hash);
     bloom_filter_init(&bf, ELEMENTS, FALSE_POSITIVE_RATE);
     int cnt, used;
     populate_bloom_filter(&bf, ELEMENTS, 2);
@@ -80,7 +78,7 @@ int main(int argc, char** argv) {
     assert(bf.elements_added == 0);  // should be empty!
     long u;
     cnt = 0;
-    for(u = 0; u < bf.bloom_length; u++) {
+    for(u = 0; u < bf.bloom_length; ++u) {
         if(bf.bloom[u] != 0) {
             cnt++;
         }
@@ -149,7 +147,7 @@ int main(int argc, char** argv) {
         qres = -1;
     }
     uint64_t t;
-    for (t = 0; t < bfh.bloom_length; t++) {
+    for (t = 0; t < bfh.bloom_length; ++t) {
         if (bfh.bloom[t] != bfi.bloom[t]) {
             qres = 1;
             break;
@@ -451,31 +449,26 @@ void success_or_failure(int res) {
 }
 
 /* NOTE: The caller will free the results */
-static uint64_t* __default_hash_mod(int num_hashes, char *str) {
+static uint64_t* __default_hash_mod(int num_hashes, const char *str) {
     uint64_t *results = calloc(num_hashes, sizeof(uint64_t));
     int i;
     char *key = calloc(17, sizeof(char));  // largest value is 7FFF,FFFF,FFFF,FFFF
-    for (i = 0; i < num_hashes; i++) {
-        if (i == 0) {
-            results[i] = __fnv_1a_mod(str);
-        } else {
-            uint64_t prev = results[i-1];
-            memset(key, 0, 17);
-            sprintf(key, "%" PRIx64 "", prev);
-            results[i] = __fnv_1a_mod(key);
-        }
+    results[0] = __fnv_1a_mod(str);
+    for (i = 1; i < num_hashes; ++i) {
+        sprintf(key, "%" PRIx64 "", results[i-1]);
+        results[i] = __fnv_1a_mod(key);
     }
     free(key);
     return results;
 }
 
-static uint64_t __fnv_1a_mod(char *key) {
+static uint64_t __fnv_1a_mod(const char *key) {
     // FNV-1a hash (http://www.isthe.com/chongo/tech/comp/fnv/)
     int i, len = strlen(key);
     uint64_t h = 14695981039346656073ULL; // FNV_OFFSET 64 bit
-    for (i = 0; i < len; i++){
-            h = h ^ (unsigned char) key[i];
-            h = h * 1099511628211ULL; // FNV_PRIME 64 bit
+    for (i = 0; i < len; ++i) {
+        h = h ^ (unsigned char) key[i];
+        h = h * 1099511628211ULL; // FNV_PRIME 64 bit
     }
     return h;
 }
