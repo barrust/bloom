@@ -7,6 +7,8 @@ data is 'inserted', data can be checked to see if it likely has been seen or if
 it definitely has not. Bloom Filters guarantee a 0% False Negative rate with a
 pre-selected false positive rate.
 
+To use the library, copy the `src/bloom.h` and `src/bloom.c` files into your
+project and include it where needed.
 
 ## License:
 MIT 2015
