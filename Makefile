@@ -3,7 +3,7 @@ DISTDIR=dist
 SRCDIR=src
 CCFLAGS=-lm -Wall -Wpedantic -Winline -O3
 
-all: clean bloom
+all: bloom
 	gcc $(DISTDIR)/bloom.o $(TESTDIR)/bloom_test.c $(CCFLAGS) -o ./$(DISTDIR)/blm
 omp: bloom
 	if [ -e ./$(DISTDIR)/blmmt ]; then rm ./dist/blmmt; fi;
