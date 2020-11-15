@@ -22,6 +22,55 @@ void test_teardown(void) {
 *******************************************************************************/
 MU_TEST(test_bloom_setup) {
     mu_assert_int_eq(50000, b.estimated_elements);
+    float fpr = 0.01;
+    mu_assert_double_eq(fpr, b.false_positive_probability);
+    mu_assert_int_eq(7, b.number_hashes);
+    mu_assert_int_eq(59907, b.bloom_length);
+    mu_assert_int_eq(0, b.elements_added);
+
+    mu_assert_null(b.filepointer);
+    mu_assert_not_null(b.hash_function);
+}
+
+MU_TEST(test_bloom_setup_returns) {
+    BloomFilter bf;
+    mu_assert_int_eq(BLOOM_FAILURE, bloom_filter_init(&bf, 0, 0.01));
+    mu_assert_int_eq(BLOOM_FAILURE, bloom_filter_init(&bf, 50000, 1.01));
+    mu_assert_int_eq(BLOOM_FAILURE, bloom_filter_init(&bf, 50000, -0.01));
+    mu_assert_int_eq(BLOOM_SUCCESS, bloom_filter_init(&bf, 50000, 0.01));
+    bloom_filter_destroy(&bf);
+}
+
+MU_TEST(test_bloom_on_disk_setup) {
+    char filepath[] = "./dist/test_bloom_on_disk_setup.blm";
+
+    BloomFilter bf;
+    int r = bloom_filter_init_on_disk(&bf, 50000, 0.01, filepath);
+
+    mu_assert_int_eq(BLOOM_SUCCESS, r);
+    mu_assert_int_eq(50000, bf.estimated_elements);
+    float fpr = 0.01;
+    mu_assert_double_eq(fpr, bf.false_positive_probability);
+    mu_assert_int_eq(7, bf.number_hashes);
+    mu_assert_int_eq(59907, bf.bloom_length);
+    mu_assert_int_eq(0, bf.elements_added);
+
+    mu_assert_not_null(bf.filepointer);
+    mu_assert_not_null(bf.hash_function);
+
+    bloom_filter_destroy(&bf);
+    remove(filepath);
+}
+
+MU_TEST(test_bloom_on_disk_setup_returns) {
+    char filepath[] = "./dist/test_bloom_on_disk_setup_returns.blm";
+    BloomFilter bf;
+    mu_assert_int_eq(BLOOM_FAILURE, bloom_filter_init_on_disk(&bf, 0, 0.01, filepath));
+    mu_assert_int_eq(BLOOM_FAILURE, bloom_filter_init_on_disk(&bf, 50000, 1.01, filepath));
+    mu_assert_int_eq(BLOOM_FAILURE, bloom_filter_init_on_disk(&bf, 50000, -0.01, filepath));
+    mu_assert_int_eq(BLOOM_SUCCESS, bloom_filter_init_on_disk(&bf, 50000, 0.01, filepath));
+    bloom_filter_destroy(&bf);
+    remove(filepath);
 }
 
 /*******************************************************************************
@@ -32,7 +81,9 @@ MU_TEST_SUITE(test_suite) {
 
     /* setup */
     MU_RUN_TEST(test_bloom_setup);
-
+    MU_RUN_TEST(test_bloom_on_disk_setup);
+    MU_RUN_TEST(test_bloom_setup_returns);
+    MU_RUN_TEST(test_bloom_on_disk_setup_returns);
 
 }
 
