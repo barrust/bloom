@@ -60,19 +60,19 @@ typedef struct bloom_filter {
     Estimated elements is 0 < x <= UINT64_MAX.
     False positive rate is 0.0 < x < 1.0 */
 int bloom_filter_init_alt(BloomFilter *bf, uint64_t estimated_elements, float false_positive_rate, BloomHashFunction hash_function);
-static int __inline__ bloom_filter_init(BloomFilter *bf, uint64_t estimated_elements, float false_positive_rate) {
+static __inline__ int bloom_filter_init(BloomFilter *bf, uint64_t estimated_elements, float false_positive_rate) {
     return bloom_filter_init_alt(bf, estimated_elements, false_positive_rate, NULL);
 }
 
 /* Initialize a bloom filter directly into file; useful if the bloom filter is larger than available RAM */
 int bloom_filter_init_on_disk_alt(BloomFilter *bf, uint64_t estimated_elements, float false_positive_rate, const char *filepath, BloomHashFunction hash_function);
-static int __inline__ bloom_filter_init_on_disk(BloomFilter *bf, uint64_t estimated_elements, float false_positive_rate, const char *filepath) {
+static __inline__ int bloom_filter_init_on_disk(BloomFilter *bf, uint64_t estimated_elements, float false_positive_rate, const char *filepath) {
     return bloom_filter_init_on_disk_alt(bf, estimated_elements, false_positive_rate, filepath, NULL);
 }
 
 /* Import a previously exported bloom filter from a file into memory */
 int bloom_filter_import_alt(BloomFilter *bf, const char *filepath, BloomHashFunction hash_function);
-static int __inline__ bloom_filter_import(BloomFilter *bf, const char *filepath) {
+static __inline__ int bloom_filter_import(BloomFilter *bf, const char *filepath) {
     return bloom_filter_import_alt(bf, filepath, NULL);
 }
 
@@ -80,7 +80,7 @@ static int __inline__ bloom_filter_import(BloomFilter *bf, const char *filepath)
     This is allows for the speed / storage trade off of not needing to put the full bloom filter
     into RAM. */
 int bloom_filter_import_on_disk_alt(BloomFilter *bf, const char *filepath, BloomHashFunction hash_function);
-static int __inline__ bloom_filter_import_on_disk(BloomFilter *bf, const char *filepath) {
+static __inline__ int bloom_filter_import_on_disk(BloomFilter *bf, const char *filepath) {
     return bloom_filter_import_on_disk_alt(bf, filepath, NULL);
 }
 
@@ -93,7 +93,7 @@ int bloom_filter_export(BloomFilter *bf, const char *filepath);
     NOTE: It is up to the caller to free the allocated memory */
 char* bloom_filter_export_hex_string(BloomFilter *bf);
 int bloom_filter_import_hex_string_alt(BloomFilter *bf, const char *hex, BloomHashFunction hash_function);
-static int __inline__ bloom_filter_import_hex_string(BloomFilter *bf, char *hex) {
+static __inline__ int bloom_filter_import_hex_string(BloomFilter *bf, char *hex) {
     return bloom_filter_import_hex_string_alt(bf, hex, NULL);
 }
 
