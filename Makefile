@@ -5,10 +5,10 @@ SRCDIR=src
 TESTDIR=tests
 
 all: bloom
-	gcc $(DISTDIR)/bloom.o $(TESTDIR)/bloom_test.c $(CCFLAGS) -o ./$(DISTDIR)/blm
+	$(CC) $(DISTDIR)/bloom.o $(TESTDIR)/bloom_test.c $(CCFLAGS) $(COMPFLAGS) -o ./$(DISTDIR)/blm
 
 omp: bloom
-	gcc $(DISTDIR)/bloom.o $(TESTDIR)/bloom_multi_thread.c $(CCFLAGS) -fopenmp -o ./$(DISTDIR)/blmmt
+	$(CC) $(DISTDIR)/bloom.o $(TESTDIR)/bloom_multi_thread.c $(CCFLAGS) $(COMPFLAGS) -fopenmp -o ./$(DISTDIR)/blmmt
 
 debug: COMPFLAGS += -g
 debug: all
@@ -40,4 +40,4 @@ clean:
 	rm -f ./*.gcov
 
 bloom:
-	gcc -c $(SRCDIR)/bloom.c -o $(DISTDIR)/bloom.o $(CCFLAGS)
+	$(CC) -c $(SRCDIR)/bloom.c -o $(DISTDIR)/bloom.o $(CCFLAGS) $(COMPFLAGS)

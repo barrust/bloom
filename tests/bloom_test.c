@@ -33,7 +33,7 @@ static uint64_t* __default_hash_mod(int num_hashes, const char *str);
 
 
 
-int main(int argc, char** argv) {
+int main() {
     Timing tm;
     timing_start(&tm);
 
@@ -76,7 +76,7 @@ int main(int argc, char** argv) {
     bloom_filter_clear(&bf);
     assert(bf.false_positive_probability == (float)FALSE_POSITIVE_RATE);
     assert(bf.elements_added == 0);  // should be empty!
-    long u;
+    unsigned long u;
     cnt = 0;
     for(u = 0; u < bf.bloom_length; ++u) {
         if(bf.bloom[u] != 0) {
@@ -124,8 +124,6 @@ int main(int argc, char** argv) {
     } else {
         success_or_failure(-1);
     }
-
-
 
 
     printf("Bloom Filter Hex Import: ");
@@ -353,10 +351,9 @@ int main(int argc, char** argv) {
 
 /* private function definitions */
 void populate_bloom_filter(BloomFilter *bf, unsigned long long elements, int mult) {
-    int i;
-    for (i = 0; i < elements * mult; i+=mult) {
+    for (unsigned long long i = 0; i < elements * mult; i+=mult) {
         char key[KEY_LEN] = {0};
-        sprintf(key, "%d", i);
+        sprintf(key, "%llu", i);
         bloom_filter_add_string(bf, key);
     }
 }

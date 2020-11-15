@@ -45,7 +45,7 @@ typedef struct bloom_filter {
     uint64_t number_bits;
     /* bloom filter */
     unsigned char *bloom;
-    long bloom_length;
+    unsigned long bloom_length;
     uint64_t elements_added;
     BloomHashFunction hash_function;
     /* on disk handeling */

@@ -7,7 +7,7 @@
 
 #define SIZE 100000000
 
-int main(int argc, char** argv) {
+int main() {
     printf("Testing BloomFilter version %s\n\n", bloom_filter_get_version());
 
     int THREADS = 1;
