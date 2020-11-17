@@ -74,6 +74,65 @@ MU_TEST(test_bloom_on_disk_setup_returns) {
 }
 
 /*******************************************************************************
+*   Test set and check
+*******************************************************************************/
+MU_TEST(test_bloom_set) {
+    int errors = 0;
+    for (int i = 0; i < 3000; ++i) {
+        char key[5] = {0};
+        sprintf(key, "%d", i);
+        errors += bloom_filter_add_string(&b, key) == BLOOM_SUCCESS ? 0 : 1;
+    }
+    mu_assert_int_eq(0, errors);
+    mu_assert_int_eq(3000, b.elements_added);
+
+    errors = 0;
+    for (int i = 0; i < 3000; ++i) {
+        char key[5] = {0};
+        sprintf(key, "%d", i);
+        errors += bloom_filter_check_string(&b, key) == BLOOM_SUCCESS ? 0 : 1;
+    }
+    mu_assert_int_eq(0, errors);
+}
+
+MU_TEST(test_bloom_check) {
+    int errors = 0;
+    for (int i = 0; i < 3000; ++i) {
+        char key[5] = {0};
+        sprintf(key, "%d", i);
+        errors += bloom_filter_add_string(&b, key) == BLOOM_SUCCESS ? 0 : 1;
+    }
+
+    /* check things that are not present */
+    errors = 0;
+    for (int i = 3000; i < 5000; ++i) {
+        char key[5] = {0};
+        sprintf(key, "%d", i);
+        errors += bloom_filter_check_string(&b, key) == BLOOM_FAILURE ? 0 : 1;
+    }
+    mu_assert_int_eq(0, errors);
+}
+
+MU_TEST(test_bloom_check_false_positive) {
+    int errors = 0;
+    for (int i = 0; i < 50000; ++i) {
+        char key[5] = {0};
+        sprintf(key, "%d", i);
+        errors += bloom_filter_add_string(&b, key) == BLOOM_SUCCESS ? 0 : 1;
+    }
+
+    /* check things that are not present */
+    errors = 0;
+    for (int i = 50000; i < 51000; ++i) {
+        char key[5] = {0};
+        sprintf(key, "%d", i);
+        errors += bloom_filter_check_string(&b, key) == BLOOM_FAILURE ? 0 : 1;
+    }
+    mu_assert_int_eq(11, errors);  // there are 11 false positives!
+}
+
+
+/*******************************************************************************
 *   Testsuite
 *******************************************************************************/
 MU_TEST_SUITE(test_suite) {
@@ -84,6 +143,11 @@ MU_TEST_SUITE(test_suite) {
     MU_RUN_TEST(test_bloom_on_disk_setup);
     MU_RUN_TEST(test_bloom_setup_returns);
     MU_RUN_TEST(test_bloom_on_disk_setup_returns);
+
+    /* set and contains */
+    MU_RUN_TEST(test_bloom_set);
+    MU_RUN_TEST(test_bloom_check);
+    MU_RUN_TEST(test_bloom_check_false_positive);
 
 }
 
