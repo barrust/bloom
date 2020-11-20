@@ -425,19 +425,68 @@ MU_TEST(test_bloom_import_on_disk_fail) {
     BloomFilter bf;
     mu_assert_int_eq(BLOOM_FAILURE, bloom_filter_import_on_disk(&bf, filepath));
 }
-/*
-MU_TEST(test_bloom_export_hex) {
 
+MU_TEST(test_bloom_export_hex) {
+    char hex_start[] = "22004000000200040004000402004033000040000000120010240010000000000020018101880000";
+    char hex_end[] = "0100000000201800000102601200000000224000000000000000c35000000000000013883c23d70a";
+
+    for (int i = 0; i < 5000; ++i) {
+        char key[5] = {0};
+        sprintf(key, "%d", i);
+        bloom_filter_add_string(&b, key);
+    }
+    char* hex = bloom_filter_export_hex_string(&b);
+
+    char hs[81] = {0};
+    strncpy(hs, hex, 80);
+    char he[81] = {0};
+    strncpy(he, hex + (119854 - 80), 80);
+
+    mu_assert_string_eq(hex_start, hs);
+    mu_assert_string_eq(hex_end, he);
+    mu_assert_int_eq(119854, strlen(hex));
+
+    free(hex);
 }
 
 MU_TEST(test_bloom_import_hex) {
+    BloomFilter bo;
+    bloom_filter_init(&bo, 500, 0.1);
 
+    for (int i = 0; i < 250; ++i) {
+        char key[5] = {0};
+        sprintf(key, "%d", i);
+        bloom_filter_add_string(&bo, key);
+    }
+    char* hex = bloom_filter_export_hex_string(&bo);
+
+    BloomFilter bf;
+    bloom_filter_import_hex_string(&bf, hex);
+
+    mu_assert_int_eq(500, bf.estimated_elements);
+    float fpr = 0.1;
+    mu_assert_double_eq(fpr, bf.false_positive_probability);
+    mu_assert_int_eq(3, bf.number_hashes);
+    mu_assert_int_eq(300, bf.bloom_length);
+    mu_assert_int_eq(250, bf.elements_added);
+    int errors = 0;
+    for (int i = 0; i < 250; ++i) {
+        char key[5] = {0};
+        sprintf(key, "%d", i);
+        errors += bloom_filter_check_string(&bf, key) == BLOOM_SUCCESS ? 0 : 1;
+    }
+    mu_assert_int_eq(0, errors);
+
+    bloom_filter_destroy(&bf);
+    bloom_filter_destroy(&bo);
+    free(hex);
 }
 
+/* NOTE: apparently import hex does not check all possible failures! */
 MU_TEST(test_bloom_import_hex_fail) {
-
+    BloomFilter bf;
+    mu_assert_int_eq(BLOOM_FAILURE, bloom_filter_import_hex_string(&bf, "aaa"));  // only checks odd length
 }
-*/
 
 /*******************************************************************************
 *   Testsuite
@@ -476,6 +525,11 @@ MU_TEST_SUITE(test_suite) {
     MU_RUN_TEST(test_bloom_import_fail);
     MU_RUN_TEST(test_bloom_import_on_disk);
     MU_RUN_TEST(test_bloom_import_on_disk_fail);
+
+    /* import and export hex strings */
+    MU_RUN_TEST(test_bloom_export_hex);
+    MU_RUN_TEST(test_bloom_import_hex);
+    MU_RUN_TEST(test_bloom_import_hex_fail);
 }
 
 
