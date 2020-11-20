@@ -21,7 +21,7 @@ sanitize: test
 
 test: COMPFLAGS += -coverage
 test: bloom
-	$(CC) $(DISTDIR)/bloom.o $(TESTDIR)/testsuite.c $(CCFLAGS) $(COMPFLAGS) -o ./$(DISTDIR)/test -g
+	$(CC) $(DISTDIR)/bloom.o $(TESTDIR)/testsuite.c $(CCFLAGS) $(COMPFLAGS) -o ./$(DISTDIR)/test -g -lcrypto
 
 clean:
 	# library
