@@ -1,5 +1,7 @@
-
-# Custom
+# project specific
+*.gcno
+*.gcda
+*.gcov
 dist/*
 !dist/.gitkeep
 
@@ -51,6 +53,7 @@ dist/*
 # Kernel Module Compile Results
 *.mod*
 *.cmd
+.tmp_versions/
 modules.order
 Module.symvers
 Mkfile.old

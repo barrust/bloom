@@ -21,7 +21,7 @@
 #include "bloom.h"
 
 
-#define CHECK_BIT_CHAR(c,k)   (c & (1 << (k)))
+#define CHECK_BIT_CHAR(c, k)  ((c) & (1 << (k)))
 #define CHECK_BIT(A, k)       (CHECK_BIT_CHAR(A[((k) / 8)], ((k) % 8)))
 // #define set_bit(A,k)          (A[((k) / 8)] |=  (1 << ((k) % 8)))
 // #define clear_bit(A,k)        (A[((k) / 8)] &= ~(1 << ((k) % 8)))
@@ -40,6 +40,13 @@
 #define LOG_TWO_SQUARED 0.4804530139182
 #define LOG_TWO 0.6931471805599453
 
+/* https://graphics.stanford.edu/~seander/bithacks.html#CountBitsSetTable */
+#define B2(n) n,     n+1,     n+1,     n+2
+#define B4(n) B2(n), B2(n+1), B2(n+1), B2(n+2)
+#define B6(n) B4(n), B4(n+1), B4(n+1), B4(n+2)
+static const unsigned char bits_set_table[256] = {B6(0), B6(1), B6(1), B6(2)};
+
+
 /*******************************************************************************
 ***  PRIVATE FUNCTIONS
 *******************************************************************************/
@@ -48,7 +55,7 @@ static uint64_t __fnv_1a(const char *key);
 static void __calculate_optimal_hashes(BloomFilter *bf);
 static void __read_from_file(BloomFilter *bf, FILE *fp, short on_disk, const char *filename);
 static void __write_to_file(BloomFilter *bf, FILE *fp, short on_disk);
-static int __sum_bits_set_char(char c);
+static int __sum_bits_set_char(unsigned char c);
 static int __check_if_union_or_intersection_ok(BloomFilter *res, BloomFilter *bf1, BloomFilter *bf2);
 
 
@@ -111,8 +118,7 @@ int bloom_filter_destroy(BloomFilter *bf) {
 }
 
 int bloom_filter_clear(BloomFilter *bf) {
-    long i;
-    for (i = 0; i < bf->bloom_length; ++i) {
+    for (unsigned long i = 0; i < bf->bloom_length; ++i) {
         bf->bloom[i] = 0;
     }
     bf->elements_added = 0;
@@ -168,7 +174,7 @@ int bloom_filter_add_string_alt(BloomFilter *bf, uint64_t *hashes, unsigned int 
         return BLOOM_FAILURE;
     }
 
-    int i;
+    unsigned int i;
     for (i = 0; i < bf->number_hashes; ++i) {
         ATOMIC
         bf->bloom[(hashes[i] % bf->number_bits) / 8] |= (1 << ((hashes[i] % bf->number_bits) % 8)); // set the bit
@@ -194,7 +200,8 @@ int bloom_filter_check_string_alt(BloomFilter *bf, uint64_t *hashes, unsigned in
         return BLOOM_FAILURE;
     }
 
-    int i, r = BLOOM_SUCCESS;
+    unsigned int i;
+    int r = BLOOM_SUCCESS;
     for (i = 0; i < bf->number_hashes; ++i) {
         int tmp_check = CHECK_BIT(bf->bloom, (hashes[i] % bf->number_bits));
         if (tmp_check == 0) {
@@ -206,8 +213,8 @@ int bloom_filter_check_string_alt(BloomFilter *bf, uint64_t *hashes, unsigned in
 }
 
 float bloom_filter_current_false_positive_rate(BloomFilter *bf) {
-    int num = (bf->number_hashes * -1 * bf->elements_added);
-    double d = num / (float) bf->number_bits;
+    int num = bf->number_hashes * bf->elements_added;
+    double d = -num / (float) bf->number_bits;
     double e = exp(d);
     return pow((1 - e), bf->number_hashes);
 }
@@ -410,12 +417,8 @@ static void __calculate_optimal_hashes(BloomFilter *bf) {
     bf->bloom_length = num_pos;
 }
 
-static int __sum_bits_set_char(char c) {
-    int j, res = 0;
-    for (j = 0; j < CHAR_LEN; ++j) {
-        res += (CHECK_BIT_CHAR(c, j) != 0) ? 1 : 0;
-    }
-    return res;
+static int __sum_bits_set_char(unsigned char c) {
+    return bits_set_table[c];
 }
 
 static int __check_if_union_or_intersection_ok(BloomFilter *res, BloomFilter *bf1, BloomFilter *bf2) {
@@ -449,14 +452,15 @@ static void __write_to_file(BloomFilter *bf, FILE *fp, short on_disk) {
 static void __read_from_file(BloomFilter *bf, FILE *fp, short on_disk, const char *filename) {
     int offset = sizeof(uint64_t) * 2 + sizeof(float);
     fseek(fp, offset * -1, SEEK_END);
-    size_t read;
-    read = fread(&bf->estimated_elements, sizeof(uint64_t), 1, fp);
-    read = fread(&bf->elements_added, sizeof(uint64_t), 1, fp);
-    read = fread(&bf->false_positive_probability, sizeof(float), 1, fp);
+
+    fread(&bf->estimated_elements, sizeof(uint64_t), 1, fp);
+    fread(&bf->elements_added, sizeof(uint64_t), 1, fp);
+    fread(&bf->false_positive_probability, sizeof(float), 1, fp);
     __calculate_optimal_hashes(bf);
     rewind(fp);
     if(on_disk == 0) {
         bf->bloom = calloc(bf->bloom_length + 1, sizeof(char));
+        size_t read;
         read = fread(bf->bloom, sizeof(char), bf->bloom_length, fp);
         if (read != bf->bloom_length) {
             perror("__read_from_file: ");
