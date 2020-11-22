@@ -13,6 +13,9 @@
 static int calculate_md5sum(const char* filename, char* digest);
 static off_t fsize(const char* filename);
 
+static uint64_t* fake_hash(int num_hashes, const char *str);
+static uint64_t hasher(const char *key);
+
 
 BloomFilter b;
 
@@ -489,6 +492,111 @@ MU_TEST(test_bloom_import_hex_fail) {
 }
 
 /*******************************************************************************
+*   Union, Intersection, Jaccard Index
+*******************************************************************************/
+MU_TEST(test_bloom_filter_union_intersection_errors) {
+    BloomFilter x, y, z;
+
+    // number of hashes different
+    bloom_filter_init(&x, 500, 0.1);
+    bloom_filter_init(&y, 500, 0.01);
+    bloom_filter_init(&z, 500, 0.1);
+    mu_assert_int_eq(BLOOM_FAILURE, bloom_filter_union(&x, &y, &z));
+    mu_assert_int_eq(BLOOM_FAILURE, bloom_filter_intersect(&x, &y, &z));
+    bloom_filter_destroy(&x);
+    bloom_filter_destroy(&y);
+    bloom_filter_destroy(&z);
+
+    // different number of bits
+    bloom_filter_init(&x, 500, 0.1);
+    bloom_filter_init(&y, 505, 0.1);
+    bloom_filter_init(&z, 500, 0.1);
+    mu_assert_int_eq(BLOOM_FAILURE, bloom_filter_union(&x, &y, &z));
+    mu_assert_int_eq(BLOOM_FAILURE, bloom_filter_intersect(&x, &y, &z));
+    bloom_filter_destroy(&x);
+    bloom_filter_destroy(&y);
+    bloom_filter_destroy(&z);
+
+    // different hash functions
+    bloom_filter_init_alt(&x, 500, 0.1, &fake_hash);
+    bloom_filter_init_alt(&y, 500, 0.1, &fake_hash);
+    bloom_filter_init_alt(&z, 500, 0.1, NULL);  // use the default hash
+    mu_assert_int_eq(BLOOM_FAILURE, bloom_filter_union(&x, &y, &z));
+    mu_assert_int_eq(BLOOM_FAILURE, bloom_filter_intersect(&x, &y, &z));
+    bloom_filter_destroy(&x);
+    bloom_filter_destroy(&y);
+    bloom_filter_destroy(&z);
+}
+
+MU_TEST(test_bloom_filter_union) {
+    BloomFilter x, y, z;
+    bloom_filter_init(&x, 500, 0.01);
+    bloom_filter_init(&y, 500, 0.01);
+    bloom_filter_init(&z, 500, 0.01);
+
+    for (int i = 0; i < 250; ++i) {
+        char key_y[5] = {0};
+        char key_z[5] = {0};
+        sprintf(key_y, "%d", i);
+        sprintf(key_z, "%d", i + 100);
+        bloom_filter_add_string(&y, key_y);
+        bloom_filter_add_string(&z, key_z);
+    }
+
+    int res = bloom_filter_union(&x, &y, &z);
+    mu_assert_int_eq(BLOOM_SUCCESS, res);
+
+    int errors = 0;
+    for (int i = 0; i < 350; ++i) {
+        char key[5] = {0};
+        sprintf(key, "%d", i);
+        errors += bloom_filter_check_string(&x, key) == BLOOM_SUCCESS ? 0 : 1;
+    }
+    mu_assert_int_eq(0, errors);
+    mu_assert_int_eq(350, bloom_filter_estimate_elements(&x));
+    mu_assert_int_between(340, 355, (int)x.elements_added);
+
+    bloom_filter_destroy(&x);
+    bloom_filter_destroy(&y);
+    bloom_filter_destroy(&z);
+}
+
+MU_TEST(test_bloom_filter_intersection) {
+    BloomFilter x, y, z;
+    bloom_filter_init(&x, 500, 0.01);
+    bloom_filter_init(&y, 500, 0.01);
+    bloom_filter_init(&z, 500, 0.01);
+
+    for (int i = 0; i < 250; ++i) {
+        char key_y[5] = {0};
+        char key_z[5] = {0};
+        sprintf(key_y, "%d", i);
+        sprintf(key_z, "%d", i + 100);
+        bloom_filter_add_string(&y, key_y);
+        bloom_filter_add_string(&z, key_z);
+    }
+
+    int res = bloom_filter_intersect(&x, &y, &z);
+    mu_assert_int_eq(BLOOM_SUCCESS, res);
+
+    int errors = 0;
+    for (int i = 1500; i < 250; ++i) {
+        char key[5] = {0};
+        sprintf(key, "%d", i);
+        errors += bloom_filter_check_string(&x, key) == BLOOM_SUCCESS ? 0 : 1;
+    }
+    mu_assert_int_eq(0, errors);
+    mu_assert_int_eq(160, bloom_filter_estimate_elements(&x));
+    mu_assert_int_between(145, 165, (int)x.elements_added);
+
+    bloom_filter_destroy(&x);
+    bloom_filter_destroy(&y);
+    bloom_filter_destroy(&z);
+}
+
+
+
+/*******************************************************************************
 *   Testsuite
 *******************************************************************************/
 MU_TEST_SUITE(test_suite) {
@@ -530,6 +638,11 @@ MU_TEST_SUITE(test_suite) {
     MU_RUN_TEST(test_bloom_export_hex);
     MU_RUN_TEST(test_bloom_import_hex);
     MU_RUN_TEST(test_bloom_import_hex_fail);
+
+    /* Union, Intersection, Jaccard Index */
+    MU_RUN_TEST(test_bloom_filter_union_intersection_errors);
+    MU_RUN_TEST(test_bloom_filter_union);
+    MU_RUN_TEST(test_bloom_filter_intersection);
 }
 
 
@@ -586,4 +699,25 @@ static off_t fsize(const char* filename) {
         return st.st_size;
 
     return -1;
+}
+
+static uint64_t* fake_hash(int num_hashes, const char *str) {
+    uint64_t* hashes = calloc(num_hashes, sizeof(uint64_t));
+    char key[17] = {0}; // largest value is 7FFF,FFFF,FFFF,FFFF
+    hashes[0] = hasher(str);
+    for (int i = 1; i < num_hashes; ++i) {
+        sprintf(key, "%" PRIx64 "", hashes[i-1]);
+        hashes[i] = hasher(key);
+    }
+    return hashes;
+}
+
+static uint64_t hasher(const char *key) {
+    int i, len = strlen(key);
+    uint64_t h = 14695981039346656073ULL; // FNV_OFFSET 64 bit
+    for (i = 0; i < len; ++i){
+            h = h ^ (unsigned char) key[i];
+            h = h * 3; // FNV_PRIME 64 bit
+    }
+    return h;
 }
