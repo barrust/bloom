@@ -594,6 +594,55 @@ MU_TEST(test_bloom_filter_intersection) {
     bloom_filter_destroy(&z);
 }
 
+MU_TEST(test_bloom_filter_jaccard) {
+    BloomFilter y, z;
+    bloom_filter_init(&y, 500, 0.01);
+    bloom_filter_init(&z, 500, 0.01);
+
+    for (int i = 0; i < 400; ++i) {
+        char key_y[5] = {0};
+        sprintf(key_y, "%d", i);
+        bloom_filter_add_string(&y, key_y);
+    }
+
+    float res = bloom_filter_jaccard_index(&y, &z);
+    mu_assert_double_eq(0.0, res);
+
+    for (int i = 0; i < 100; ++i) {
+        char key_z[5] = {0};
+        sprintf(key_z, "%d", i);
+        bloom_filter_add_string(&z, key_z);
+    }
+    res = bloom_filter_jaccard_index(&y, &z);
+    mu_assert_double_between(0.20, 0.31, res);
+
+    for (int i = 100; i < 200; ++i) {
+        char key_z[5] = {0};
+        sprintf(key_z, "%d", i);
+        bloom_filter_add_string(&z, key_z);
+    }
+    res = bloom_filter_jaccard_index(&y, &z);
+    mu_assert_double_between(0.49, 0.59, res);
+
+    for (int i = 200; i < 300; ++i) {
+        char key_z[5] = {0};
+        sprintf(key_z, "%d", i);
+        bloom_filter_add_string(&z, key_z);
+    }
+    res = bloom_filter_jaccard_index(&y, &z);
+    mu_assert_double_between(0.70, 0.80, res);
+
+    for (int i = 300; i < 400; ++i) {
+        char key_z[5] = {0};
+        sprintf(key_z, "%d", i);
+        bloom_filter_add_string(&z, key_z);
+    }
+    res = bloom_filter_jaccard_index(&y, &z);
+    mu_assert_double_eq(1.0, res);
+
+    bloom_filter_destroy(&y);
+    bloom_filter_destroy(&z);
+}
 
 
 /*******************************************************************************
@@ -643,6 +692,7 @@ MU_TEST_SUITE(test_suite) {
     MU_RUN_TEST(test_bloom_filter_union_intersection_errors);
     MU_RUN_TEST(test_bloom_filter_union);
     MU_RUN_TEST(test_bloom_filter_intersection);
+    MU_RUN_TEST(test_bloom_filter_jaccard);
 }
 
 
