@@ -4,12 +4,17 @@ on: [push, pull_request]
 
 jobs:
   build:
-
-    runs-on: [ ubuntu-latest, macos-latest ]
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        compilers: [gcc-4.9, gcc-5, gcc-6, gcc-7, gcc-8, gcc-9, gcc-10, clang-3.9, clang]
 
     steps:
     - uses: actions/checkout@v2
     - name: make
+      env:
+        CC: ${{ matrix.compiler }}
       run: make test
     - name: run test
       run: ./dist/test
