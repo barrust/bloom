@@ -12,9 +12,15 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - name: make
+    - name: Compile Library
       env:
         CC: ${{ matrix.compiler }}
-      run: make test
-    - name: run test
+      run: |
+        echo ${CC} --version
+        make test
+    - name: Run Unittests
       run: ./dist/test
+    - name: Calculate Coverage
+      run: gcov ./dist/*.gcno
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v1
