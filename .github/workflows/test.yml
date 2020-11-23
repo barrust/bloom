@@ -17,7 +17,7 @@ jobs:
         CC: ${{ matrix.compiler }}
         CCFLAGS: "-fsanitize=undefined"
       run: |
-        echo "${CC} --version"
+        echo "$(CC) --version"
         make test
     - name: Run Unittests
       run: ./dist/test
