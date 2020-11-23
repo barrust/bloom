@@ -16,7 +16,9 @@ jobs:
       env:
         CC: ${{ matrix.compiler }}
         CCFLAGS: "-fsanitize=undefined"
-      run: make test
+      run: |
+        gcc --version
+        make test
     - name: Run Unittests
       run: ./dist/test
     - name: Calculate Coverage
