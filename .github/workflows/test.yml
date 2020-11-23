@@ -1,0 +1,15 @@
+name: C/C++ CI
+
+on: [push, pull_request]
+
+jobs:
+  build:
+
+    runs-on: [ ubuntu-latest, macos-latest ]
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: make
+      run: make test
+    - name: run test
+      run: ./dist/test
