@@ -1,0 +1,11 @@
+name: C/C++ lint
+
+jobs:
+  clang-tidy:
+    name: clang-tidy
+    runs-on: ubuntu-latest
+    env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: C++ code check using clang/cppcheck/flawfinder
+        uses: Tlazypanda/cpp-clang-check@master
