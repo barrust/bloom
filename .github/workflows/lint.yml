@@ -1,5 +1,7 @@
 name: C/C++ lint
 
+on: [pull_request]
+
 jobs:
   clang-tidy:
     name: clang-tidy
