@@ -2,7 +2,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![GitHub release](https://img.shields.io/github/v/release/barrust/bloom.svg)](https://github.com/barrust/bloom/releases)
-[![Build Status](https://travis-ci.com/barrust/bloom.svg?branch=master)](https://travis-ci.com/barrust/bloom)
+[![Build Status](https://github.com/barrust/bloom/workflows/C/C++%20CI/badge.svg?branch=github-action)](https://github.com/barrust/bloom/actions)
 [![codecov](https://codecov.io/gh/barrust/bloom/branch/master/graph/badge.svg)](https://codecov.io/gh/barrust/bloom)
 
 Bloom Filter implementation written in **C**
