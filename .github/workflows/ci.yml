@@ -18,6 +18,11 @@ jobs:
       run: make test CC=${{ matrix.compiler }}
     - name: Run Unittests
       run: ./dist/test
+    # The following should be moved into a seperate action for only pull requests, etc.
+    - name: Install cppcheck
+      run: sudo apt install cppcheck
+    - name: Code Quality (cppcheck)
+      run: cppcheck --error-exitcode=1 --inline-suppr --enable=warning,performance,information,style --template='{file}:{line},{severity},{id},{message}' ./src/
     - name: Calculate Coverage
       run: gcov ./dist/*.gcno
     - name: Upload coverage to Codecov
