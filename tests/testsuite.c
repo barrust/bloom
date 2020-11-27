@@ -503,6 +503,7 @@ MU_TEST(test_bloom_filter_union_intersection_errors) {
     bloom_filter_init(&z, 500, 0.1);
     mu_assert_int_eq(BLOOM_FAILURE, bloom_filter_union(&x, &y, &z));
     mu_assert_int_eq(BLOOM_FAILURE, bloom_filter_intersect(&x, &y, &z));
+    mu_assert_int_eq(BLOOM_FAILURE, bloom_filter_jaccard_index(&x, &y));
     bloom_filter_destroy(&x);
     bloom_filter_destroy(&y);
     bloom_filter_destroy(&z);
@@ -526,6 +527,18 @@ MU_TEST(test_bloom_filter_union_intersection_errors) {
     bloom_filter_destroy(&x);
     bloom_filter_destroy(&y);
     bloom_filter_destroy(&z);
+}
+
+MU_TEST(test_bloom_filter_union_intersection_cnt_errors) {
+    BloomFilter x, y;
+    bloom_filter_init(&x, 500, 0.1);
+    bloom_filter_init(&y, 500, 0.01);
+
+    mu_assert_int_eq(BLOOM_FAILURE, bloom_filter_count_intersection_bits_set(&x, &y));
+    mu_assert_int_eq(BLOOM_FAILURE, bloom_filter_count_union_bits_set(&x, &y));
+
+    bloom_filter_destroy(&x);
+    bloom_filter_destroy(&y);
 }
 
 MU_TEST(test_bloom_filter_union) {
@@ -599,13 +612,18 @@ MU_TEST(test_bloom_filter_jaccard) {
     bloom_filter_init(&y, 500, 0.01);
     bloom_filter_init(&z, 500, 0.01);
 
+    // check that they are the same, yet empty...
+    float res = bloom_filter_jaccard_index(&y, &z);
+    mu_assert_double_eq(1.0, res);
+
+
     for (int i = 0; i < 400; ++i) {
         char key_y[5] = {0};
         sprintf(key_y, "%d", i);
         bloom_filter_add_string(&y, key_y);
     }
 
-    float res = bloom_filter_jaccard_index(&y, &z);
+    res = bloom_filter_jaccard_index(&y, &z);
     mu_assert_double_eq(0.0, res);
 
     for (int i = 0; i < 100; ++i) {
@@ -642,6 +660,49 @@ MU_TEST(test_bloom_filter_jaccard) {
 
     bloom_filter_destroy(&y);
     bloom_filter_destroy(&z);
+}
+
+/*******************************************************************************
+*   Test Statistics
+*******************************************************************************/
+MU_TEST(test_bloom_filter_stat) {
+    for (int i = 0; i < 400; ++i) {
+        char key[5] = {0};
+        sprintf(key, "%d", i);
+        bloom_filter_add_string(&b, key);
+    }
+
+    /* save the printout to a buffer */
+    int stdout_save;
+    char buffer[2046] = {0};
+    fflush(stdout); //clean everything first
+    stdout_save = dup(STDOUT_FILENO); //save the stdout state
+    freopen("output_file", "a", stdout); //redirect stdout to null pointer
+    setvbuf(stdout, buffer, _IOFBF, 1024); //set buffer to stdout
+
+    bloom_filter_stats(&b);
+
+    /* reset stdout */
+    freopen("output_file", "a", stdout); //redirect stdout to null again
+    dup2(stdout_save, STDOUT_FILENO); //restore the previous state of stdout
+    setvbuf(stdout, NULL, _IONBF, 0); //disable buffer to print to screen instantly
+
+    // Not sure this is necessary, but it cleans it up
+    remove("output_file");
+
+    mu_assert_not_null(buffer);
+    mu_assert_string_eq("BloomFilter\n\
+    bits: 479253\n\
+    estimated elements: 50000\n\
+    number hashes: 7\n\
+    max false positive rate: 0.010000\n\
+    bloom length (8 bits): 59907\n\
+    elements added: 400\n\
+    estimated elements added: 399\n\
+    current false positive rate: 0.000000\n\
+    export size (bytes): 59927\n\
+    number bits set: 2790\n\
+    is on disk: no\n", buffer);
 }
 
 
@@ -690,9 +751,13 @@ MU_TEST_SUITE(test_suite) {
 
     /* Union, Intersection, Jaccard Index */
     MU_RUN_TEST(test_bloom_filter_union_intersection_errors);
+    MU_RUN_TEST(test_bloom_filter_union_intersection_cnt_errors);
     MU_RUN_TEST(test_bloom_filter_union);
     MU_RUN_TEST(test_bloom_filter_intersection);
     MU_RUN_TEST(test_bloom_filter_jaccard);
+
+    /* Statistics */
+    MU_RUN_TEST(test_bloom_filter_stat);
 }
 
 
