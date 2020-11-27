@@ -60,7 +60,7 @@ static int __check_if_union_or_intersection_ok(BloomFilter *res, BloomFilter *bf
 
 
 int bloom_filter_init_alt(BloomFilter *bf, uint64_t estimated_elements, float false_positive_rate, BloomHashFunction hash_function) {
-    if(estimated_elements <= 0 || estimated_elements > UINT64_MAX || false_positive_rate <= 0.0 || false_positive_rate >= 1.0) {
+    if(estimated_elements == 0 || estimated_elements > UINT64_MAX || false_positive_rate <= 0.0 || false_positive_rate >= 1.0) {
         return BLOOM_FAILURE;
     }
     bf->estimated_elements = estimated_elements;
@@ -74,7 +74,7 @@ int bloom_filter_init_alt(BloomFilter *bf, uint64_t estimated_elements, float fa
 }
 
 int bloom_filter_init_on_disk_alt(BloomFilter *bf, uint64_t estimated_elements, float false_positive_rate, const char *filepath, BloomHashFunction hash_function) {
-    if(estimated_elements <= 0 || estimated_elements > UINT64_MAX || false_positive_rate <= 0.0 || false_positive_rate >= 1.0) {
+    if(estimated_elements == 0 || estimated_elements > UINT64_MAX || false_positive_rate <= 0.0 || false_positive_rate >= 1.0) {
         return BLOOM_FAILURE;
     }
     bf->estimated_elements = estimated_elements;
