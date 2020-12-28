@@ -40,4 +40,4 @@ clean:
 	rm -f ./*.gcov
 
 bloom:
-	$(CC) -c $(SRCDIR)/bloom.c -o $(DISTDIR)/bloom.o $(CCFLAGS) $(COMPFLAGS)
+	$(CC) -c ./$(SRCDIR)/bloom.c -o ./$(DISTDIR)/bloom.o $(CCFLAGS) $(COMPFLAGS)
