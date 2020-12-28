@@ -8,14 +8,16 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest]
-        compiler: [gcc]
+        compiler: [gcc, clang]
 
     steps:
     - uses: actions/checkout@v2
     - name: Compile Library
       env:
         CCFLAGS: "-fsanitize=undefined"
-      run: make test CC=${{ matrix.compiler }}
+      run: |
+        ${{ matrix.compiler }} --version
+        make test CC=${{ matrix.compiler }}
     - name: Run Unittests
       run: ./dist/test
     - name: Calculate Coverage
