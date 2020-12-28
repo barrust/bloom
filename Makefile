@@ -5,10 +5,10 @@ SRCDIR=src
 TESTDIR=tests
 
 all: bloom
-	$(CC) $(DISTDIR)/bloom.o $(TESTDIR)/bloom_test.c $(CCFLAGS) $(COMPFLAGS) -o ./$(DISTDIR)/blm
+	$(CC) ./$(DISTDIR)/bloom.o ./$(TESTDIR)/bloom_test.c $(CCFLAGS) $(COMPFLAGS) -o ./$(DISTDIR)/blm
 
 omp: bloom
-	$(CC) $(DISTDIR)/bloom.o $(TESTDIR)/bloom_multi_thread.c $(CCFLAGS) $(COMPFLAGS) -fopenmp -o ./$(DISTDIR)/blmmt
+	$(CC) ./$(DISTDIR)/bloom.o ./$(TESTDIR)/bloom_multi_thread.c $(CCFLAGS) $(COMPFLAGS) -fopenmp -o ./$(DISTDIR)/blmmt
 
 debug: COMPFLAGS += -g
 debug: all
@@ -21,7 +21,7 @@ sanitize: test
 
 test: COMPFLAGS += -coverage
 test: bloom
-	$(CC) $(DISTDIR)/bloom.o $(TESTDIR)/testsuite.c $(CCFLAGS) $(COMPFLAGS) -o ./$(DISTDIR)/test -g -lcrypto
+	$(CC) ./$(DISTDIR)/bloom.o ./$(TESTDIR)/testsuite.c $(CCFLAGS) $(COMPFLAGS) -o ./$(DISTDIR)/test -g -lcrypto
 
 clean:
 	# library
