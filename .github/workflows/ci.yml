@@ -3,13 +3,12 @@ name: C/C++ CI
 on: [push, pull_request]
 
 jobs:
-  build:
+  gcc:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os: [ubuntu-latest]
-        compiler: [gcc, clang]
-
+        compiler: [gcc]
     steps:
     - uses: actions/checkout@v2
     - name: Compile Library
@@ -23,16 +22,30 @@ jobs:
         ls dist/
         dist/test
     - name: Calculate Coverage
-      if: ${{ matrix.compiler }} == gcc
       run: gcov ./dist/*.gcno
     - name: Upload coverage to Codecov
-      if: ${{ matrix.compiler }} == gcc
       uses: codecov/codecov-action@v1
     # The following should be moved into a seperate action for only pull requests, etc.
     # where you it posts the information into the PR as a comment (optionally?)
     - name: Install cppcheck
-      if: ${{ matrix.compiler }} == gcc
       run: sudo apt install cppcheck
     - name: Code Quality (cppcheck)
-      if: ${{ matrix.compiler }} == gcc
       run: cppcheck --error-exitcode=1 --inline-suppr --enable=warning,performance,information,style --template='{file}:{line},{severity},{id},{message}' ./src/
+  clang:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        compiler: [clang]
+    steps:
+    - uses: actions/checkout@v2
+    - name: Compile Library
+      env:
+        CCFLAGS: "-fsanitize=undefined"
+      run: |
+        ${{ matrix.compiler }} --version
+        make test CC=${{ matrix.compiler }}
+    - name: Run Unittests
+      run: |
+        ls dist/
+        dist/test
