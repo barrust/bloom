@@ -35,15 +35,22 @@ int main() {
     BloomFilter bf2;
     //bloom_filter_init(&bf2, SIZE, 0.01, NULL);
     bloom_filter_init(&bf2, SIZE, 0.01);
+
     #if defined (_OPENMP)
     printf("setting the number of threads to use to: %d\n", THREADS);
     omp_set_num_threads(THREADS);
     #endif
-    #pragma omp parallel for private(i)
-    for(i = 1; i < SIZE; i++) {
+
+    #pragma omp parallel for
+    for(uint64_t i = 1; i < SIZE; i++) {
         char str[255] = {0};
         sprintf(str, "%" PRIu64 "", i);
-        bloom_filter_add_string(&bf2, str);
+        if (bloom_filter_add_string(&bf2, str) == BLOOM_FAILURE) {
+            #pragma omp critical
+            {
+                printf("Unable to add '%s'\n", str);
+            }
+        }
     }
     timing_end(&t);
     #if defined (_OPENMP)
@@ -60,7 +67,7 @@ int main() {
     uint64_t j;
     for (j = 0; j < chars; j++) {
         if ((int)bf.bloom[j] != (int)bf2.bloom[j]) {
-            //printf("elm: %" PRIu64 "\tbf: %d\tbf2: %d\n", j, (int)bf.bloom[j], (int)bf2.bloom[j]);
+            printf("total elements: %" PRIu64 "\telm: %" PRIu64 "\tbf: %d\tbf2: %d\n", chars, j, (int)bf.bloom[j], (int)bf2.bloom[j]);
             errors++;
         }
     }
@@ -71,8 +78,8 @@ int main() {
     }
 
     errors = 0;
-    #pragma omp parallel for private(i)
-    for(i = 1; i < SIZE; i++) {
+    #pragma omp parallel for
+    for(uint64_t i = 1; i < SIZE; i++) {
         char str[255] = {0};
         sprintf(str, "%" PRIu64 "", i);
         int r = bloom_filter_check_string(&bf2, str);
@@ -103,5 +110,5 @@ int main() {
     bloom_filter_destroy(&bf);
     bloom_filter_destroy(&bf2);
 
-    return 0;
+    return errors;
 }

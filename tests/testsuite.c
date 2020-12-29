@@ -90,7 +90,7 @@ MU_TEST(test_bloom_on_disk_setup_returns) {
 MU_TEST(test_bloom_set) {
     int errors = 0;
     for (int i = 0; i < 3000; ++i) {
-        char key[5] = {0};
+        char key[10] = {0};
         sprintf(key, "%d", i);
         errors += bloom_filter_add_string(&b, key) == BLOOM_SUCCESS ? 0 : 1;
     }
@@ -99,7 +99,7 @@ MU_TEST(test_bloom_set) {
 
     errors = 0;
     for (int i = 0; i < 3000; ++i) {
-        char key[5] = {0};
+        char key[10] = {0};
         sprintf(key, "%d", i);
         errors += bloom_filter_check_string(&b, key) == BLOOM_SUCCESS ? 0 : 1;
     }
@@ -122,7 +122,7 @@ MU_TEST(test_bloom_set_on_disk) {
 
     int errors = 0;
     for (int i = 0; i < 3000; ++i) {
-        char key[5] = {0};
+        char key[10] = {0};
         sprintf(key, "%d", i);
         errors += bloom_filter_add_string(&bf, key) == BLOOM_SUCCESS ? 0 : 1;
     }
@@ -131,7 +131,7 @@ MU_TEST(test_bloom_set_on_disk) {
 
     errors = 0;
     for (int i = 0; i < 3000; ++i) {
-        char key[5] = {0};
+        char key[10] = {0};
         sprintf(key, "%d", i);
         errors += bloom_filter_check_string(&bf, key) == BLOOM_SUCCESS ? 0 : 1;
     }
@@ -143,7 +143,7 @@ MU_TEST(test_bloom_set_on_disk) {
 MU_TEST(test_bloom_check) {
     int errors = 0;
     for (int i = 0; i < 3000; ++i) {
-        char key[5] = {0};
+        char key[10] = {0};
         sprintf(key, "%d", i);
         errors += bloom_filter_add_string(&b, key) == BLOOM_SUCCESS ? 0 : 1;
     }
@@ -151,7 +151,7 @@ MU_TEST(test_bloom_check) {
     /* check things that are not present */
     errors = 0;
     for (int i = 3000; i < 5000; ++i) {
-        char key[5] = {0};
+        char key[10] = {0};
         sprintf(key, "%d", i);
         errors += bloom_filter_check_string(&b, key) == BLOOM_FAILURE ? 0 : 1;
     }
@@ -161,7 +161,7 @@ MU_TEST(test_bloom_check) {
 MU_TEST(test_bloom_check_false_positive) {
     int errors = 0;
     for (int i = 0; i < 50000; ++i) {
-        char key[5] = {0};
+        char key[10] = {0};
         sprintf(key, "%d", i);
         errors += bloom_filter_add_string(&b, key) == BLOOM_SUCCESS ? 0 : 1;
     }
@@ -169,7 +169,7 @@ MU_TEST(test_bloom_check_false_positive) {
     /* check things that are not present */
     errors = 0;
     for (int i = 50000; i < 51000; ++i) {
-        char key[5] = {0};
+        char key[10] = {0};
         sprintf(key, "%d", i);
         errors += bloom_filter_check_string(&b, key) == BLOOM_FAILURE ? 0 : 1;
     }
@@ -187,7 +187,7 @@ MU_TEST(test_bloom_check_failure) {
 *******************************************************************************/
 MU_TEST(test_bloom_clear) {
     for (int i = 0; i < 5000; ++i) {
-        char key[5] = {0};
+        char key[10] = {0};
         sprintf(key, "%d", i);
         bloom_filter_add_string(&b, key);
     }
@@ -199,7 +199,7 @@ MU_TEST(test_bloom_clear) {
 
     int errors = 0;
     for (int i = 0; i < 5000; ++i) {
-        char key[5] = {0};
+        char key[10] = {0};
         sprintf(key, "%d", i);
         errors += bloom_filter_check_string(&b, key) == BLOOM_SUCCESS ? 0 : 1;
     }
@@ -213,7 +213,7 @@ MU_TEST(test_bloom_current_false_positive_rate) {
     mu_assert_double_eq(0.00000, bloom_filter_current_false_positive_rate(&b));
 
     for (int i = 0; i < 5000; ++i) {
-        char key[5] = {0};
+        char key[10] = {0};
         sprintf(key, "%d", i);
         bloom_filter_add_string(&b, key);
     }
@@ -221,7 +221,7 @@ MU_TEST(test_bloom_current_false_positive_rate) {
     mu_assert_double_between(0.0000, 0.0010, bloom_filter_current_false_positive_rate(&b));
 
     for (int i = 5000; i < 50000; ++i) {
-        char key[5] = {0};
+        char key[10] = {0};
         sprintf(key, "%d", i);
         bloom_filter_add_string(&b, key);
     }
@@ -237,7 +237,7 @@ MU_TEST(test_bloom_count_set_bits) {
 
     /* add a few keys */
     for (int i = 0; i < 5000; ++i) {
-        char key[5] = {0};
+        char key[10] = {0};
         sprintf(key, "%d", i);
         bloom_filter_add_string(&b, key);
     }
@@ -271,7 +271,7 @@ MU_TEST(test_bloom_export_size) {  // size is in bytes
 
 MU_TEST(test_bloom_estimate_elements) {
     for (int i = 0; i < 5000; ++i) {
-        char key[5] = {0};
+        char key[10] = {0};
         sprintf(key, "%d", i);
         bloom_filter_add_string(&b, key);
     }
@@ -279,7 +279,7 @@ MU_TEST(test_bloom_estimate_elements) {
     mu_assert_int_eq(4974, bloom_filter_estimate_elements(&b));
 
     for (int i = 5000; i < 10000; ++i) {
-        char key[5] = {0};
+        char key[10] = {0};
         sprintf(key, "%d", i);
         bloom_filter_add_string(&b, key);
     }
@@ -292,7 +292,7 @@ MU_TEST(test_bloom_set_elements_to_estimated) {
         to make sure we can update it. This function is useful for the set
         operations of bloom filters */
     for (int i = 0; i < 5000; ++i) {
-        char key[5] = {0};
+        char key[10] = {0};
         sprintf(key, "%d", i);
         bloom_filter_add_string(&b, key);
     }
@@ -300,7 +300,7 @@ MU_TEST(test_bloom_set_elements_to_estimated) {
     mu_assert_int_eq(4974, bloom_filter_estimate_elements(&b));
 
     for (int i = 5000; i < 10000; ++i) {
-        char key[5] = {0};
+        char key[10] = {0};
         sprintf(key, "%d", i);
         bloom_filter_add_string(&b, key);
     }
@@ -316,7 +316,7 @@ MU_TEST(test_bloom_set_elements_to_estimated) {
 MU_TEST(test_bloom_export) {
     char filepath[] = "./dist/test_bloom_export.blm";
     for (int i = 0; i < 5000; ++i) {
-        char key[5] = {0};
+        char key[10] = {0};
         sprintf(key, "%d", i);
         bloom_filter_add_string(&b, key);
     }
@@ -338,7 +338,7 @@ MU_TEST(test_bloom_export_on_disk) {
     bloom_filter_init_on_disk(&bf, 50000, 0.01, filepath);
 
     for (int i = 0; i < 5000; ++i) {
-        char key[5] = {0};
+        char key[10] = {0};
         sprintf(key, "%d", i);
         bloom_filter_add_string(&bf, key);
     }
@@ -357,7 +357,7 @@ MU_TEST(test_bloom_export_on_disk) {
 MU_TEST(test_bloom_import) {
     char filepath[] = "./dist/test_bloom_import.blm";
     for (int i = 0; i < 5000; ++i) {
-        char key[5] = {0};
+        char key[10] = {0};
         sprintf(key, "%d", i);
         bloom_filter_add_string(&b, key);
     }
@@ -376,7 +376,7 @@ MU_TEST(test_bloom_import) {
     mu_assert_int_eq(5000, bf.elements_added);
     int errors = 0;
     for (int i = 0; i < 5000; ++i) {
-        char key[5] = {0};
+        char key[10] = {0};
         sprintf(key, "%d", i);
         errors += bloom_filter_check_string(&bf, key) == BLOOM_SUCCESS ? 0 : 1;
     }
@@ -395,7 +395,7 @@ MU_TEST(test_bloom_import_fail) {
 MU_TEST(test_bloom_import_on_disk) {
     char filepath[] = "./dist/test_bloom_import.blm";
     for (int i = 0; i < 5000; ++i) {
-        char key[5] = {0};
+        char key[10] = {0};
         sprintf(key, "%d", i);
         bloom_filter_add_string(&b, key);
     }
@@ -414,7 +414,7 @@ MU_TEST(test_bloom_import_on_disk) {
     mu_assert_int_eq(5000, bf.elements_added);
     int errors = 0;
     for (int i = 0; i < 5000; ++i) {
-        char key[5] = {0};
+        char key[10] = {0};
         sprintf(key, "%d", i);
         errors += bloom_filter_check_string(&bf, key) == BLOOM_SUCCESS ? 0 : 1;
     }
@@ -434,7 +434,7 @@ MU_TEST(test_bloom_export_hex) {
     char hex_end[] = "0100000000201800000102601200000000224000000000000000c35000000000000013883c23d70a";
 
     for (int i = 0; i < 5000; ++i) {
-        char key[5] = {0};
+        char key[10] = {0};
         sprintf(key, "%d", i);
         bloom_filter_add_string(&b, key);
     }
@@ -457,7 +457,7 @@ MU_TEST(test_bloom_import_hex) {
     bloom_filter_init(&bo, 500, 0.1);
 
     for (int i = 0; i < 250; ++i) {
-        char key[5] = {0};
+        char key[10] = {0};
         sprintf(key, "%d", i);
         bloom_filter_add_string(&bo, key);
     }
@@ -474,7 +474,7 @@ MU_TEST(test_bloom_import_hex) {
     mu_assert_int_eq(250, bf.elements_added);
     int errors = 0;
     for (int i = 0; i < 250; ++i) {
-        char key[5] = {0};
+        char key[10] = {0};
         sprintf(key, "%d", i);
         errors += bloom_filter_check_string(&bf, key) == BLOOM_SUCCESS ? 0 : 1;
     }
@@ -561,7 +561,7 @@ MU_TEST(test_bloom_filter_union) {
 
     int errors = 0;
     for (int i = 0; i < 350; ++i) {
-        char key[5] = {0};
+        char key[10] = {0};
         sprintf(key, "%d", i);
         errors += bloom_filter_check_string(&x, key) == BLOOM_SUCCESS ? 0 : 1;
     }
@@ -594,7 +594,7 @@ MU_TEST(test_bloom_filter_intersection) {
 
     int errors = 0;
     for (int i = 1500; i < 250; ++i) {
-        char key[5] = {0};
+        char key[10] = {0};
         sprintf(key, "%d", i);
         errors += bloom_filter_check_string(&x, key) == BLOOM_SUCCESS ? 0 : 1;
     }
@@ -667,7 +667,7 @@ MU_TEST(test_bloom_filter_jaccard) {
 *******************************************************************************/
 MU_TEST(test_bloom_filter_stat) {
     for (int i = 0; i < 400; ++i) {
-        char key[5] = {0};
+        char key[10] = {0};
         sprintf(key, "%d", i);
         bloom_filter_add_string(&b, key);
     }

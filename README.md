@@ -36,6 +36,7 @@ will determine number of hashes and number of bits required
 * Union and Intersection of Bloom Filters
 * Calculate the Jaccard Index between two Bloom Filters
 * **OpenMP** support for generation and lookup
+    * Ensure the `bloom.c` file is compiled with `-fopenmp` along with the utilizing program
 
 
 ## Future Enhancements
