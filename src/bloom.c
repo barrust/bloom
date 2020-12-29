@@ -26,15 +26,6 @@
 // #define set_bit(A,k)          (A[((k) / 8)] |=  (1 << ((k) % 8)))
 // #define clear_bit(A,k)        (A[((k) / 8)] &= ~(1 << ((k) % 8)))
 
-
-#if defined (_OPENMP)
-#define ATOMIC _Pragma ("omp atomic")
-#define CRITICAL _Pragma ("omp critical (bloom_filter_critical)")
-#else
-#define ATOMIC
-#define CRITICAL
-#endif
-
 /* define some constant magic looking numbers */
 #define CHAR_LEN 8
 #define LOG_TWO_SQUARED 0.4804530139182
@@ -174,17 +165,20 @@ int bloom_filter_add_string_alt(BloomFilter *bf, uint64_t *hashes, unsigned int 
         return BLOOM_FAILURE;
     }
 
-    unsigned int i;
-    for (i = 0; i < bf->number_hashes; ++i) {
-        ATOMIC
-        bf->bloom[(hashes[i] % bf->number_bits) / 8] |= (1 << ((hashes[i] % bf->number_bits) % 8)); // set the bit
+    for (unsigned int i = 0; i < bf->number_hashes; ++i) {
+        unsigned long idx = (hashes[i] % bf->number_bits) / 8;
+        int bit = (hashes[i] % bf->number_bits) % 8;
+
+        #pragma omp atomic update
+        bf->bloom[idx] |= (1 << bit); // set the bit
     }
 
-    ATOMIC
-    ++bf->elements_added;
+    #pragma omp atomic update
+    bf->elements_added++;
+
     if (bf->__is_on_disk == 1) { // only do this if it is on disk!
         int offset = sizeof(uint64_t) + sizeof(float);
-        CRITICAL
+        #pragma omp critical (bloom_filter_critical_on_disk)
         {
             fseek(bf->filepointer, offset * -1, SEEK_END);
             fwrite(&bf->elements_added, sizeof(uint64_t), 1, bf->filepointer);

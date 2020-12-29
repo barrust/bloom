@@ -3,12 +3,16 @@ COMPFLAGS=-lm -Wall -Wpedantic -Winline -Wextra
 DISTDIR=dist
 SRCDIR=src
 TESTDIR=tests
+UNKNOWN_PRAGMAS=-Wno-unknown-pragmas
 
 all: bloom
-	$(CC) ./$(DISTDIR)/bloom.o ./$(TESTDIR)/bloom_test.c $(CCFLAGS) $(COMPFLAGS) -o ./$(DISTDIR)/blm
+	$(CC) ./$(DISTDIR)/bloom.o ./$(TESTDIR)/bloom_test.c $(CCFLAGS) $(COMPFLAGS) $(UNKNOWN_PRAGMAS) -o ./$(DISTDIR)/blm
 
-omp: bloom
-	$(CC) ./$(DISTDIR)/bloom.o ./$(TESTDIR)/bloom_multi_thread.c $(CCFLAGS) $(COMPFLAGS) -fopenmp -o ./$(DISTDIR)/blmmt
+# add openmp and keep unknown pragmas
+omp: COMPFLAGS += -fopenmp
+omp: UNKNOWN_PRAGMAS=
+omp: all
+	$(CC) ./$(DISTDIR)/bloom.o ./$(TESTDIR)/bloom_multi_thread.c $(CCFLAGS) $(COMPFLAGS) $(UNKNOWN_PRAGMAS) -o ./$(DISTDIR)/blmmt
 
 debug: COMPFLAGS += -g
 debug: all
@@ -21,7 +25,7 @@ sanitize: test
 
 test: COMPFLAGS += -coverage
 test: bloom
-	$(CC) ./$(DISTDIR)/bloom.o ./$(TESTDIR)/testsuite.c $(CCFLAGS) $(COMPFLAGS) -o ./$(DISTDIR)/test -g -lcrypto
+	$(CC) ./$(DISTDIR)/bloom.o ./$(TESTDIR)/testsuite.c $(CCFLAGS) $(COMPFLAGS) $(UNKNOWN_PRAGMAS) -o ./$(DISTDIR)/test -g -lcrypto
 
 clean:
 	# library
@@ -40,4 +44,4 @@ clean:
 	rm -f ./*.gcov
 
 bloom:
-	$(CC) -c ./$(SRCDIR)/bloom.c -o ./$(DISTDIR)/bloom.o $(CCFLAGS) $(COMPFLAGS)
+	$(CC) -c ./$(SRCDIR)/bloom.c -o ./$(DISTDIR)/bloom.o $(CCFLAGS) $(COMPFLAGS) $(UNKNOWN_PRAGMAS)
