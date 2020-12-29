@@ -29,7 +29,7 @@ jobs:
     # where you it posts the information into the PR as a comment (optionally?)
     - name: c-linter
       uses: tonybaloney/cppcheck-action@master
-      inputs:
+      with:
         path: "./src/"
         opts: "--error-exitcode=1 --inline-suppr --enable=warning,performance,information,style"
       # run: cppcheck --error-exitcode=1 --inline-suppr --enable=warning,performance,information,style --template='{file}:{line},{severity},{id},{message}' ./src/
