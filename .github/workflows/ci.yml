@@ -30,8 +30,8 @@ jobs:
     - name: c-linter
       uses: tonybaloney/cppcheck-action@master
       with:
-        path: "./src/"
-        opts: "--error-exitcode=1 --inline-suppr --enable=warning,performance,information,style"
+        path: ./src/
+        opts: --error-exitcode=1 --inline-suppr --enable=warning,performance,information,style
       # run: cppcheck --error-exitcode=1 --inline-suppr --enable=warning,performance,information,style --template='{file}:{line},{severity},{id},{message}' ./src/
   clang:
     runs-on: ${{ matrix.os }}
