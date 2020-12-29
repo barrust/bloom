@@ -27,10 +27,11 @@ jobs:
       uses: codecov/codecov-action@v1
     # The following should be moved into a seperate action for only pull requests, etc.
     # where you it posts the information into the PR as a comment (optionally?)
-    - name: Install cppcheck
-      run: sudo apt install cppcheck
-    - name: Code Quality (cppcheck)
-      run: cppcheck --error-exitcode=1 --inline-suppr --enable=warning,performance,information,style --template='{file}:{line},{severity},{id},{message}' ./src/
+    - name: c-linter
+      uses: tonybaloney/cppcheck-action@master
+      path: "./src/"
+      opts: "--error-exitcode=1 --inline-suppr --enable=warning,performance,information,style --template='{file}:{line},{severity},{id},{message}'"
+      # run: cppcheck --error-exitcode=1 --inline-suppr --enable=warning,performance,information,style --template='{file}:{line},{severity},{id},{message}' ./src/
   clang:
     runs-on: ${{ matrix.os }}
     strategy:
