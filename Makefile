@@ -1,5 +1,5 @@
 CC=gcc
-COMPFLAGS=-lm -Wall -Wpedantic -Winline -Wextra
+COMPFLAGS=-lm -Wall -Wpedantic -Winline -Wextra -Wno-long-long
 DISTDIR=dist
 SRCDIR=src
 TESTDIR=tests
@@ -26,6 +26,9 @@ sanitize: test
 test: COMPFLAGS += -coverage
 test: bloom
 	$(CC) ./$(DISTDIR)/bloom.o ./$(TESTDIR)/testsuite.c $(CCFLAGS) $(COMPFLAGS) $(UNKNOWN_PRAGMAS) -o ./$(DISTDIR)/test -g -lcrypto
+
+runtests:
+	@ if [ -f "./$(DISTDIR)/test" ]; then ./$(DISTDIR)/test; fi
 
 clean:
 	# library

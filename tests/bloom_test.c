@@ -447,9 +447,9 @@ void success_or_failure(int res) {
 
 /* NOTE: The caller will free the results */
 static uint64_t* __default_hash_mod(int num_hashes, const char *str) {
-    uint64_t *results = calloc(num_hashes, sizeof(uint64_t));
+    uint64_t *results = (uint64_t*)calloc(num_hashes, sizeof(uint64_t));
     int i;
-    char *key = calloc(17, sizeof(char));  // largest value is 7FFF,FFFF,FFFF,FFFF
+    char *key = (char*)calloc(17, sizeof(char));  // largest value is 7FFF,FFFF,FFFF,FFFF
     results[0] = __fnv_1a_mod(str);
     for (i = 1; i < num_hashes; ++i) {
         sprintf(key, "%" PRIx64 "", results[i-1]);
