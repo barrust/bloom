@@ -1,3 +1,5 @@
+#ifndef BARRUST_BLOOM_FILTER_H__
+#define BARRUST_BLOOM_FILTER_H__
 /*******************************************************************************
 ***
 ***     Author: Tyler Barrus
@@ -11,8 +13,10 @@
 ***     URL: https://github.com/barrust/bloom
 ***
 *******************************************************************************/
-#ifndef BARRUST_BLOOM_FILTER_H__
-#define BARRUST_BLOOM_FILTER_H__
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #include <inttypes.h>       /* PRIu64 */
 
@@ -166,5 +170,9 @@ uint64_t bloom_filter_count_intersection_bits_set(BloomFilter *bf1, BloomFilter 
     elements are in common. 0 would mean the Bloom Filters are completely different. */
 float bloom_filter_jaccard_index(BloomFilter *bf1, BloomFilter *bf2);
 
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif /* END BLOOM FILTER HEADER */

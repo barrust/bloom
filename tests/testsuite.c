@@ -488,7 +488,7 @@ MU_TEST(test_bloom_import_hex) {
 /* NOTE: apparently import hex does not check all possible failures! */
 MU_TEST(test_bloom_import_hex_fail) {
     BloomFilter bf;
-    mu_assert_int_eq(BLOOM_FAILURE, bloom_filter_import_hex_string(&bf, "aaa"));  // only checks odd length
+    mu_assert_int_eq(BLOOM_FAILURE, bloom_filter_import_hex_string(&bf, (char*)"aaa"));  // only checks odd length
 }
 
 /*******************************************************************************
@@ -817,7 +817,7 @@ static off_t fsize(const char* filename) {
 }
 
 static uint64_t* fake_hash(int num_hashes, const char *str) {
-    uint64_t* hashes = calloc(num_hashes, sizeof(uint64_t));
+    uint64_t* hashes = (uint64_t*)calloc(num_hashes, sizeof(uint64_t));
     char key[17] = {0}; // largest value is 7FFF,FFFF,FFFF,FFFF
     hashes[0] = hasher(str);
     for (int i = 1; i < num_hashes; ++i) {

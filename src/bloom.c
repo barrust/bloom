@@ -57,7 +57,7 @@ int bloom_filter_init_alt(BloomFilter *bf, uint64_t estimated_elements, float fa
     bf->estimated_elements = estimated_elements;
     bf->false_positive_probability = false_positive_rate;
     __calculate_optimal_hashes(bf);
-    bf->bloom = calloc(bf->bloom_length + 1, sizeof(char)); // pad to ensure no running off the end
+    bf->bloom = (unsigned char*)calloc(bf->bloom_length + 1, sizeof(char)); // pad to ensure no running off the end
     bf->elements_added = 0;
     bloom_filter_set_hash_function(bf, hash_function);
     bf->__is_on_disk = 0; // not on disk
@@ -117,7 +117,7 @@ int bloom_filter_clear(BloomFilter *bf) {
 }
 
 void bloom_filter_stats(BloomFilter *bf) {
-    char *is_on_disk = (bf->__is_on_disk == 0 ? "no" : "yes");
+    const char *is_on_disk = (bf->__is_on_disk == 0 ? "no" : "yes");
     uint64_t size_on_disk = bloom_filter_export_size(bf);
 
     printf("BloomFilter\n\
@@ -258,7 +258,7 @@ int bloom_filter_import_on_disk_alt(BloomFilter *bf, const char *filepath, Bloom
 
 char* bloom_filter_export_hex_string(BloomFilter *bf) {
     uint64_t i, bytes = sizeof(uint64_t) * 2 + sizeof(float) + (bf->bloom_length);
-    char* hex = malloc((bytes * 2 + 1) * sizeof(char));
+    char* hex = (char*)calloc((bytes * 2 + 1), sizeof(char));
     for (i = 0; i < bf->bloom_length; ++i) {
         sprintf(hex + (i * 2), "%02x", bf->bloom[i]); // not the fastest way, but works
     }
@@ -297,12 +297,12 @@ int bloom_filter_import_hex_string_alt(BloomFilter *bf, const char *hex, BloomHa
     bloom_filter_set_hash_function(bf, hash_function);
 
     __calculate_optimal_hashes(bf);
-    bf->bloom = calloc(bf->bloom_length + 1, sizeof(char));  // pad
+    bf->bloom = (unsigned char*)calloc(bf->bloom_length + 1, sizeof(char));  // pad
     bf->__is_on_disk = 0; // not on disk
 
     uint64_t i;
     for (i = 0; i < bf->bloom_length; ++i) {
-        sscanf(hex + (i * 2), "%2hhx", &bf->bloom[i]);
+        sscanf(hex + (i * 2), "%2hx", (short unsigned int*)&bf->bloom[i]);
     }
     return BLOOM_SUCCESS;
 }
@@ -453,7 +453,7 @@ static void __read_from_file(BloomFilter *bf, FILE *fp, short on_disk, const cha
     __calculate_optimal_hashes(bf);
     rewind(fp);
     if(on_disk == 0) {
-        bf->bloom = calloc(bf->bloom_length + 1, sizeof(char));
+        bf->bloom = (unsigned char*)calloc(bf->bloom_length + 1, sizeof(char));
         size_t read;
         read = fread(bf->bloom, sizeof(char), bf->bloom_length, fp);
         if (read != bf->bloom_length) {
@@ -469,7 +469,7 @@ static void __read_from_file(BloomFilter *bf, FILE *fp, short on_disk, const cha
         }
         fstat(fd, &buf);
         bf->__filesize = buf.st_size;
-        bf->bloom = mmap((caddr_t)0, bf->__filesize, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+        bf->bloom = (unsigned char*)mmap((caddr_t)0, bf->__filesize, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
         if (bf->bloom == (unsigned char*) - 1) {
             perror("mmap: ");
             exit(1);
@@ -481,7 +481,7 @@ static void __read_from_file(BloomFilter *bf, FILE *fp, short on_disk, const cha
 
 /* NOTE: The caller will free the results */
 static uint64_t* __default_hash(int num_hashes, const char *str) {
-    uint64_t *results = calloc(num_hashes, sizeof(uint64_t));
+    uint64_t *results = (uint64_t*)calloc(num_hashes, sizeof(uint64_t));
     int i;
     char key[17] = {0}; // largest value is 7FFF,FFFF,FFFF,FFFF
     results[0] = __fnv_1a(str);
