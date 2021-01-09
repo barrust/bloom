@@ -1,5 +1,9 @@
 ## Current Version
 
+### Version 1.8.2
+* Added CPP Guards
+* Ensured that on-disk blooms correctly updated `elements_added`
+
 ### Version 1.8.1
 * Improved the speed of calculating the number of bits set: [more info](https://graphics.stanford.edu/~seander/bithacks.html#CountBitsSetTable)
 * cppcheck code analysis and minor improvements
