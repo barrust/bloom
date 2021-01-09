@@ -206,6 +206,40 @@ MU_TEST(test_bloom_clear) {
     mu_assert_int_eq(5000, errors);
 }
 
+
+MU_TEST(test_bloom_clear_on_disk) {
+    char filepath[] = "./dist/test_bloom_set_on_disk.blm";
+    BloomFilter bf;
+    bloom_filter_init_on_disk(&bf, 50000, 0.01, filepath);
+    for (int i = 0; i < 5000; ++i) {
+        char key[10] = {0};
+        sprintf(key, "%d", i);
+        bloom_filter_add_string(&bf, key);
+    }
+    mu_assert_int_eq(5000, bf.elements_added);
+
+    mu_assert_int_eq(BLOOM_SUCCESS, bloom_filter_clear(&bf));
+
+    mu_assert_int_eq(0, bf.elements_added);
+
+    int errors = 0;
+    for (int i = 0; i < 5000; ++i) {
+        char key[10] = {0};
+        sprintf(key, "%d", i);
+        errors += bloom_filter_check_string(&bf, key) == BLOOM_SUCCESS ? 0 : 1;
+    }
+    mu_assert_int_eq(5000, errors);
+
+    bloom_filter_destroy(&bf);
+
+    // re-import the counting bloom filter to see if elements added was correctly set!
+    bloom_filter_import(&bf, filepath);
+    mu_assert_int_eq(0, bf.elements_added);
+    bloom_filter_destroy(&bf);
+
+    remove(filepath);
+}
+
 /*******************************************************************************
 *   Test statistics
 *******************************************************************************/
@@ -308,6 +342,41 @@ MU_TEST(test_bloom_set_elements_to_estimated) {
     mu_assert_int_eq(9960, bloom_filter_estimate_elements(&b));
     bloom_filter_set_elements_to_estimated(&b);
     mu_assert_int_eq(9960, b.elements_added);
+}
+
+MU_TEST(test_bloom_set_elements_to_estimated_on_disk) {
+    /*  same test as estimate elements but will then update it at the end
+        to make sure we can update it. This function is useful for the set
+        operations of bloom filters */
+    char filepath[] = "./dist/test_bloom_set_on_disk.blm";
+    BloomFilter bf;
+    bloom_filter_init_on_disk(&bf, 50000, 0.01, filepath);
+    for (int i = 0; i < 5000; ++i) {
+        char key[10] = {0};
+        sprintf(key, "%d", i);
+        bloom_filter_add_string(&bf, key);
+    }
+    mu_assert_int_eq(5000, bf.elements_added);
+    mu_assert_int_eq(4974, bloom_filter_estimate_elements(&bf));
+
+    for (int i = 5000; i < 10000; ++i) {
+        char key[10] = {0};
+        sprintf(key, "%d", i);
+        bloom_filter_add_string(&bf, key);
+    }
+    mu_assert_int_eq(10000, bf.elements_added);
+    mu_assert_int_eq(9960, bloom_filter_estimate_elements(&bf));
+    bloom_filter_set_elements_to_estimated(&bf);
+    mu_assert_int_eq(9960, bf.elements_added);
+
+    bloom_filter_destroy(&bf);
+
+    // re-import the counting bloom filter to see if elements added was correctly set!
+    bloom_filter_import(&bf, filepath);
+    mu_assert_int_eq(9960, bf.elements_added);
+    bloom_filter_destroy(&bf);
+
+    remove(filepath);
 }
 
 /*******************************************************************************
@@ -728,6 +797,7 @@ MU_TEST_SUITE(test_suite) {
 
     /* clear, reset */
     MU_RUN_TEST(test_bloom_clear);
+    MU_RUN_TEST(test_bloom_clear_on_disk);
 
     /* statistics */
     MU_RUN_TEST(test_bloom_current_false_positive_rate);
@@ -735,6 +805,7 @@ MU_TEST_SUITE(test_suite) {
     MU_RUN_TEST(test_bloom_export_size);
     MU_RUN_TEST(test_bloom_estimate_elements);
     MU_RUN_TEST(test_bloom_set_elements_to_estimated);
+    MU_RUN_TEST(test_bloom_set_elements_to_estimated_on_disk);
 
     /* export, import */
     MU_RUN_TEST(test_bloom_export);

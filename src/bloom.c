@@ -3,7 +3,7 @@
 ***     Author: Tyler Barrus
 ***     email:  barrust@gmail.com
 ***
-***     Version: 1.8.1
+***     Version: 1.8.2
 ***
 ***     License: MIT 2015
 ***
@@ -46,6 +46,7 @@ static uint64_t __fnv_1a(const char *key);
 static void __calculate_optimal_hashes(BloomFilter *bf);
 static void __read_from_file(BloomFilter *bf, FILE *fp, short on_disk, const char *filename);
 static void __write_to_file(BloomFilter *bf, FILE *fp, short on_disk);
+static void __update_elements_added_on_disk(BloomFilter *bf);
 static int __sum_bits_set_char(unsigned char c);
 static int __check_if_union_or_intersection_ok(BloomFilter *res, BloomFilter *bf1, BloomFilter *bf2);
 
@@ -113,6 +114,7 @@ int bloom_filter_clear(BloomFilter *bf) {
         bf->bloom[i] = 0;
     }
     bf->elements_added = 0;
+    __update_elements_added_on_disk(bf);
     return BLOOM_SUCCESS;
 }
 
@@ -175,15 +177,7 @@ int bloom_filter_add_string_alt(BloomFilter *bf, uint64_t *hashes, unsigned int 
 
     #pragma omp atomic update
     bf->elements_added++;
-
-    if (bf->__is_on_disk == 1) { // only do this if it is on disk!
-        int offset = sizeof(uint64_t) + sizeof(float);
-        #pragma omp critical (bloom_filter_critical_on_disk)
-        {
-            fseek(bf->filepointer, offset * -1, SEEK_END);
-            fwrite(&bf->elements_added, sizeof(uint64_t), 1, bf->filepointer);
-        }
-    }
+    __update_elements_added_on_disk(bf);
     return BLOOM_SUCCESS;
 }
 
@@ -369,6 +363,7 @@ int bloom_filter_intersect(BloomFilter *res, BloomFilter *bf1, BloomFilter *bf2)
 
 void bloom_filter_set_elements_to_estimated(BloomFilter *bf) {
     bf->elements_added = bloom_filter_estimate_elements(bf);
+    __update_elements_added_on_disk(bf);
 }
 
 uint64_t bloom_filter_count_intersection_bits_set(BloomFilter *bf1, BloomFilter *bf2) {
@@ -476,6 +471,17 @@ static void __read_from_file(BloomFilter *bf, FILE *fp, short on_disk, const cha
         }
         // close the file descriptor
         close(fd);
+    }
+}
+
+static void __update_elements_added_on_disk(BloomFilter* bf) {
+    if (bf->__is_on_disk == 1) { // only do this if it is on disk!
+        int offset = sizeof(uint64_t) + sizeof(float);
+        #pragma omp critical (bloom_filter_critical_on_disk)
+        {
+            fseek(bf->filepointer, offset * -1, SEEK_END);
+            fwrite(&bf->elements_added, sizeof(uint64_t), 1, bf->filepointer);
+        }
     }
 }
 
