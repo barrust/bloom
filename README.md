@@ -2,7 +2,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![GitHub release](https://img.shields.io/github/v/release/barrust/bloom.svg)](https://github.com/barrust/bloom/releases)
-[![Build Status](https://github.com/barrust/bloom/workflows/C/C++%20CI/badge.svg?branch=master)](https://github.com/barrust/bloom/actions)
+[![C/C++ CI](https://github.com/barrust/bloom/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/barrust/bloom/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/barrust/bloom/branch/master/graph/badge.svg)](https://codecov.io/gh/barrust/bloom)
 
 Bloom Filter implementation written in **C**
@@ -17,7 +17,7 @@ To use the library, copy the `src/bloom.h` and `src/bloom.c` files into your
 project and include it where needed.
 
 ## License:
-MIT 2015
+MIT 2015 - 2021
 
 
 ## Main Features:
