@@ -676,7 +676,7 @@ MU_TEST(test_bloom_filter_intersection) {
     bloom_filter_destroy(&z);
 }
 
-MU_TEST(test_bloom_filter_interesection_57) {
+/*MU_TEST(test_bloom_filter_interesection_57) {
     BloomFilter x, y, z;
     bloom_filter_init(&x, 16000000, 0.0010);
     bloom_filter_init(&y, 16000000, 0.0010);
@@ -710,7 +710,7 @@ MU_TEST(test_bloom_filter_interesection_57) {
     bloom_filter_destroy(&x);
     bloom_filter_destroy(&y);
     bloom_filter_destroy(&z);
-}
+}*/
 
 MU_TEST(test_bloom_filter_jaccard) {
     BloomFilter y, z;
@@ -861,7 +861,7 @@ MU_TEST_SUITE(test_suite) {
     MU_RUN_TEST(test_bloom_filter_union_intersection_cnt_errors);
     MU_RUN_TEST(test_bloom_filter_union);
     MU_RUN_TEST(test_bloom_filter_intersection);
-    MU_RUN_TEST(test_bloom_filter_interesection_57);
+    //MU_RUN_TEST(test_bloom_filter_interesection_57);
     MU_RUN_TEST(test_bloom_filter_jaccard);
 
     /* Statistics */
