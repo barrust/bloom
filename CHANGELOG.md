@@ -1,5 +1,11 @@
 ## Current Version
 
+### FUTURE VERSION
+* ***BACKWARD INCOMPATIBLE CHANGES***
+ * Update to the FNV_1a hash function **NOTE:** Breaks backwards compatibility with
+ previously exported blooms using the default hash!
+
+
 ### Version 1.8.2
 * Added CPP Guards
 * Ensured that on-disk blooms correctly updated `elements_added`

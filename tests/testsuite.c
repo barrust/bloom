@@ -173,7 +173,7 @@ MU_TEST(test_bloom_check_false_positive) {
         sprintf(key, "%d", i);
         errors += bloom_filter_check_string(&b, key) == BLOOM_FAILURE ? 0 : 1;
     }
-    mu_assert_int_eq(11, errors);  // there are 11 false positives!
+    mu_assert_int_eq(8, errors);  // there are 8 false positives!
 }
 
 MU_TEST(test_bloom_check_failure) {
@@ -275,7 +275,7 @@ MU_TEST(test_bloom_count_set_bits) {
         sprintf(key, "%d", i);
         bloom_filter_add_string(&b, key);
     }
-    mu_assert_int_eq(33592, bloom_filter_count_set_bits(&b));
+    mu_assert_int_eq(33641, bloom_filter_count_set_bits(&b));
 }
 
 MU_TEST(test_bloom_export_size) {  // size is in bytes
@@ -310,7 +310,7 @@ MU_TEST(test_bloom_estimate_elements) {
         bloom_filter_add_string(&b, key);
     }
     mu_assert_int_eq(5000, b.elements_added);
-    mu_assert_int_eq(4974, bloom_filter_estimate_elements(&b));
+    mu_assert_int_eq(4981, bloom_filter_estimate_elements(&b));
 
     for (int i = 5000; i < 10000; ++i) {
         char key[10] = {0};
@@ -318,7 +318,7 @@ MU_TEST(test_bloom_estimate_elements) {
         bloom_filter_add_string(&b, key);
     }
     mu_assert_int_eq(10000, b.elements_added);
-    mu_assert_int_eq(9960, bloom_filter_estimate_elements(&b));
+    mu_assert_int_eq(9972, bloom_filter_estimate_elements(&b));
 }
 
 MU_TEST(test_bloom_set_elements_to_estimated) {
@@ -331,7 +331,7 @@ MU_TEST(test_bloom_set_elements_to_estimated) {
         bloom_filter_add_string(&b, key);
     }
     mu_assert_int_eq(5000, b.elements_added);
-    mu_assert_int_eq(4974, bloom_filter_estimate_elements(&b));
+    mu_assert_int_eq(4981, bloom_filter_estimate_elements(&b));
 
     for (int i = 5000; i < 10000; ++i) {
         char key[10] = {0};
@@ -339,9 +339,9 @@ MU_TEST(test_bloom_set_elements_to_estimated) {
         bloom_filter_add_string(&b, key);
     }
     mu_assert_int_eq(10000, b.elements_added);
-    mu_assert_int_eq(9960, bloom_filter_estimate_elements(&b));
+    mu_assert_int_eq(9972, bloom_filter_estimate_elements(&b));
     bloom_filter_set_elements_to_estimated(&b);
-    mu_assert_int_eq(9960, b.elements_added);
+    mu_assert_int_eq(9972, b.elements_added);
 }
 
 MU_TEST(test_bloom_set_elements_to_estimated_on_disk) {
@@ -357,7 +357,7 @@ MU_TEST(test_bloom_set_elements_to_estimated_on_disk) {
         bloom_filter_add_string(&bf, key);
     }
     mu_assert_int_eq(5000, bf.elements_added);
-    mu_assert_int_eq(4974, bloom_filter_estimate_elements(&bf));
+    mu_assert_int_eq(4981, bloom_filter_estimate_elements(&bf));
 
     for (int i = 5000; i < 10000; ++i) {
         char key[10] = {0};
@@ -365,15 +365,15 @@ MU_TEST(test_bloom_set_elements_to_estimated_on_disk) {
         bloom_filter_add_string(&bf, key);
     }
     mu_assert_int_eq(10000, bf.elements_added);
-    mu_assert_int_eq(9960, bloom_filter_estimate_elements(&bf));
+    mu_assert_int_eq(9972, bloom_filter_estimate_elements(&bf));
     bloom_filter_set_elements_to_estimated(&bf);
-    mu_assert_int_eq(9960, bf.elements_added);
+    mu_assert_int_eq(9972, bf.elements_added);
 
     bloom_filter_destroy(&bf);
 
     // re-import the counting bloom filter to see if elements added was correctly set!
     bloom_filter_import(&bf, filepath);
-    mu_assert_int_eq(9960, bf.elements_added);
+    mu_assert_int_eq(9972, bf.elements_added);
     bloom_filter_destroy(&bf);
 
     remove(filepath);
@@ -394,7 +394,7 @@ MU_TEST(test_bloom_export) {
 
     char digest[33] = {0};
     calculate_md5sum(filepath, digest);
-    mu_assert_string_eq("0e3b2c3c86bed868bc1da526e3747597", digest);
+    mu_assert_string_eq("0e3409a76b411986a9ef628818aadb9d", digest);
     mu_assert_int_eq(fsize(filepath), 59927);
     remove(filepath);
 }
@@ -418,7 +418,7 @@ MU_TEST(test_bloom_export_on_disk) {
 
     char digest[33] = {0};
     calculate_md5sum(filepath, digest);
-    mu_assert_string_eq("0e3b2c3c86bed868bc1da526e3747597", digest);
+    mu_assert_string_eq("0e3409a76b411986a9ef628818aadb9d", digest);
     mu_assert_int_eq(fsize(filepath), 59927);
     remove(filepath);
 }
@@ -499,8 +499,8 @@ MU_TEST(test_bloom_import_on_disk_fail) {
 }
 
 MU_TEST(test_bloom_export_hex) {
-    char hex_start[] = "22004000000200040004000402004033000040000000120010240010000000000020018101880000";
-    char hex_end[] = "0100000000201800000102601200000000224000000000000000c35000000000000013883c23d70a";
+    char hex_start[] = "88200000000000020000001020000000802000000120100040040100000000000000000000010000";
+    char hex_end[] = "00040001000212000009400000000000c0210002000000000000c35000000000000013883c23d70a";
 
     for (int i = 0; i < 5000; ++i) {
         char key[10] = {0};
@@ -635,7 +635,7 @@ MU_TEST(test_bloom_filter_union) {
         errors += bloom_filter_check_string(&x, key) == BLOOM_SUCCESS ? 0 : 1;
     }
     mu_assert_int_eq(0, errors);
-    mu_assert_int_eq(350, bloom_filter_estimate_elements(&x));
+    mu_assert_int_eq(351, bloom_filter_estimate_elements(&x));
     mu_assert_int_between(340, 355, (int)x.elements_added);
 
     bloom_filter_destroy(&x);
@@ -671,6 +671,42 @@ MU_TEST(test_bloom_filter_intersection) {
     mu_assert_int_eq(160, bloom_filter_estimate_elements(&x));
     mu_assert_int_between(145, 165, (int)x.elements_added);
 
+    bloom_filter_destroy(&x);
+    bloom_filter_destroy(&y);
+    bloom_filter_destroy(&z);
+}
+
+MU_TEST(test_bloom_filter_interesection_57) {
+    BloomFilter x, y, z;
+    bloom_filter_init(&x, 16000000, 0.0010);
+    bloom_filter_init(&y, 16000000, 0.0010);
+    bloom_filter_init(&z, 16000000, 0.0010);
+
+    for (int i = 0; i < 250; ++i) {
+        char key_y[5] = {0};
+        char key_z[5] = {0};
+        sprintf(key_y, "%d", i);
+        sprintf(key_z, "%d", i + 100);
+        bloom_filter_add_string(&y, key_y);
+        bloom_filter_add_string(&z, key_z);
+    }
+
+    int res = bloom_filter_intersect(&x, &y, &z);
+    mu_assert_int_eq(BLOOM_SUCCESS, res);
+
+    int errors = 0;
+    for (int i = 1500; i < 250; ++i) {
+        char key[10] = {0};
+        sprintf(key, "%d", i);
+        errors += bloom_filter_check_string(&x, key) == BLOOM_SUCCESS ? 0 : 1;
+    }
+    mu_assert_int_eq(0, errors);
+    mu_assert_int_eq(150, bloom_filter_estimate_elements(&x));
+    mu_assert_int_between(145, 165, (int)x.elements_added);
+
+    // printf("%lu\t%lu\t%.25f\n", x.bloom_length, x.number_bits, x.false_positive_probability);
+    // printf("%.6f", myFloat);
+    mu_assert_int_eq(28755175, x.bloom_length);
     bloom_filter_destroy(&x);
     bloom_filter_destroy(&y);
     bloom_filter_destroy(&z);
@@ -825,6 +861,7 @@ MU_TEST_SUITE(test_suite) {
     MU_RUN_TEST(test_bloom_filter_union_intersection_cnt_errors);
     MU_RUN_TEST(test_bloom_filter_union);
     MU_RUN_TEST(test_bloom_filter_intersection);
+    MU_RUN_TEST(test_bloom_filter_interesection_57);
     MU_RUN_TEST(test_bloom_filter_jaccard);
 
     /* Statistics */

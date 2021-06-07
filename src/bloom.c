@@ -501,7 +501,7 @@ static uint64_t* __default_hash(int num_hashes, const char *str) {
 static uint64_t __fnv_1a(const char *key) {
     // FNV-1a hash (http://www.isthe.com/chongo/tech/comp/fnv/)
     int i, len = strlen(key);
-    uint64_t h = 14695981039346656073ULL; // FNV_OFFSET 64 bit
+    uint64_t h = 14695981039346656037ULL; // FNV_OFFSET 64 bit
     for (i = 0; i < len; ++i){
             h = h ^ (unsigned char) key[i];
             h = h * 1099511628211ULL; // FNV_PRIME 64 bit
