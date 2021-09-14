@@ -704,7 +704,8 @@ MU_TEST(test_bloom_filter_interesection_57) {
     mu_assert_int_eq(150, bloom_filter_estimate_elements(&x));
     mu_assert_int_between(145, 165, (int)x.elements_added);
 
-    // printf("%lu\t%lu\t%.25f\n", x.bloom_length, x.number_bits, x.false_positive_probability);
+
+    printf("%lu\t%lu\t%.25f\n", x.bloom_length, x.number_bits, x.false_positive_probability);
     // printf("%.6f", myFloat);
     mu_assert_int_eq(28755175, x.bloom_length);
     bloom_filter_destroy(&x);
