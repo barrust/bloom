@@ -28,8 +28,9 @@
 
 /* define some constant magic looking numbers */
 #define CHAR_LEN 8
-#define LOG_TWO_SQUARED 0.4804530139182
-#define LOG_TWO 0.6931471805599453
+#define LOG_TWO_SQUARED  0.480453013918201388143813800   // 0.4804530143737792968750000
+                                                        // 0.4804530143737792968750000
+#define LOG_TWO 0.693147180559945286226764000
 
 /* https://graphics.stanford.edu/~seander/bithacks.html#CountBitsSetTable */
 #define B2(n) n,     n+1,     n+1,     n+2
@@ -397,7 +398,7 @@ static void __calculate_optimal_hashes(BloomFilter *bf) {
     // calc optimized values
     long n = bf->estimated_elements;
     float p = bf->false_positive_probability;
-    uint64_t m = ceil((-n * log(p)) / LOG_TWO_SQUARED);  // AKA pow(log(2), 2);
+    uint64_t m = ceil((-n * logl(p)) / LOG_TWO_SQUARED);  // AKA pow(log(2), 2);
     unsigned int k = round(LOG_TWO * m / n);             // AKA log(2.0);
     // set paramenters
     bf->number_hashes = k; // should check to make sure it is at least 1...
