@@ -705,6 +705,7 @@ MU_TEST(test_bloom_filter_interesection_57) {
     mu_assert_int_between(145, 165, (int)x.elements_added);
 
     mu_assert_int_eq(28755175, x.bloom_length);
+    mu_assert_int_eq(230041400, x.number_bits);
     bloom_filter_destroy(&x);
     bloom_filter_destroy(&y);
     bloom_filter_destroy(&z);

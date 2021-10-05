@@ -115,3 +115,36 @@ bloom_filter_destroy(&bf);
 
 ## Required Compile Flags:
 -lm
+
+
+## Backward Compatible Hash Function
+To use the older bloom filters (v1.8.2 or lower) that utilized the default hashing
+algorithm, then change use the following code as the hash function:
+
+``` c
+/* NOTE: The caller will free the results */
+static uint64_t* original_default_hash(unsigned int num_hashes, const char* str) {
+    uint64_t *results = (uint64_t*)calloc(num_hashes, sizeof(uint64_t));
+    char key[17] = {0}; // largest value is 7FFF,FFFF,FFFF,FFFF
+    results[0] = __fnv_1a(str);
+    for (unsigned int i = 1; i < num_hashes; ++i) {
+        sprintf(key, "%" PRIx64 "", results[i-1]);
+        results[i] = old_fnv_1a(key);
+    }
+    return results;
+}
+
+static uint64_t old_fnv_1a(const char* key) {
+    // FNV-1a hash (http://www.isthe.com/chongo/tech/comp/fnv/)
+    int i, len = strlen(key);
+    uint64_t h = 14695981039346656073ULL; // FNV_OFFSET 64 bit
+    for (i = 0; i < len; ++i){
+            h = h ^ (unsigned char) key[i];
+            h = h * 1099511628211ULL; // FNV_PRIME 64 bit
+    }
+    return h;
+}
+```
+
+If using only older Bloom Filters, then you can update the // FNV_OFFSET 64 bit
+to use `14695981039346656073ULL`
