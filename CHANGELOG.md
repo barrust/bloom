@@ -1,4 +1,4 @@
-## Current Version
+# Bloom Filter
 
 ### FUTURE VERSION
 * ***BACKWARD INCOMPATIBLE CHANGES***
