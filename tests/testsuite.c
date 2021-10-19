@@ -84,6 +84,31 @@ MU_TEST(test_bloom_on_disk_setup_returns) {
     remove(filepath);
 }
 
+
+/*******************************************************************************
+*   Test hashing
+*******************************************************************************/
+MU_TEST(test_bloom_hashes_values) {
+    uint64_t vals[] = {15902901984413996407ULL, 13757982394814800524ULL, 14025518860217559917ULL, 5646210032526140290ULL, 6127913770875964707ULL};
+    uint64_t* hashes = bloom_filter_calculate_hashes(&b, "foo", 5);
+    for (int i = 0; i < 5; ++i)
+        mu_assert_int_eq(vals[i], hashes[i]);
+    free(hashes);
+}
+
+MU_TEST(test_bloom_hashes_start_collisions) {
+    // see https://github.com/barrust/pyprobables/issues/62#issue-913502606
+    // the hashes start the same, but we want them to diverge for everything else
+    uint64_t* hashes_foo = bloom_filter_calculate_hashes(&b, "gMPflVXtwGDXbIhP73TX", 5);
+    uint64_t* hashes_bar = bloom_filter_calculate_hashes(&b, "LtHf1prlU1bCeYZEdqWf", 5);
+    mu_assert_int_eq(hashes_foo[0], hashes_bar[0]);
+    for (int i = 1; i < 5; ++i)
+        mu_assert_int_not_eq(hashes_foo[i], hashes_bar[i]);
+    free(hashes_foo);
+    free(hashes_bar);
+}
+
+
 /*******************************************************************************
 *   Test set and check
 *******************************************************************************/
@@ -173,7 +198,7 @@ MU_TEST(test_bloom_check_false_positive) {
         sprintf(key, "%d", i);
         errors += bloom_filter_check_string(&b, key) == BLOOM_FAILURE ? 0 : 1;
     }
-    mu_assert_int_eq(8, errors);  // there are 8 false positives!
+    mu_assert_int_eq(5, errors);  // there are 5 false positives!
 }
 
 MU_TEST(test_bloom_check_failure) {
@@ -275,7 +300,7 @@ MU_TEST(test_bloom_count_set_bits) {
         sprintf(key, "%d", i);
         bloom_filter_add_string(&b, key);
     }
-    mu_assert_int_eq(33641, bloom_filter_count_set_bits(&b));
+    mu_assert_int_eq(32931, bloom_filter_count_set_bits(&b));
 }
 
 MU_TEST(test_bloom_export_size) {  // size is in bytes
@@ -310,7 +335,7 @@ MU_TEST(test_bloom_estimate_elements) {
         bloom_filter_add_string(&b, key);
     }
     mu_assert_int_eq(5000, b.elements_added);
-    mu_assert_int_eq(4981, bloom_filter_estimate_elements(&b));
+    mu_assert_int_eq(4872, bloom_filter_estimate_elements(&b));
 
     for (int i = 5000; i < 10000; ++i) {
         char key[10] = {0};
@@ -318,7 +343,7 @@ MU_TEST(test_bloom_estimate_elements) {
         bloom_filter_add_string(&b, key);
     }
     mu_assert_int_eq(10000, b.elements_added);
-    mu_assert_int_eq(9972, bloom_filter_estimate_elements(&b));
+    mu_assert_int_eq(9792, bloom_filter_estimate_elements(&b));
 }
 
 MU_TEST(test_bloom_set_elements_to_estimated) {
@@ -331,7 +356,7 @@ MU_TEST(test_bloom_set_elements_to_estimated) {
         bloom_filter_add_string(&b, key);
     }
     mu_assert_int_eq(5000, b.elements_added);
-    mu_assert_int_eq(4981, bloom_filter_estimate_elements(&b));
+    mu_assert_int_eq(4872, bloom_filter_estimate_elements(&b));
 
     for (int i = 5000; i < 10000; ++i) {
         char key[10] = {0};
@@ -339,9 +364,9 @@ MU_TEST(test_bloom_set_elements_to_estimated) {
         bloom_filter_add_string(&b, key);
     }
     mu_assert_int_eq(10000, b.elements_added);
-    mu_assert_int_eq(9972, bloom_filter_estimate_elements(&b));
+    mu_assert_int_eq(9792, bloom_filter_estimate_elements(&b));
     bloom_filter_set_elements_to_estimated(&b);
-    mu_assert_int_eq(9972, b.elements_added);
+    mu_assert_int_eq(9792, b.elements_added);
 }
 
 MU_TEST(test_bloom_set_elements_to_estimated_on_disk) {
@@ -357,7 +382,7 @@ MU_TEST(test_bloom_set_elements_to_estimated_on_disk) {
         bloom_filter_add_string(&bf, key);
     }
     mu_assert_int_eq(5000, bf.elements_added);
-    mu_assert_int_eq(4981, bloom_filter_estimate_elements(&bf));
+    mu_assert_int_eq(4872, bloom_filter_estimate_elements(&bf));
 
     for (int i = 5000; i < 10000; ++i) {
         char key[10] = {0};
@@ -365,15 +390,15 @@ MU_TEST(test_bloom_set_elements_to_estimated_on_disk) {
         bloom_filter_add_string(&bf, key);
     }
     mu_assert_int_eq(10000, bf.elements_added);
-    mu_assert_int_eq(9972, bloom_filter_estimate_elements(&bf));
+    mu_assert_int_eq(9792, bloom_filter_estimate_elements(&bf));
     bloom_filter_set_elements_to_estimated(&bf);
-    mu_assert_int_eq(9972, bf.elements_added);
+    mu_assert_int_eq(9792, bf.elements_added);
 
     bloom_filter_destroy(&bf);
 
     // re-import the counting bloom filter to see if elements added was correctly set!
     bloom_filter_import(&bf, filepath);
-    mu_assert_int_eq(9972, bf.elements_added);
+    mu_assert_int_eq(9792, bf.elements_added);
     bloom_filter_destroy(&bf);
 
     remove(filepath);
@@ -394,7 +419,7 @@ MU_TEST(test_bloom_export) {
 
     char digest[33] = {0};
     calculate_md5sum(filepath, digest);
-    mu_assert_string_eq("0e3409a76b411986a9ef628818aadb9d", digest);
+    mu_assert_string_eq("dff430adaf230fe3579d658c1fd3b457", digest);
     mu_assert_int_eq(fsize(filepath), 59927);
     remove(filepath);
 }
@@ -418,7 +443,7 @@ MU_TEST(test_bloom_export_on_disk) {
 
     char digest[33] = {0};
     calculate_md5sum(filepath, digest);
-    mu_assert_string_eq("0e3409a76b411986a9ef628818aadb9d", digest);
+    mu_assert_string_eq("dff430adaf230fe3579d658c1fd3b457", digest);
     mu_assert_int_eq(fsize(filepath), 59927);
     remove(filepath);
 }
@@ -499,8 +524,8 @@ MU_TEST(test_bloom_import_on_disk_fail) {
 }
 
 MU_TEST(test_bloom_export_hex) {
-    char hex_start[] = "88200000000000020000001020000000802000000120100040040100000000000000000000010000";
-    char hex_end[] = "00040001000212000009400000000000c0210002000000000000c35000000000000013883c23d70a";
+    char hex_start[] = "80202010000000008008068000001000800800000200800080220000200000000000002002000002";
+    char hex_end[] = "1000000004021000000200601000000040020100000000000000c35000000000000013883c23d70a";
 
     for (int i = 0; i < 5000; ++i) {
         char key[10] = {0};
@@ -635,8 +660,8 @@ MU_TEST(test_bloom_filter_union) {
         errors += bloom_filter_check_string(&x, key) == BLOOM_SUCCESS ? 0 : 1;
     }
     mu_assert_int_eq(0, errors);
-    mu_assert_int_eq(351, bloom_filter_estimate_elements(&x));
-    mu_assert_int_between(340, 355, (int)x.elements_added);
+    mu_assert_int_eq(358, bloom_filter_estimate_elements(&x));
+    mu_assert_int_between(350, 360, (int)x.elements_added);
 
     bloom_filter_destroy(&x);
     bloom_filter_destroy(&y);
@@ -668,8 +693,8 @@ MU_TEST(test_bloom_filter_intersection) {
         errors += bloom_filter_check_string(&x, key) == BLOOM_SUCCESS ? 0 : 1;
     }
     mu_assert_int_eq(0, errors);
-    mu_assert_int_eq(160, bloom_filter_estimate_elements(&x));
-    mu_assert_int_between(145, 165, (int)x.elements_added);
+    mu_assert_int_eq(168, bloom_filter_estimate_elements(&x));
+    mu_assert_int_between(160, 170, (int)x.elements_added);
 
     bloom_filter_destroy(&x);
     bloom_filter_destroy(&y);
@@ -736,7 +761,7 @@ MU_TEST(test_bloom_filter_jaccard) {
         bloom_filter_add_string(&z, key_z);
     }
     res = bloom_filter_jaccard_index(&y, &z);
-    mu_assert_double_between(0.20, 0.31, res);
+    mu_assert_double_between(0.24, 0.32, res);
 
     for (int i = 100; i < 200; ++i) {
         char key_z[5] = {0};
@@ -752,7 +777,7 @@ MU_TEST(test_bloom_filter_jaccard) {
         bloom_filter_add_string(&z, key_z);
     }
     res = bloom_filter_jaccard_index(&y, &z);
-    mu_assert_double_between(0.70, 0.80, res);
+    mu_assert_double_between(0.70, 0.85, res);
 
     for (int i = 300; i < 400; ++i) {
         char key_z[5] = {0};
@@ -802,10 +827,10 @@ MU_TEST(test_bloom_filter_stat) {
     max false positive rate: 0.010000\n\
     bloom length (8 bits): 59907\n\
     elements added: 400\n\
-    estimated elements added: 399\n\
+    estimated elements added: 397\n\
     current false positive rate: 0.000000\n\
     export size (bytes): 59927\n\
-    number bits set: 2790\n\
+    number bits set: 2776\n\
     is on disk: no\n", buffer);
 }
 
@@ -821,6 +846,10 @@ MU_TEST_SUITE(test_suite) {
     MU_RUN_TEST(test_bloom_on_disk_setup);
     MU_RUN_TEST(test_bloom_setup_returns);
     MU_RUN_TEST(test_bloom_on_disk_setup_returns);
+
+    /* hashes */
+    MU_RUN_TEST(test_bloom_hashes_values);
+    MU_RUN_TEST(test_bloom_hashes_start_collisions);
 
     /* set and contains */
     MU_RUN_TEST(test_bloom_set);

@@ -5,7 +5,7 @@
 ***     Author: Tyler Barrus
 ***     email:  barrust@gmail.com
 ***
-***     Version: 1.8.2
+***     Version: 1.9.0
 ***     Purpose: Simple, yet effective, bloom filter implementation
 ***
 ***     License: MIT 2015

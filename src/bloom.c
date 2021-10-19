@@ -3,7 +3,7 @@
 ***     Author: Tyler Barrus
 ***     email:  barrust@gmail.com
 ***
-***     Version: 1.8.2
+***     Version: 1.9.0
 ***
 ***     License: MIT 2015
 ***
@@ -43,7 +43,7 @@ static const unsigned char bits_set_table[256] = {B6(0), B6(1), B6(1), B6(2)};
 ***  PRIVATE FUNCTIONS
 *******************************************************************************/
 static uint64_t* __default_hash(int num_hashes, const char *str);
-static uint64_t __fnv_1a(const char *key);
+static uint64_t __fnv_1a(const char *key, int seed);
 static void __calculate_optimal_hashes(BloomFilter *bf);
 static void __read_from_file(BloomFilter *bf, FILE *fp, short on_disk, const char *filename);
 static void __write_to_file(BloomFilter *bf, FILE *fp, short on_disk);
@@ -490,19 +490,16 @@ static void __update_elements_added_on_disk(BloomFilter* bf) {
 static uint64_t* __default_hash(int num_hashes, const char *str) {
     uint64_t *results = (uint64_t*)calloc(num_hashes, sizeof(uint64_t));
     int i;
-    char key[17] = {0}; // largest value is 7FFF,FFFF,FFFF,FFFF
-    results[0] = __fnv_1a(str);
-    for (i = 1; i < num_hashes; ++i) {
-        sprintf(key, "%" PRIx64 "", results[i-1]);
-        results[i] = __fnv_1a(key);
+    for (i = 0; i < num_hashes; ++i) {
+        results[i] = __fnv_1a(str, i);
     }
     return results;
 }
 
-static uint64_t __fnv_1a(const char *key) {
+static uint64_t __fnv_1a(const char *key, int seed) {
     // FNV-1a hash (http://www.isthe.com/chongo/tech/comp/fnv/)
     int i, len = strlen(key);
-    uint64_t h = 14695981039346656037ULL; // FNV_OFFSET 64 bit
+    uint64_t h = 14695981039346656037ULL + (31 * seed); // FNV_OFFSET 64 bit with magic number seed
     for (i = 0; i < len; ++i){
             h = h ^ (unsigned char) key[i];
             h = h * 1099511628211ULL; // FNV_PRIME 64 bit

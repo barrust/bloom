@@ -1,9 +1,10 @@
-## Current Version
+# Bloom Filter
 
-### FUTURE VERSION
+### Version 1.9.0
 * ***BACKWARD INCOMPATIBLE CHANGES***
- * Update to the FNV_1a hash function **NOTE:** Breaks backwards compatibility with
- previously exported blooms using the default hash!
+    * **NOTE:** Breaks backwards compatibility with previously exported blooms using the default hash!
+    * Update to the FNV_1a hash function
+    * Simplified hashing at depth by using a seed value
 
 
 ### Version 1.8.2
