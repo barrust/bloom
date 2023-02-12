@@ -354,7 +354,7 @@ void populate_bloom_filter(BloomFilter *bf, unsigned long long elements, int mul
     for (unsigned long long i = 0; i < elements * mult; i+=mult) {
         char key[KEY_LEN] = {0};
         sprintf(key, "%llu", i);
-        bloom_filter_add_string(bf, (const uint8_t *) key, strlen(key));
+        bloom_filter_add_string(bf, key);
     }
 }
 
@@ -363,7 +363,7 @@ int check_known_values(BloomFilter *bf, int mult) {
     for (i = 0; i < ELEMENTS * mult; i+=mult) {
         char key[KEY_LEN] = {0};
         sprintf(key, "%d", i);
-        if (bloom_filter_check_string(bf, (const uint8_t *) key, strlen(key)) == BLOOM_FAILURE) {
+        if (bloom_filter_check_string(bf, key) == BLOOM_FAILURE) {
             cnt++;
         }
     }
@@ -377,7 +377,7 @@ int check_known_values_alt(BloomFilter *bf, int mult, int mult2, int* used) {
         if (i % mult2 == 0 && i % mult == 0) {
             char key[KEY_LEN] = {0};
             sprintf(key, "%d", i);
-            if (bloom_filter_check_string(bf, (const uint8_t *) key, strlen(key)) == BLOOM_FAILURE) {
+            if (bloom_filter_check_string(bf, key) == BLOOM_FAILURE) {
                 cnt++;
             }
             j++;
@@ -392,7 +392,7 @@ int check_unknown_values(BloomFilter *bf, int mult) {
     for (i = 1; i < ELEMENTS * mult; i+=mult) {
         char key[KEY_LEN] = {0};
         sprintf(key, "%d", i);
-        if (bloom_filter_check_string(bf, (const uint8_t *) key, strlen(key)) == BLOOM_SUCCESS) {
+        if (bloom_filter_check_string(bf, key) == BLOOM_SUCCESS) {
             cnt++;
         }
     }
@@ -408,7 +408,7 @@ int check_unknown_values_alt(BloomFilter *bf, int mult, int mult2, int offset, i
         } else {
             char key[KEY_LEN] = {0};
             sprintf(key, "%d", i);
-            if (bloom_filter_check_string(bf, (const uint8_t *) key, strlen(key)) == BLOOM_SUCCESS) {
+            if (bloom_filter_check_string(bf, key) == BLOOM_SUCCESS) {
                 cnt++;
             }
             j++;
@@ -427,7 +427,7 @@ int check_unknown_values_alt_2(BloomFilter *bf, int mult, int mult2, int offset,
         } else {
             char key[KEY_LEN] = {0};
             sprintf(key, "%d", i);
-            if (bloom_filter_check_string(bf, (const uint8_t *) key, strlen(key)) == BLOOM_SUCCESS) {
+            if (bloom_filter_check_string(bf, key) == BLOOM_SUCCESS) {
                 cnt++;
             }
             j++;

@@ -142,15 +142,22 @@ void bloom_filter_stats(BloomFilter *bf) {
     bloom_filter_count_set_bits(bf), is_on_disk);
 }
 
-int bloom_filter_add_string(BloomFilter *bf, const uint8_t *str, const size_t str_len) {
+int bloom_filter_add_string(BloomFilter *bf, const char *str) {
+    return bloom_filter_add_uint8_str(bf, (const uint8_t *) str, strlen(str));
+}
+
+int bloom_filter_add_uint8_str(BloomFilter *bf, const uint8_t *str, const size_t str_len) {
     uint64_t *hashes = bloom_filter_calculate_hashes(bf, str, str_len, bf->number_hashes);
     int res = bloom_filter_add_string_alt(bf, hashes, bf->number_hashes);
     free(hashes);
     return res;
 }
 
+int bloom_filter_check_string(BloomFilter *bf, const char *str) {
+    return bloom_filter_check_uint8_str(bf, (const uint8_t *) str, strlen(str));
+}
 
-int bloom_filter_check_string(BloomFilter *bf, const uint8_t *str, const size_t str_len) {
+int bloom_filter_check_uint8_str(BloomFilter *bf, const uint8_t *str, const size_t str_len) {
     uint64_t *hashes = bloom_filter_calculate_hashes(bf, str, str_len, bf->number_hashes);
     int res = bloom_filter_check_string_alt(bf, hashes, bf->number_hashes);
     free(hashes);

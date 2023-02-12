@@ -114,13 +114,19 @@ int bloom_filter_destroy(BloomFilter *bf);
 int bloom_filter_clear(BloomFilter *bf);
 
 /* Add a string (or element) to the bloom filter */
-int bloom_filter_add_string(BloomFilter *bf, const uint8_t *str, const size_t str_len);
+int bloom_filter_add_string(BloomFilter *bf, const char *str);
+
+/* Add a uint8_t string (or element) to the bloom filter */
+int bloom_filter_add_uint8_str(BloomFilter *bf, const uint8_t *str, const size_t str_len);
 
 /* Add a string to a bloom filter using the defined hashes */
 int bloom_filter_add_string_alt(BloomFilter *bf, uint64_t *hashes, unsigned int number_hashes_passed);
 
 /* Check to see if a string (or element) is or is not in the bloom filter */
-int bloom_filter_check_string(BloomFilter *bf, const uint8_t *str, const size_t str_len);
+int bloom_filter_check_string(BloomFilter *bf, const char *str);
+
+/* Check to see if a uint8_t string (or element) is or is not in the bloom filter */
+int bloom_filter_check_uint8_str(BloomFilter *bf, const uint8_t *str, const size_t str_len);
 
 /* Check if a string is in the bloom filter using the passed hashes */
 int bloom_filter_check_string_alt(BloomFilter *bf, uint64_t *hashes, unsigned int number_hashes_passed);
