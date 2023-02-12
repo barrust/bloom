@@ -39,7 +39,7 @@ extern "C" {
 
 #define bloom_filter_get_version()    (BLOOMFILTER_VERSION)
 
-typedef uint64_t* (*BloomHashFunction) (int num_hashes, const char *str);
+typedef uint64_t* (*BloomHashFunction) (int num_hashes, const uint8_t *str, const size_t str_len);
 
 typedef struct bloom_filter {
     /* bloom parameters */
@@ -116,11 +116,17 @@ int bloom_filter_clear(BloomFilter *bf);
 /* Add a string (or element) to the bloom filter */
 int bloom_filter_add_string(BloomFilter *bf, const char *str);
 
+/* Add a uint8_t string (or element) to the bloom filter */
+int bloom_filter_add_uint8_str(BloomFilter *bf, const uint8_t *str, const size_t str_len);
+
 /* Add a string to a bloom filter using the defined hashes */
 int bloom_filter_add_string_alt(BloomFilter *bf, uint64_t *hashes, unsigned int number_hashes_passed);
 
 /* Check to see if a string (or element) is or is not in the bloom filter */
 int bloom_filter_check_string(BloomFilter *bf, const char *str);
+
+/* Check to see if a uint8_t string (or element) is or is not in the bloom filter */
+int bloom_filter_check_uint8_str(BloomFilter *bf, const uint8_t *str, const size_t str_len);
 
 /* Check if a string is in the bloom filter using the passed hashes */
 int bloom_filter_check_string_alt(BloomFilter *bf, uint64_t *hashes, unsigned int number_hashes_passed);
@@ -144,7 +150,7 @@ void bloom_filter_set_elements_to_estimated(BloomFilter *bf);
 
 /*  Generate the desired number of hashes for the provided string
     NOTE: It is up to the caller to free the allocated memory */
-uint64_t* bloom_filter_calculate_hashes(BloomFilter *bf, const char *str, unsigned int number_hashes);
+uint64_t* bloom_filter_calculate_hashes(BloomFilter *bf, const uint8_t *str, const size_t str_len, unsigned int number_hashes);
 
 /* Calculate the size the bloom filter will take on disk when exported in bytes */
 uint64_t bloom_filter_export_size(BloomFilter *bf);

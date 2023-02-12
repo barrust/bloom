@@ -28,8 +28,8 @@ int check_unknown_values_alt(BloomFilter *bf, int mult, int mult2, int offset, i
 int check_unknown_values_alt_2(BloomFilter *bf, int mult, int mult2, int offset, int* used);
 void success_or_failure(int res);
 void populate_bloom_filter(BloomFilter *bf, unsigned long long elements, int mult);
-static uint64_t __fnv_1a_mod(const char *key);
-static uint64_t* __default_hash_mod(int num_hashes, const char *str);
+static uint64_t __fnv_1a_mod(const uint8_t *key, const size_t str_len);
+static uint64_t* __default_hash_mod(int num_hashes, const uint8_t *str, const size_t str_len);
 
 
 
@@ -446,22 +446,22 @@ void success_or_failure(int res) {
 }
 
 /* NOTE: The caller will free the results */
-static uint64_t* __default_hash_mod(int num_hashes, const char *str) {
+static uint64_t* __default_hash_mod(int num_hashes, const uint8_t *str, const size_t str_len) {
     uint64_t *results = (uint64_t*)calloc(num_hashes, sizeof(uint64_t));
     int i;
     char *key = (char*)calloc(17, sizeof(char));  // largest value is 7FFF,FFFF,FFFF,FFFF
-    results[0] = __fnv_1a_mod(str);
+    results[0] = __fnv_1a_mod(str, str_len);
     for (i = 1; i < num_hashes; ++i) {
         sprintf(key, "%" PRIx64 "", results[i-1]);
-        results[i] = __fnv_1a_mod(key);
+        results[i] = __fnv_1a_mod((const uint8_t *) key, strlen(key));
     }
     free(key);
     return results;
 }
 
-static uint64_t __fnv_1a_mod(const char *key) {
+static uint64_t __fnv_1a_mod(const uint8_t *key, const size_t len) {
     // FNV-1a hash (http://www.isthe.com/chongo/tech/comp/fnv/)
-    int i, len = strlen(key);
+    size_t i;
     uint64_t h = 14695981039346656073ULL; // FNV_OFFSET 64 bit
     for (i = 0; i < len; ++i) {
         h = h ^ (unsigned char) key[i];

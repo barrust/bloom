@@ -42,8 +42,8 @@ static const unsigned char bits_set_table[256] = {B6(0), B6(1), B6(1), B6(2)};
 /*******************************************************************************
 ***  PRIVATE FUNCTIONS
 *******************************************************************************/
-static uint64_t* __default_hash(int num_hashes, const char *str);
-static uint64_t __fnv_1a(const char *key, int seed);
+static uint64_t* __default_hash(int num_hashes, const uint8_t *str, const size_t str_len);
+static uint64_t __fnv_1a(const uint8_t *key, const size_t key_len, int seed);
 static void __calculate_optimal_hashes(BloomFilter *bf);
 static void __read_from_file(BloomFilter *bf, FILE *fp, short on_disk, const char *filename);
 static void __write_to_file(BloomFilter *bf, FILE *fp, short on_disk);
@@ -143,22 +143,29 @@ void bloom_filter_stats(BloomFilter *bf) {
 }
 
 int bloom_filter_add_string(BloomFilter *bf, const char *str) {
-    uint64_t *hashes = bloom_filter_calculate_hashes(bf, str, bf->number_hashes);
+    return bloom_filter_add_uint8_str(bf, (const uint8_t *) str, strlen(str));
+}
+
+int bloom_filter_add_uint8_str(BloomFilter *bf, const uint8_t *str, const size_t str_len) {
+    uint64_t *hashes = bloom_filter_calculate_hashes(bf, str, str_len, bf->number_hashes);
     int res = bloom_filter_add_string_alt(bf, hashes, bf->number_hashes);
     free(hashes);
     return res;
 }
 
-
 int bloom_filter_check_string(BloomFilter *bf, const char *str) {
-    uint64_t *hashes = bloom_filter_calculate_hashes(bf, str, bf->number_hashes);
+    return bloom_filter_check_uint8_str(bf, (const uint8_t *) str, strlen(str));
+}
+
+int bloom_filter_check_uint8_str(BloomFilter *bf, const uint8_t *str, const size_t str_len) {
+    uint64_t *hashes = bloom_filter_calculate_hashes(bf, str, str_len, bf->number_hashes);
     int res = bloom_filter_check_string_alt(bf, hashes, bf->number_hashes);
     free(hashes);
     return res;
 }
 
-uint64_t* bloom_filter_calculate_hashes(BloomFilter *bf, const char *str, unsigned int number_hashes) {
-    return bf->hash_function(number_hashes, str);
+uint64_t* bloom_filter_calculate_hashes(BloomFilter *bf, const uint8_t *str, const size_t str_len, unsigned int number_hashes) {
+    return bf->hash_function(number_hashes, str, str_len);
 }
 
 /* Add a string to a bloom filter using the defined hashes */
@@ -487,18 +494,18 @@ static void __update_elements_added_on_disk(BloomFilter* bf) {
 }
 
 /* NOTE: The caller will free the results */
-static uint64_t* __default_hash(int num_hashes, const char *str) {
+static uint64_t* __default_hash(int num_hashes, const uint8_t *str, const size_t str_len) {
     uint64_t *results = (uint64_t*)calloc(num_hashes, sizeof(uint64_t));
     int i;
     for (i = 0; i < num_hashes; ++i) {
-        results[i] = __fnv_1a(str, i);
+        results[i] = __fnv_1a(str, str_len, i);
     }
     return results;
 }
 
-static uint64_t __fnv_1a(const char *key, int seed) {
+static uint64_t __fnv_1a(const uint8_t *key, const size_t len, int seed) {
     // FNV-1a hash (http://www.isthe.com/chongo/tech/comp/fnv/)
-    int i, len = strlen(key);
+    size_t i;
     uint64_t h = 14695981039346656037ULL + (31 * seed); // FNV_OFFSET 64 bit with magic number seed
     for (i = 0; i < len; ++i){
             h = h ^ (unsigned char) key[i];
