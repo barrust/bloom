@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <math.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 
@@ -587,6 +588,131 @@ MU_TEST(test_bloom_import_hex_fail) {
     mu_assert_int_eq(BLOOM_FAILURE, bloom_filter_import_hex_string(&bf, (char*)"aaa"));  // only checks odd length
 }
 
+/* a hash function that cannot allocate its results */
+static uint64_t* __null_hash(int num_hashes, const char *str) {
+    (void)num_hashes;
+    (void)str;
+    return NULL;
+}
+
+MU_TEST(test_bloom_hash_allocation_failure) {
+    BloomFilter x;
+    mu_assert_int_eq(BLOOM_SUCCESS, bloom_filter_init_alt(&x, 100, 0.05, __null_hash));
+    mu_assert_int_eq(BLOOM_FAILURE, bloom_filter_add_string(&x, "test"));
+    mu_assert_int_eq(BLOOM_FAILURE, bloom_filter_check_string(&x, "test"));
+    mu_assert_int_eq(0, x.elements_added);
+    bloom_filter_destroy(&x);
+}
+
+MU_TEST(test_bloom_union_intersection_const_inputs) {
+    BloomFilter x, y, u, n;
+    bloom_filter_init(&x, 100, 0.05);
+    bloom_filter_init(&y, 100, 0.05);
+    bloom_filter_init(&u, 100, 0.05);
+    bloom_filter_init(&n, 100, 0.05);
+    for (int i = 0; i < 50; ++i) {
+        char key[10] = {0};
+        sprintf(key, "%d", i);
+        bloom_filter_add_string(&x, key);
+        sprintf(key, "%d", i + 25);
+        bloom_filter_add_string(&y, key);
+    }
+    /* the inputs are only read, so they can be const */
+    const BloomFilter *cx = &x, *cy = &y;
+    mu_assert_int_eq(BLOOM_SUCCESS, bloom_filter_union(&u, cx, cy));
+    mu_assert_int_eq(BLOOM_SUCCESS, bloom_filter_intersect(&n, cx, cy));
+    int errors = 0;
+    for (unsigned long i = 0; i < x.bloom_length; ++i) {
+        errors += u.bloom[i] == (x.bloom[i] | y.bloom[i]) ? 0 : 1;
+        errors += n.bloom[i] == (x.bloom[i] & y.bloom[i]) ? 0 : 1;
+    }
+    mu_assert_int_eq(0, errors);
+    bloom_filter_destroy(&x);
+    bloom_filter_destroy(&y);
+    bloom_filter_destroy(&u);
+    bloom_filter_destroy(&n);
+}
+
+MU_TEST(test_bloom_import_hex_invalid) {
+    BloomFilter x;
+    /* shorter than the 40 character footer: it read before the start of the string */
+    mu_assert_int_eq(BLOOM_FAILURE, bloom_filter_import_hex_string(&x, "abcd"));
+
+    BloomFilter bo;
+    bloom_filter_init(&bo, 500, 0.1);
+    bloom_filter_add_string(&bo, "test");
+    char* hex = bloom_filter_export_hex_string(&bo);
+    /* one byte of the bloom missing */
+    mu_assert_int_eq(BLOOM_FAILURE, bloom_filter_import_hex_string(&x, hex + 2));
+    /* a character that is not hex */
+    hex[10] = 'z';
+    mu_assert_int_eq(BLOOM_FAILURE, bloom_filter_import_hex_string(&x, hex));
+    /* a footer of zeros: 0 estimated elements and a false positive rate of 0 */
+    char zeros[41] = {0};
+    memset(zeros, '0', 40);
+    mu_assert_int_eq(BLOOM_FAILURE, bloom_filter_import_hex_string(&x, zeros));
+    free(hex);
+    bloom_filter_destroy(&bo);
+}
+
+MU_TEST(test_bloom_import_hex_all_byte_values) {
+    BloomFilter bo, bf;
+    bloom_filter_init(&bo, 500, 0.1);
+    for (unsigned long i = 0; i < bo.bloom_length; ++i) {
+        bo.bloom[i] = (unsigned char)(i % 256);  /* every byte value, including those above 0x7f */
+    }
+    char* hex = bloom_filter_export_hex_string(&bo);
+    mu_assert_int_eq(BLOOM_SUCCESS, bloom_filter_import_hex_string(&bf, hex));
+    mu_assert_int_eq(bo.bloom_length, bf.bloom_length);
+    mu_assert_int_eq(0, memcmp(bo.bloom, bf.bloom, bo.bloom_length));
+    free(hex);
+    bloom_filter_destroy(&bf);
+    bloom_filter_destroy(&bo);
+}
+
+MU_TEST(test_bloom_init_zero_hashes) {
+    BloomFilter x;
+    /* a false positive rate above about 0.7 gives 0 hashes, and every check would succeed */
+    mu_assert_int_eq(BLOOM_FAILURE, bloom_filter_init(&x, 1000, 0.9));
+    char filepath[] = "./dist/test_bloom_init_zero_hashes.blm";
+    mu_assert_int_eq(BLOOM_FAILURE, bloom_filter_init_on_disk(&x, 1000, 0.9, filepath));
+    struct stat st;
+    mu_assert_int_eq(-1, stat(filepath, &st));  /* no file is created */
+
+    mu_assert_int_eq(BLOOM_SUCCESS, bloom_filter_init(&x, 1000, 0.5));
+    mu_assert_int_eq(1, x.number_hashes);
+    bloom_filter_destroy(&x);
+}
+
+MU_TEST(test_bloom_current_false_positive_rate_large) {
+    BloomFilter x;
+    bloom_filter_init(&x, 10, 0.05);
+    /*  The rate only uses these values, so use those of a filter for a billion elements at 0.01
+        holding 400 million, without allocating it: 7 * 400 million does not fit in an int */
+    unsigned int hashes = x.number_hashes;
+    x.number_hashes = 7;
+    x.number_bits = 9585058378ULL;
+    x.elements_added = 400000000ULL;
+    double expected = pow(1 - exp(-7.0 * 400000000.0 / 9585058378.0), 7);
+    mu_assert_double_between(expected * 0.999, expected * 1.001, bloom_filter_current_false_positive_rate(&x));
+    x.number_hashes = hashes;
+    bloom_filter_destroy(&x);
+}
+
+MU_TEST(test_bloom_estimate_elements_all_bits_set) {
+    BloomFilter x;
+    bloom_filter_init(&x, 10, 0.05);
+    for (uint64_t i = 0; i < x.number_bits; ++i) {
+        x.bloom[i / 8] |= (1 << (i % 8));
+    }
+    mu_assert(bloom_filter_count_set_bits(&x) == x.number_bits, "every bit should be set");
+    /* log(0) is -inf; converting the result to an integer was undefined behavior */
+    mu_assert(bloom_filter_estimate_elements(&x) == UINT64_MAX, "a full filter estimates UINT64_MAX");
+    mu_assert(bloom_filter_estimate_elements_by_values(63, 63, 4) == UINT64_MAX, "a full filter estimates UINT64_MAX");
+    mu_assert_int_eq(65, bloom_filter_estimate_elements_by_values(63, 62, 4));
+    bloom_filter_destroy(&x);
+}
+
 /*******************************************************************************
 *   Union, Intersection, Jaccard Index
 *******************************************************************************/
@@ -885,6 +1011,13 @@ MU_TEST_SUITE(test_suite) {
     MU_RUN_TEST(test_bloom_export_hex);
     MU_RUN_TEST(test_bloom_import_hex);
     MU_RUN_TEST(test_bloom_import_hex_fail);
+    MU_RUN_TEST(test_bloom_import_hex_invalid);
+    MU_RUN_TEST(test_bloom_import_hex_all_byte_values);
+    MU_RUN_TEST(test_bloom_init_zero_hashes);
+    MU_RUN_TEST(test_bloom_current_false_positive_rate_large);
+    MU_RUN_TEST(test_bloom_estimate_elements_all_bits_set);
+    MU_RUN_TEST(test_bloom_hash_allocation_failure);
+    MU_RUN_TEST(test_bloom_union_intersection_const_inputs);
 
     /* Union, Intersection, Jaccard Index */
     MU_RUN_TEST(test_bloom_filter_union_intersection_errors);
