@@ -95,6 +95,7 @@ int bloom_filter_export(const BloomFilter *bf, const char *filepath);
     multiple blooms in a single file or in a database, etc.
 
     NOTE: It is up to the caller to free the allocated memory
+    NOTE: Exporting returns NULL if the memory cannot be allocated
     NOTE: Importing fails if the string is not the hex export of a valid bloom filter */
 char* bloom_filter_export_hex_string(const BloomFilter *bf);
 int bloom_filter_import_hex_string_alt(BloomFilter *bf, const char *hex, BloomHashFunction hash_function);
@@ -159,12 +160,12 @@ uint64_t bloom_filter_export_size(const BloomFilter *bf);
 *******************************************************************************/
 
 /* Merge Bloom Filters - inserts information into res */
-int bloom_filter_union(BloomFilter *res, BloomFilter *bf1, BloomFilter *bf2);
+int bloom_filter_union(BloomFilter *res, const BloomFilter *bf1, const BloomFilter *bf2);
 uint64_t bloom_filter_count_union_bits_set(const BloomFilter *bf1, const BloomFilter *bf2);
 
 /*  Find the intersection of Bloom Filters - insert into res with the intersection
     The number of inserted elements is updated to the estimated elements calculation */
-int bloom_filter_intersect(BloomFilter *res, BloomFilter *bf1, BloomFilter *bf2);
+int bloom_filter_intersect(BloomFilter *res, const BloomFilter *bf1, const BloomFilter *bf2);
 uint64_t bloom_filter_count_intersection_bits_set(const BloomFilter *bf1, const BloomFilter *bf2);
 
 /*  Calculate the Jacccard Index of the Bloom Filters

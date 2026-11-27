@@ -6,6 +6,8 @@
 * Fix: `bloom_filter_estimate_elements()` was undefined behavior when every bit is set; it now returns `UINT64_MAX`
 * Fix: `bloom_filter_import_hex_string()` read before the start of strings shorter than the 40 character footer, and did not check the length, the footer values, or the hex characters; it now fails for those
 * Fix: `bloom_filter_import_hex_string()` wrote 2 bytes into each 1 byte element, which was only correct on little-endian machines
+* Fix: a failed hash allocation is now returned as a failure instead of dereferencing `NULL`; `bloom_filter_calculate_hashes()` and `bloom_filter_export_hex_string()` return `NULL` if the memory cannot be allocated
+* `bloom_filter_union()` and `bloom_filter_intersect()` take the two input filters as `const`
 
 ### Version 1.9.1
 * Improved use of `const` keyword

@@ -604,6 +604,35 @@ MU_TEST(test_bloom_hash_allocation_failure) {
     bloom_filter_destroy(&x);
 }
 
+MU_TEST(test_bloom_union_intersection_const_inputs) {
+    BloomFilter x, y, u, n;
+    bloom_filter_init(&x, 100, 0.05);
+    bloom_filter_init(&y, 100, 0.05);
+    bloom_filter_init(&u, 100, 0.05);
+    bloom_filter_init(&n, 100, 0.05);
+    for (int i = 0; i < 50; ++i) {
+        char key[10] = {0};
+        sprintf(key, "%d", i);
+        bloom_filter_add_string(&x, key);
+        sprintf(key, "%d", i + 25);
+        bloom_filter_add_string(&y, key);
+    }
+    /* the inputs are only read, so they can be const */
+    const BloomFilter *cx = &x, *cy = &y;
+    mu_assert_int_eq(BLOOM_SUCCESS, bloom_filter_union(&u, cx, cy));
+    mu_assert_int_eq(BLOOM_SUCCESS, bloom_filter_intersect(&n, cx, cy));
+    int errors = 0;
+    for (unsigned long i = 0; i < x.bloom_length; ++i) {
+        errors += u.bloom[i] == (x.bloom[i] | y.bloom[i]) ? 0 : 1;
+        errors += n.bloom[i] == (x.bloom[i] & y.bloom[i]) ? 0 : 1;
+    }
+    mu_assert_int_eq(0, errors);
+    bloom_filter_destroy(&x);
+    bloom_filter_destroy(&y);
+    bloom_filter_destroy(&u);
+    bloom_filter_destroy(&n);
+}
+
 MU_TEST(test_bloom_import_hex_invalid) {
     BloomFilter x;
     /* shorter than the 40 character footer: it read before the start of the string */
@@ -988,6 +1017,7 @@ MU_TEST_SUITE(test_suite) {
     MU_RUN_TEST(test_bloom_current_false_positive_rate_large);
     MU_RUN_TEST(test_bloom_estimate_elements_all_bits_set);
     MU_RUN_TEST(test_bloom_hash_allocation_failure);
+    MU_RUN_TEST(test_bloom_union_intersection_const_inputs);
 
     /* Union, Intersection, Jaccard Index */
     MU_RUN_TEST(test_bloom_filter_union_intersection_errors);

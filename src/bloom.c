@@ -268,6 +268,9 @@ int bloom_filter_import_on_disk_alt(BloomFilter *bf, const char *filepath, Bloom
 char* bloom_filter_export_hex_string(const BloomFilter *bf) {
     uint64_t i, bytes = sizeof(uint64_t) * 2 + sizeof(float) + (bf->bloom_length);
     char* hex = (char*)calloc((bytes * 2 + 1), sizeof(char));
+    if (hex == NULL) {  // out of memory
+        return NULL;
+    }
     for (i = 0; i < bf->bloom_length; ++i) {
         sprintf(hex + (i * 2), "%02x", bf->bloom[i]); // not the fastest way, but works
     }
@@ -357,7 +360,7 @@ uint64_t bloom_filter_estimate_elements_by_values(uint64_t m, uint64_t X, int k)
     return (uint64_t)-(((double) m / k) * log_n);
 }
 
-int bloom_filter_union(BloomFilter *res, BloomFilter *bf1, BloomFilter *bf2) {
+int bloom_filter_union(BloomFilter *res, const BloomFilter *bf1, const BloomFilter *bf2) {
     // Ensure the bloom filters can be unioned
     if (__check_if_union_or_intersection_ok(res, bf1, bf2) == BLOOM_FAILURE) {
         return BLOOM_FAILURE;
@@ -382,7 +385,7 @@ uint64_t bloom_filter_count_union_bits_set(const BloomFilter *bf1, const BloomFi
     return res;
 }
 
-int bloom_filter_intersect(BloomFilter *res, BloomFilter *bf1, BloomFilter *bf2) {
+int bloom_filter_intersect(BloomFilter *res, const BloomFilter *bf1, const BloomFilter *bf2) {
     // Ensure the bloom filters can be used in an intersection
     if (__check_if_union_or_intersection_ok(res, bf1, bf2) == BLOOM_FAILURE) {
         return BLOOM_FAILURE;
