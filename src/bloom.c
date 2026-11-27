@@ -60,6 +60,9 @@ int bloom_filter_init_alt(BloomFilter *bf, uint64_t estimated_elements, float fa
     bf->estimated_elements = estimated_elements;
     bf->false_positive_probability = false_positive_rate;
     __calculate_optimal_hashes(bf);
+    if (bf->number_hashes == 0) {  // a false positive rate above about 0.7; every check would succeed
+        return BLOOM_FAILURE;
+    }
     bf->bloom = (unsigned char*)calloc(bf->bloom_length + 1, sizeof(char)); // pad to ensure no running off the end
     bf->elements_added = 0;
     bloom_filter_set_hash_function(bf, hash_function);
@@ -74,6 +77,9 @@ int bloom_filter_init_on_disk_alt(BloomFilter *bf, uint64_t estimated_elements, 
     bf->estimated_elements = estimated_elements;
     bf->false_positive_probability = false_positive_rate;
     __calculate_optimal_hashes(bf);
+    if (bf->number_hashes == 0) {  // a false positive rate above about 0.7; every check would succeed
+        return BLOOM_FAILURE;
+    }
     bf->elements_added = 0;
     FILE *fp;
     fp = fopen(filepath, "w+b");
@@ -203,10 +209,11 @@ int bloom_filter_check_string_alt(const BloomFilter *bf, const uint64_t *hashes,
 }
 
 float bloom_filter_current_false_positive_rate(const BloomFilter *bf) {
-    int num = bf->number_hashes * bf->elements_added;
-    double d = -num / (float) bf->number_bits;
+    // in floating point: the product of the hashes and elements added can be larger than an int
+    double num = (double)bf->number_hashes * (double)bf->elements_added;
+    double d = -num / (double)bf->number_bits;
     double e = exp(d);
-    return pow((1 - e), bf->number_hashes);
+    return (float)pow((1 - e), bf->number_hashes);
 }
 
 int bloom_filter_export(const BloomFilter *bf, const char *filepath) {
@@ -272,7 +279,8 @@ char* bloom_filter_export_hex_string(const BloomFilter *bf) {
 
 int bloom_filter_import_hex_string_alt(BloomFilter *bf, const char *hex, BloomHashFunction hash_function) {
     uint64_t len = strlen(hex);
-    if (len % 2 != 0) {
+    // the footer is 40 hex characters: estimated elements, elements added, and false positive rate
+    if (len % 2 != 0 || len < 40) {
         fprintf(stderr, "Unable to parse; exiting\n");
         return BLOOM_FAILURE;
     }
@@ -291,14 +299,29 @@ int bloom_filter_import_hex_string_alt(BloomFilter *bf, const char *hex, BloomHa
     memcpy(&f, &t_fpr, sizeof(float));
     bf->false_positive_probability = f;
     bloom_filter_set_hash_function(bf, hash_function);
+    if (bf->estimated_elements == 0 || !(f > 0.0 && f < 1.0)) {
+        fprintf(stderr, "Unable to parse; invalid estimated elements or false positive rate\n");
+        return BLOOM_FAILURE;
+    }
 
     __calculate_optimal_hashes(bf);
+    if (bf->number_hashes == 0 || len != bf->bloom_length * 2 + 40) {
+        fprintf(stderr, "Unable to parse; the length does not match the bloom filter\n");
+        return BLOOM_FAILURE;
+    }
     bf->bloom = (unsigned char*)calloc(bf->bloom_length + 1, sizeof(char));  // pad
     bf->__is_on_disk = 0; // not on disk
 
     uint64_t i;
     for (i = 0; i < bf->bloom_length; ++i) {
-        sscanf(hex + (i * 2), "%2hx", (short unsigned int*)&bf->bloom[i]);
+        unsigned int byte;  // read each byte into an int: "%2hx" wrote 2 bytes into each 1 byte element
+        if (sscanf(hex + (i * 2), "%2x", &byte) != 1) {
+            fprintf(stderr, "Unable to parse; not a hex string\n");
+            free(bf->bloom);
+            bf->bloom = NULL;
+            return BLOOM_FAILURE;
+        }
+        bf->bloom[i] = (unsigned char)byte;
     }
     return BLOOM_SUCCESS;
 }
@@ -321,6 +344,9 @@ uint64_t bloom_filter_estimate_elements(const BloomFilter *bf) {
 
 uint64_t bloom_filter_estimate_elements_by_values(uint64_t m, uint64_t X, int k) {
     /* m = number bits; X = count of flipped bits; k = number hashes */
+    if (X >= m) {
+        return UINT64_MAX;  // every bit is set: log(0) is -inf, too many elements to estimate
+    }
     double log_n = log(1 - ((double) X / (double) m));
     return (uint64_t)-(((double) m / k) * log_n);
 }

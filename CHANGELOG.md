@@ -1,5 +1,12 @@
 # Bloom Filter
 
+### Version 1.9.2 (unreleased)
+* Fix: `bloom_filter_current_false_positive_rate()` overflowed an `int` once the number of hashes times the elements added passed `INT_MAX`, returning a wrong (even negative) rate
+* Fix: a false positive rate above about 0.7 gave 0 hashes, so every check succeeded; `bloom_filter_init()` and `bloom_filter_init_on_disk()` now fail (check the return value before using the filter)
+* Fix: `bloom_filter_estimate_elements()` was undefined behavior when every bit is set; it now returns `UINT64_MAX`
+* Fix: `bloom_filter_import_hex_string()` read before the start of strings shorter than the 40 character footer, and did not check the length, the footer values, or the hex characters; it now fails for those
+* Fix: `bloom_filter_import_hex_string()` wrote 2 bytes into each 1 byte element, which was only correct on little-endian machines
+
 ### Version 1.9.1
 * Improved use of `const` keyword
 * Minor updates

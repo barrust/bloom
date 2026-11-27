@@ -62,7 +62,7 @@ typedef struct bloom_filter {
 /*  Initialize a standard bloom filter in memory; this will provide 'optimal' size and hash numbers.
 
     Estimated elements is 0 < x <= UINT64_MAX.
-    False positive rate is 0.0 < x < 1.0 */
+    False positive rate is 0.0 < x < 1.0; a rate above about 0.7 gives 0 hashes and fails */
 int bloom_filter_init_alt(BloomFilter *bf, uint64_t estimated_elements, float false_positive_rate, BloomHashFunction hash_function);
 static __inline__ int bloom_filter_init(BloomFilter *bf, uint64_t estimated_elements, float false_positive_rate) {
     return bloom_filter_init_alt(bf, estimated_elements, false_positive_rate, NULL);
@@ -94,7 +94,8 @@ int bloom_filter_export(const BloomFilter *bf, const char *filepath);
 /*  Export and import as a hex string; not space effecient but allows for storing
     multiple blooms in a single file or in a database, etc.
 
-    NOTE: It is up to the caller to free the allocated memory */
+    NOTE: It is up to the caller to free the allocated memory
+    NOTE: Importing fails if the string is not the hex export of a valid bloom filter */
 char* bloom_filter_export_hex_string(const BloomFilter *bf);
 int bloom_filter_import_hex_string_alt(BloomFilter *bf, const char *hex, BloomHashFunction hash_function);
 static __inline__ int bloom_filter_import_hex_string(BloomFilter *bf, const char *hex) {
@@ -135,7 +136,8 @@ uint64_t bloom_filter_count_set_bits(const BloomFilter *bf);
     https://en.wikipedia.org/wiki/Bloom_filter#Approximating_the_number_of_items_in_a_Bloom_filter
     m = bits in Bloom filter
     k = number hashes
-    X = count of flipped bits in filter */
+    X = count of flipped bits in filter
+    Returns UINT64_MAX when every bit is set, as the number of elements cannot be estimated */
 uint64_t bloom_filter_estimate_elements(const BloomFilter *bf);
 uint64_t bloom_filter_estimate_elements_by_values(uint64_t m, uint64_t X, int k);
 
