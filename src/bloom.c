@@ -151,6 +151,9 @@ void bloom_filter_stats(const BloomFilter *bf) {
 
 int bloom_filter_add_string(BloomFilter *bf, const char *str) {
     uint64_t *hashes = bloom_filter_calculate_hashes(bf, str, bf->number_hashes);
+    if (hashes == NULL) {  // the hash function could not allocate the hashes
+        return BLOOM_FAILURE;
+    }
     int res = bloom_filter_add_string_alt(bf, hashes, bf->number_hashes);
     free(hashes);
     return res;
@@ -159,6 +162,9 @@ int bloom_filter_add_string(BloomFilter *bf, const char *str) {
 
 int bloom_filter_check_string(const BloomFilter *bf, const char *str) {
     uint64_t *hashes = bloom_filter_calculate_hashes(bf, str, bf->number_hashes);
+    if (hashes == NULL) {  // the hash function could not allocate the hashes
+        return BLOOM_FAILURE;
+    }
     int res = bloom_filter_check_string_alt(bf, hashes, bf->number_hashes);
     free(hashes);
     return res;
@@ -516,6 +522,9 @@ static void __update_elements_added_on_disk(BloomFilter* bf) {
 /* NOTE: The caller will free the results */
 static uint64_t* __default_hash(int num_hashes, const char *str) {
     uint64_t *results = (uint64_t*)calloc(num_hashes, sizeof(uint64_t));
+    if (results == NULL) {  // out of memory; the callers return a failure
+        return NULL;
+    }
     int i;
     for (i = 0; i < num_hashes; ++i) {
         results[i] = __fnv_1a(str, i);

@@ -145,7 +145,8 @@ uint64_t bloom_filter_estimate_elements_by_values(uint64_t m, uint64_t X, int k)
 void bloom_filter_set_elements_to_estimated(BloomFilter *bf);
 
 /*  Generate the desired number of hashes for the provided string
-    NOTE: It is up to the caller to free the allocated memory */
+    NOTE: It is up to the caller to free the allocated memory
+    NOTE: Returns NULL if the memory cannot be allocated */
 uint64_t* bloom_filter_calculate_hashes(const BloomFilter *bf, const char *str, unsigned int number_hashes);
 
 /* Calculate the size the bloom filter will take on disk when exported in bytes */

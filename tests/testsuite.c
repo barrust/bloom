@@ -588,6 +588,22 @@ MU_TEST(test_bloom_import_hex_fail) {
     mu_assert_int_eq(BLOOM_FAILURE, bloom_filter_import_hex_string(&bf, (char*)"aaa"));  // only checks odd length
 }
 
+/* a hash function that cannot allocate its results */
+static uint64_t* __null_hash(int num_hashes, const char *str) {
+    (void)num_hashes;
+    (void)str;
+    return NULL;
+}
+
+MU_TEST(test_bloom_hash_allocation_failure) {
+    BloomFilter x;
+    mu_assert_int_eq(BLOOM_SUCCESS, bloom_filter_init_alt(&x, 100, 0.05, __null_hash));
+    mu_assert_int_eq(BLOOM_FAILURE, bloom_filter_add_string(&x, "test"));
+    mu_assert_int_eq(BLOOM_FAILURE, bloom_filter_check_string(&x, "test"));
+    mu_assert_int_eq(0, x.elements_added);
+    bloom_filter_destroy(&x);
+}
+
 MU_TEST(test_bloom_import_hex_invalid) {
     BloomFilter x;
     /* shorter than the 40 character footer: it read before the start of the string */
@@ -971,6 +987,7 @@ MU_TEST_SUITE(test_suite) {
     MU_RUN_TEST(test_bloom_init_zero_hashes);
     MU_RUN_TEST(test_bloom_current_false_positive_rate_large);
     MU_RUN_TEST(test_bloom_estimate_elements_all_bits_set);
+    MU_RUN_TEST(test_bloom_hash_allocation_failure);
 
     /* Union, Intersection, Jaccard Index */
     MU_RUN_TEST(test_bloom_filter_union_intersection_errors);
