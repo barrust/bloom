@@ -8,7 +8,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest]
-        compiler: [gcc, g++, clang, gcc-12, gcc-13, gcc-14]
+        compiler: [gcc, g++, clang, gcc-13, gcc-14]
     steps:
     - uses: actions/checkout@v7
     - name: Compile Library
